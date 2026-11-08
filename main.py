@@ -28,7 +28,7 @@ class CotizacionDolar(Base):
     fecha_registro = Column(DateTime, default=datetime.utcnow)
 
 class VariableMacro(Base):
-    __tablename__ = "variables_macro"
+    __tablename__ = "variables_macro_v2"
 
     id = Column(Integer, primary_key=True, index=True)
     fuente = Column(String, index=True)
@@ -60,34 +60,42 @@ def inicio():
 @app.get("/dolar")
 def ver_dolar(db: Session = Depends(get_db)):
     url = "https://dolarapi.com/v1/dolares"
-    respuesta = requests.get(url, timeout=10)
-    
-    if respuesta.status_code == 200:
-        datos = respuesta.json()
-        if db:
-            for item in datos:
-                nueva_cotizacion = CotizacionDolar(
-                    casa=item.get("casa"),
-                    nombre=item.get("nombre"),
-                    compra=float(item.get("compra", 0) or 0),
-                    venta=float(item.get("venta", 0) or 0),
-                    fecha_actualizacion=str(item.get("fechaActualizacion"))
-                )
-                db.add(nueva_cotizacion)
-            db.commit()
-        return datos
-    return {"error": "No se pudo conectar a la API de divisas"}
+    try:
+        respuesta = requests.get(url, timeout=10)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            if db:
+                try:
+                    for item in datos:
+                        nueva_cotizacion = CotizacionDolar(
+                            casa=item.get("casa"),
+                            nombre=item.get("nombre"),
+                            compra=float(item.get("compra", 0) or 0),
+                            venta=float(item.get("venta", 0) or 0),
+                            fecha_actualizacion=str(item.get("fechaActualizacion"))
+                        )
+                        db.add(nueva_cotizacion)
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            return datos
+        return {"error": "No se pudo conectar a la API de divisas"}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/dolar/historial")
 def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     if not db:
         return {"error": "Base de datos no disponible"}
-    return db.query(CotizacionDolar).order_by(CotizacionDolar.id.desc()).limit(limite).all()
+    try:
+        return db.query(CotizacionDolar).order_by(CotizacionDolar.id.desc()).limit(limite).all()
+    except Exception as e:
+        return {"error": str(e)}
 
 def consultar_serie_simple(serie_id: str):
     url = f"https://apis.datos.gob.ar/series/api/series/?ids={serie_id}&limit=1&sort=desc"
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=8)
         if r.status_code == 200:
             data = r.json().get("data", [])
             if data and len(data[0]) >= 2:
@@ -98,7 +106,6 @@ def consultar_serie_simple(serie_id: str):
 
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
-    # Consultamos las series individualmente para evitar conflictos de periodicidad
     series = [
         {"clave": "RESERVAS_USD", "id": "174.1_RO_2016_0_21", "desc": "Reservas Internacionales (Millones USD)"},
         {"clave": "BASE_MONETARIA", "id": "174.1_BMA_2016_0_15", "desc": "Base Monetaria (Millones ARS)"},
@@ -118,17 +125,23 @@ def ver_bcra(db: Session = Depends(get_db)):
             resultado.append(registro_dict)
             
             if db:
-                db_record = VariableMacro(
-                    fuente="BCRA",
-                    id_variable=item["clave"],
-                    descripcion=item["desc"],
-                    valor=float(dato["valor"]),
-                    fecha_dato=str(dato["fecha"])
-                )
-                db.add(db_record)
+                try:
+                    db_record = VariableMacro(
+                        fuente="BCRA",
+                        id_variable=item["clave"],
+                        descripcion=item["desc"],
+                        valor=float(dato["valor"]),
+                        fecha_dato=str(dato["fecha"])
+                    )
+                    db.add(db_record)
+                except Exception:
+                    db.rollback()
     
     if db and resultado:
-        db.commit()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
         
     if not resultado:
         return {"mensaje": "No se pudieron recuperar las series del BCRA en este momento"}
@@ -139,7 +152,7 @@ def ver_bcra(db: Session = Depends(get_db)):
 def ver_indec_ipc(db: Session = Depends(get_db)):
     url = "https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc"
     try:
-        respuesta = requests.get(url, timeout=12)
+        respuesta = requests.get(url, timeout=10)
         if respuesta.status_code == 200:
             datos = respuesta.json()
             data_points = datos.get("data", [])
@@ -150,16 +163,22 @@ def ver_indec_ipc(db: Session = Depends(get_db)):
                 if valor is not None:
                     resultado.append({"fecha": fecha, "indice_ipc": float(valor)})
                     if db:
-                        registro = VariableMacro(
-                            fuente="INDEC",
-                            id_variable="IPC_NACIONAL",
-                            descripcion="Índice de Precios al Consumidor (Nivel General)",
-                            valor=float(valor),
-                            fecha_dato=str(fecha)
-                        )
-                        db.add(registro)
+                        try:
+                            registro = VariableMacro(
+                                fuente="INDEC",
+                                id_variable="IPC_NACIONAL",
+                                descripcion="Índice de Precios al Consumidor (Nivel General)",
+                                valor=float(valor),
+                                fecha_dato=str(fecha)
+                            )
+                            db.add(registro)
+                        except Exception:
+                            db.rollback()
             if db:
-                db.commit()
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
             return resultado
         return {"error": f"INDEC API devolvió código {respuesta.status_code}"}
     except Exception as e:
