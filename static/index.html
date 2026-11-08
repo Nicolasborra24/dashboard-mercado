@@ -8,59 +8,115 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Financiero Argentino</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              900: "#0b0f19",
-              800: "#111827",
-              700: "#1f2937",
-              card: "#131b2e"
-            }
-          }
-        }
-      }
-    }
-  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background-color: #080c14; }
-    .card-glow { box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.45); }
-    .table-dark-row:hover { background-color: rgba(30, 41, 59, 0.45); }
-    
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    body {
+      background-color: #030712;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Tarjetas estilo Glassmorphic Neón */
+    .neon-card {
+      background: linear-gradient(180deg, rgba(12, 22, 42, 0.75) 0%, rgba(5, 10, 22, 0.90) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+    }
+    .neon-card:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 10px 28px -2px rgba(6, 182, 212, 0.15), inset 0 1px 2px 0 rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    /* Pestañas de Navegación */
+    .neon-tab {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 14, 28, 0.9) 100%);
+      border: 1px solid rgba(71, 85, 105, 0.45);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+    .neon-tab:hover {
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(20, 32, 58, 0.85) 0%, rgba(11, 18, 36, 0.95) 100%);
+    }
+    .neon-tab.active {
+      background: linear-gradient(180deg, rgba(8, 145, 178, 0.4) 0%, rgba(6, 78, 100, 0.6) 100%);
+      border-color: #22d3ee;
+      box-shadow: 0 0 16px rgba(34, 211, 238, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    /* Barras de Título Temáticas de Sección */
+    .section-bar-cyan {
+      background: linear-gradient(90deg, rgba(6, 182, 212, 0.35) 0%, rgba(8, 51, 68, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
+      border: 1px solid rgba(34, 211, 238, 0.55);
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .section-bar-purple {
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.35) 0%, rgba(59, 7, 100, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
+      border: 1px solid rgba(192, 132, 252, 0.55);
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .section-bar-amber {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.35) 0%, rgba(69, 26, 3, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
+      border: 1px solid rgba(251, 191, 36, 0.55);
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    /* Línea con flare de luz extendido */
+    .glow-flare-cyan {
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%);
+    }
+    .glow-flare-purple {
+      background: linear-gradient(90deg, rgba(192, 132, 252, 0.8) 0%, rgba(168, 85, 247, 0.3) 60%, transparent 100%);
+    }
+    .glow-flare-amber {
+      background: linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(245, 158, 11, 0.3) 60%, transparent 100%);
+    }
+
+    /* Destellos de precio */
     @keyframes flash-up {
-      0% { color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.7); }
+      0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); }
       100% { color: #ffffff; text-shadow: none; }
     }
     @keyframes flash-down {
-      0% { color: #f43f5e; text-shadow: 0 0 12px rgba(244, 63, 94, 0.7); }
+      0% { color: #f43f5e; text-shadow: 0 0 14px rgba(244, 63, 94, 0.9); }
       100% { color: #ffffff; text-shadow: none; }
     }
-    .flash-green { animation: flash-up 1.4s ease; }
-    .flash-red { animation: flash-down 1.4s ease; }
+    .flash-green { animation: flash-up 1.3s ease; }
+    .flash-red { animation: flash-down 1.3s ease; }
   </style>
 </head>
-<body class="text-slate-100 font-sans antialiased min-h-screen">
+<body class="text-slate-100 antialiased min-h-screen pb-10">
 
   <!-- Header -->
-  <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-base">
+      <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-black shadow-[0_0_12px_rgba(6,182,212,0.3)]">
         <i class="fa-solid fa-chart-line"></i>
       </div>
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">3.8</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">3.8</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados en Tiempo Real</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <span id="sync-status" class="flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      <span id="sync-status" class="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado
       </span>
       <span id="last-update" class="text-[11px] text-slate-400 font-mono">--:--:--</span>
@@ -68,10 +124,11 @@
   </header>
 
   <!-- Navigation -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-6">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
-        <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0">
+        <!-- HOME Button -->
+        <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-2xl neon-tab text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shrink-0">
           <i class="fa-solid fa-house text-base"></i>
           <span>HOME</span>
         </button>
@@ -79,27 +136,27 @@
         <div class="flex flex-col gap-1.5 flex-1 w-full text-[11px]">
           <!-- Fila 1 (6 secciones) -->
           <div class="grid grid-cols-6 gap-1.5">
-            <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
               <span class="truncate">Tasas y BCRA</span>
             </button>
-            <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i>
               <span class="truncate">Dólar y Brechas</span>
             </button>
-            <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
               <span class="truncate">Monedas</span>
             </button>
-            <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-brands fa-bitcoin text-amber-400 text-[11px]"></i>
               <span class="truncate">Cripto</span>
             </button>
-            <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
               <span class="truncate">Cotización Bonos</span>
             </button>
-            <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i>
               <span class="truncate">Inflación / UVA</span>
             </button>
@@ -107,27 +164,27 @@
 
           <!-- Fila 2 (6 secciones) -->
           <div class="grid grid-cols-6 gap-1.5">
-            <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
               <span class="truncate">Índices y Sectores</span>
             </button>
-            <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
               <span class="truncate">Metales</span>
             </button>
-            <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i>
               <span class="truncate">Petróleo</span>
             </button>
-            <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i>
               <span class="truncate">Macro & Fiscal</span>
             </button>
-            <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-industry text-orange-400 text-[10px]"></i>
               <span class="truncate">Micro / Real</span>
             </button>
-            <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i>
               <span class="truncate">Agro & Energía</span>
             </button>
@@ -136,10 +193,10 @@
       </div>
     </div>
 
-    <!-- Contenedor General -->
-    <div id="dashboard-content" class="space-y-6">
-      <div class="flex justify-center items-center py-20 text-slate-500">
-        <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
+    <!-- Contenedor General Dinámico -->
+    <div id="dashboard-content" class="space-y-7">
+      <div class="flex justify-center items-center py-24 text-slate-500">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-cyan-400"></i>
       </div>
     </div>
   </main>
@@ -161,38 +218,72 @@
       commodities_agro_energia: { titulo: "Commodities, Agro y Energía", icono: "fa-wheat-awn" }
     };
 
-    const VARIABLES_HOME = [
-      "MONEDA_DXY",
-      "CRIPTO_BTC",
-      "DOLAR_OFICIAL",
-      "DOLAR_MEP",
-      "DOLAR_CCL",
-      "INFLACION_MENSUAL",
-      "RIESGO_PAIS",
-      "INDICE_SP500",
-      "INDICE_NASDAQ",
-      "INDICE_VIX",
-      "MERVAL_ARS",
-      "MERVAL_USD",
-      "TASA_TAMAR",
-      "TASA_BADLAR",
-      "TASA_CALL",
-      "AGRO_SOJA",
-      "METALES_XAU",
-      "PETROLEO_WTI"
+    // Bloques del HOME exactamente como en la imagen
+    const BLOQUES_HOME = [
+      {
+        id: "mercados_divisas",
+        titulo: "MERCADOS & DIVISAS",
+        estiloBarra: "section-bar-cyan",
+        estiloFlare: "glow-flare-cyan",
+        iconoIzq: "fa-solid fa-chart-line text-cyan-300",
+        badgeBg: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300",
+        iconoDer: "fa-solid fa-globe text-cyan-400/80",
+        variables: [
+          "MONEDA_DXY",
+          "CRIPTO_BTC",
+          "DOLAR_OFICIAL",
+          "DOLAR_MEP",
+          "DOLAR_CCL",
+          "INFLACION_MENSUAL"
+        ]
+      },
+      {
+        id: "riesgo_indices",
+        titulo: "RIESGO & ÍNDICES GLOBALES",
+        estiloBarra: "section-bar-purple",
+        estiloFlare: "glow-flare-purple",
+        iconoIzq: "fa-solid fa-shield-halved text-purple-300",
+        badgeBg: "bg-purple-500/20 border-purple-400/40 text-purple-300",
+        iconoDer: "fa-solid fa-chart-simple text-purple-400/80",
+        variables: [
+          "RIESGO_PAIS",
+          "INDICE_SP500",
+          "INDICE_NASDAQ",
+          "INDICE_VIX",
+          "MERVAL_ARS",
+          "MERVAL_USD"
+        ]
+      },
+      {
+        id: "tasas_commodities",
+        titulo: "TASAS & COMMODITIES",
+        estiloBarra: "section-bar-amber",
+        estiloFlare: "glow-flare-amber",
+        iconoIzq: "fa-solid fa-percent text-amber-300",
+        badgeBg: "bg-amber-500/20 border-amber-400/40 text-amber-300",
+        iconoDer: "fa-solid fa-coins text-amber-400/80",
+        variables: [
+          "TASA_TAMAR",
+          "TASA_BADLAR",
+          "TASA_CALL",
+          "AGRO_SOJA",
+          "METALES_XAU",
+          "PETROLEO_WTI"
+        ]
+      }
     ];
 
     const CRIPTO_DIRECTAS = [
-      { cod: "CRIPTO_BTC", desc: "Bitcoin (BTC)", sym: "BTCUSDT", defP: 76420.0 },
-      { cod: "CRIPTO_ETH", desc: "Ethereum (ETH)", sym: "ETHUSDT", defP: 2485.0 },
-      { cod: "CRIPTO_SOL", desc: "Solana (SOL)", sym: "SOLUSDT", defP: 198.50 },
-      { cod: "CRIPTO_PAXG", desc: "PAX Gold (PAXG)", sym: "PAXGUSDT", defP: 2745.0 },
-      { cod: "CRIPTO_BNB", desc: "BNB Chain (BNB)", sym: "BNBUSDT", defP: 588.0 },
-      { cod: "CRIPTO_XRP", desc: "Ripple (XRP)", sym: "XRPUSDT", defP: 0.582 },
-      { cod: "CRIPTO_DOGE", desc: "Dogecoin (DOGE)", sym: "DOGEUSDT", defP: 0.198 },
-      { cod: "CRIPTO_ADA", desc: "Cardano (ADA)", sym: "ADAUSDT", defP: 0.438 },
-      { cod: "CRIPTO_USDC", desc: "USD Coin (USDC)", sym: "USDCUSDT", defP: 1.00 },
-      { cod: "CRIPTO_USDT", desc: "Tether (USDT)", sym: null, defP: 1.00 }
+      { cod: "CRIPTO_BTC", desc: "BITCOIN (BTC)", sym: "BTCUSDT", defP: 75864.01 },
+      { cod: "CRIPTO_ETH", desc: "ETHEREUM (ETH)", sym: "ETHUSDT", defP: 2485.0 },
+      { cod: "CRIPTO_SOL", desc: "SOLANA (SOL)", sym: "SOLUSDT", defP: 198.50 },
+      { cod: "CRIPTO_PAXG", desc: "PAX GOLD (PAXG)", sym: "PAXGUSDT", defP: 2745.0 },
+      { cod: "CRIPTO_BNB", desc: "BNB CHAIN (BNB)", sym: "BNBUSDT", defP: 588.0 },
+      { cod: "CRIPTO_XRP", desc: "RIPPLE (XRP)", sym: "XRPUSDT", defP: 0.582 },
+      { cod: "CRIPTO_DOGE", desc: "DOGECOIN (DOGE)", sym: "DOGEUSDT", defP: 0.198 },
+      { cod: "CRIPTO_ADA", desc: "CARDANO (ADA)", sym: "ADAUSDT", defP: 0.438 },
+      { cod: "CRIPTO_USDC", desc: "USD COIN (USDC)", sym: "USDCUSDT", defP: 1.00 },
+      { cod: "CRIPTO_USDT", desc: "TETHER (USDT)", sym: null, defP: 1.00 }
     ];
 
     const PRECIOS_ANTERIORES = {};
@@ -225,26 +316,26 @@
     };
 
     const INDICES_ESTATICOS_BASE = [
-      { variable: "MERVAL_ARS", descripcion: "S&P Merval en Pesos", subcategoria: "argentina", valor_formateado: "$ 2.085.420", variacion: "+1,25%", valor: 2085420.0, fecha: "Cierre" },
-      { variable: "MERVAL_USD", descripcion: "S&P Merval en Dólares (CCL)", subcategoria: "argentina", valor_formateado: "US$ 1.812,50", variacion: "+0,85%", valor: 1812.50, fecha: "Cierre" },
-      { variable: "RIESGO_PAIS", descripcion: "Riesgo País EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+1,51%", valor: 939.0, fecha: "Cierre" },
-      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "5.995,54 pts", variacion: "+0,38%", valor: 5995.54, fecha: "Cierre" },
-      { variable: "INDICE_NASDAQ", descripcion: "Nasdaq 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "21.117,20 pts", variacion: "+0,09%", valor: 21117.20, fecha: "Cierre" },
-      { variable: "INDICE_VIX", descripcion: "Índice de Volatilidad (VIX)", subcategoria: "estados_unidos", valor_formateado: "14,94 pts", variacion: "-1,71%", valor: 14.94, fecha: "Cierre" },
-      { variable: "INDICE_DJI", descripcion: "Dow Jones Industrial (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0,59%", valor: 43988.99, fecha: "Cierre" },
-      { variable: "INDICE_RUSSELL", descripcion: "Russell 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0,71%", valor: 2399.61, fecha: "Cierre" },
-      { variable: "MONEDA_DXY", descripcion: "Índice Dólar (DXY)", subcategoria: "estados_unidos", valor_formateado: "104,35 pts", variacion: "+0,15%", valor: 104.35, fecha: "Cierre" },
-      { variable: "SPDR_XLK", descripcion: "Tecnología (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0,52%", valor: 228.45, fecha: "Cierre" },
-      { variable: "SPDR_XLF", descripcion: "Financiero (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1,15%", valor: 49.32, fecha: "Cierre" },
-      { variable: "SPDR_XLE", descripcion: "Energía (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0,84%", valor: 91.80, fecha: "Cierre" },
-      { variable: "SPDR_XLV", descripcion: "Salud (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0,28%", valor: 146.22, fecha: "Cierre" },
-      { variable: "SPDR_XLI", descripcion: "Industrial (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0,65%", valor: 139.15, fecha: "Cierre" },
-      { variable: "SPDR_XLY", descripcion: "Consumo Discrecional (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1,40%", valor: 206.88, fecha: "Cierre" },
-      { variable: "SPDR_XLP", descripcion: "Consumo Básico (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0,15%", valor: 78.90, fecha: "Cierre" },
-      { variable: "SPDR_XLU", descripcion: "Servicios Públicos (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0,45%", valor: 81.42, fecha: "Cierre" },
-      { variable: "SPDR_XLB", descripcion: "Materiales (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0,35%", valor: 93.65, fecha: "Cierre" },
-      { variable: "SPDR_XLRE", descripcion: "Bienes Raíces (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0,62%", valor: 43.10, fecha: "Cierre" },
-      { variable: "SPDR_XLC", descripcion: "Comunicaciones (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0,48%", valor: 92.74, fecha: "Cierre"}
+      { variable: "MERVAL_ARS", descripcion: "S&P MERVAL EN PESOS", subcategoria: "argentina", valor_formateado: "84K", variacion: "+2.313,5%", valor: 84000.0, fecha: "08 Nov 2026" },
+      { variable: "MERVAL_USD", descripcion: "S&P MERVAL EN DÓLARES", subcategoria: "argentina", valor_formateado: "$54", variacion: "+2.292,9%", valor: 54.0, fecha: "08 Nov 2026" },
+      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+59,4%", valor: 939.0, fecha: "08 Nov 2026" },
+      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
+      { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
+      { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
+      { variable: "INDICE_DJI", descripcion: "DOW JONES INDUSTRIAL (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0.59%", valor: 43988.99, fecha: "08 Nov 2026" },
+      { variable: "INDICE_RUSSELL", descripcion: "RUSSELL 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0.71%", valor: 2399.61, fecha: "08 Nov 2026" },
+      { variable: "MONEDA_DXY", descripcion: "ÍNDICE DÓLAR (DXY)", subcategoria: "estados_unidos", valor_formateado: "102,28 pts", variacion: "-0.02%", valor: 102.28, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLK", descripcion: "TECNOLOGÍA (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0.52%", valor: 228.45, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLF", descripcion: "FINANCIERO (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1.15%", valor: 49.32, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLE", descripcion: "ENERGÍA (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0.84%", valor: 91.80, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLV", descripcion: "SALUD (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0.28%", valor: 146.22, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLI", descripcion: "INDUSTRIAL (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0.65%", valor: 139.15, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLY", descripcion: "CONSUMO DISCRECIONAL (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1.40%", valor: 206.88, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLP", descripcion: "CONSUMO BÁSICO (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0.15%", valor: 78.90, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLU", descripcion: "SERVICIOS PÚBLICOS (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0.45%", valor: 81.42, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLB", descripcion: "MATERIALES (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0.35%", valor: 93.65, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
     ];
 
     const CURVAS_INFO = {
@@ -364,7 +455,7 @@
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
 
-    // CARGA DE CRIPTO EN VIVO
+    // Cripto en vivo desde Binance cada 5 segundos
     async function actualizarCriptosEnVivo() {
       try {
         const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
@@ -426,7 +517,7 @@
       }
     }
 
-    // CARGA DE DATOS DEL BACKEND
+    // Backend polling cada 15 segundos
     async function cargarDatos() {
       try {
         const res = await fetch("/bcra/variables?formato=agrupado&t=" + Date.now());
@@ -478,7 +569,7 @@
         if (reloj) reloj.innerText = new Date().toLocaleTimeString();
         const status = document.getElementById("sync-status");
         if (status) {
-          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]";
           status.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
         }
       } catch (err) {
@@ -544,22 +635,22 @@
         const strLimpia = String(valStr).replace("%", "").trim();
         const numVal = parseFloat(strLimpia);
         if (!isNaN(numVal) && numVal < 0) {
-          bgStyle = "background-color: rgba(136, 19, 55, 0.55);";
-          textStyle = "color: #f43f5e;";
+          bgStyle = "background-color: rgba(136, 19, 55, 0.45);";
+          textStyle = "color: #fb7185;";
           borderStyle = "border: 1px solid rgba(244, 63, 94, 0.4);";
         } else if (!isNaN(numVal) && numVal > 0) {
-          bgStyle = "background-color: rgba(6, 78, 59, 0.65);";
+          bgStyle = "background-color: rgba(6, 78, 59, 0.45);";
           textStyle = "color: #34d399;";
           borderStyle = "border: 1px solid rgba(52, 211, 153, 0.4);";
         } else {
-          bgStyle = "background-color: rgba(51, 65, 85, 0.4);";
+          bgStyle = "background-color: rgba(30, 41, 59, 0.5);";
           textStyle = "color: #94a3b8;";
-          borderStyle = "border: 1px solid rgba(71, 85, 105, 0.3);";
+          borderStyle = "border: 1px solid rgba(71, 85, 105, 0.4);";
         }
       } else {
-        bgStyle = "background-color: rgba(85, 45, 15, 0.4);";
-        textStyle = "color: #fcd34d;";
-        borderStyle = "border: 1px solid rgba(180, 83, 9, 0.3);";
+        bgStyle = "background-color: rgba(69, 36, 10, 0.45);";
+        textStyle = "color: #fde047;";
+        borderStyle = "border: 1px solid rgba(180, 83, 9, 0.35);";
       }
 
       return `<span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${bgStyle} ${textStyle} ${borderStyle}">${valStr}</span>`;
@@ -584,6 +675,54 @@
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
+      // ----------------- VISTA HOME: 3 BLOQUES TEMÁTICOS CON ESTÉTICA NEÓN EXACTA -----------------
+      if (categoriaActiva === "home") {
+        let todos = [];
+        for (const cat in datosGlobales) {
+          if (Array.isArray(datosGlobales[cat])) {
+            todos = todos.concat(datosGlobales[cat]);
+          }
+        }
+
+        let htmlHome = "";
+        BLOQUES_HOME.forEach(bloque => {
+          const itemsBloque = [];
+          bloque.variables.forEach(cod => {
+            const it = todos.find(x => x && x.variable === cod) || INDICES_ESTATICOS_BASE.find(x => x.variable === cod);
+            if (it && !itemsBloque.some(y => y.variable === it.variable)) {
+              itemsBloque.push(it);
+            }
+          });
+
+          htmlHome += `
+            <section class="space-y-3">
+              <!-- Barra de Título Neón con Flare -->
+              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
+                <div class="flex items-center gap-3 z-10">
+                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${bloque.badgeBg}">
+                    <i class="${bloque.iconoIzq}"></i>
+                  </div>
+                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${bloque.titulo}</h2>
+                </div>
+                <div class="z-10 flex items-center gap-2">
+                  <i class="${bloque.iconoDer} text-sm"></i>
+                </div>
+                <!-- Línea de estela con resplandor -->
+                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
+              </div>
+
+              <!-- Grilla de 6 tarjetas (3 columnas x 2 filas) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
+              </div>
+            </section>
+          `;
+        });
+
+        contenedor.innerHTML = htmlHome;
+        return;
+      }
+
       // ----------------- VISTA DE ÍNDICES Y SECTORES: MENÚ LATERAL + TARJETAS -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
@@ -607,33 +746,33 @@
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
+            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
               </div>
               
-              <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Argentina</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'argentina' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">3</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'argentina' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">3</span>
               </button>
 
-              <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-flag-usa text-blue-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Estados Unidos</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'estados_unidos' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">6</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
               </button>
 
-              <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-chart-pie text-amber-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Sectores (SPDRs)</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'sectores' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">11</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'sectores' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">11</span>
               </button>
             </aside>
 
@@ -645,7 +784,7 @@
                 </div>
                 <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
               </div>
             </section>
@@ -910,65 +1049,65 @@
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
+            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
               </div>
               
-              <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-money-bill-trend-up text-amber-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Lecaps y Boncaps</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'lecaps' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">9</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'lecaps' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">9</span>
               </button>
 
-              <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-arrow-trend-up text-purple-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bonos CER</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'cer' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">22</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'cer' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">22</span>
               </button>
 
-              <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Soberanos en Dólares</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'soberanos' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">15</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'soberanos' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">15</span>
               </button>
 
-              <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'bopreales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">7</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'bopreales' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">7</span>
               </button>
 
-              <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Dollar Linked</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'dollar_linked' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">6</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'dollar_linked' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
               </button>
 
-              <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'tamar' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">10</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'tamar' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">10</span>
               </button>
 
-              <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bonos Duales</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'duales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">7</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'duales' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">7</span>
               </button>
             </aside>
 
@@ -980,50 +1119,11 @@
                 </div>
                 <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
               </div>
-              <div class="overflow-x-auto rounded-xl border border-slate-800 bg-brand-card shadow-2xl">
+              <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                 ${tablaHtml}
               </div>
             </section>
           </div>
-        `;
-        return;
-      }
-
-      // ----------------- VISTA HOME -----------------
-      if (categoriaActiva === "home") {
-        let todos = [];
-        for (const cat in datosGlobales) {
-          if (Array.isArray(datosGlobales[cat])) {
-            todos = todos.concat(datosGlobales[cat]);
-          }
-        }
-
-        const itemsHome = [];
-        for (const cod of VARIABLES_HOME) {
-          const item = todos.find(i => {
-            if (!i) return false;
-            if (i.variable === cod) return true;
-            if (cod === "METALES_XAU" && (i.variable === "METALES_ORO" || i.variable === "METALES_XAU")) return true;
-            if (cod === "METALES_XAG" && (i.variable === "METALES_PLATA" || i.variable === "METALES_XAG")) return true;
-            if (cod === "METALES_HG00" && (i.variable === "METALES_COBRE" || i.variable === "METALES_HG00")) return true;
-            return false;
-          });
-          if (item && !itemsHome.some(it => it.variable === item.variable)) {
-            itemsHome.push(item);
-          }
-        }
-
-        const info = NOMBRES_SECCIONES.home;
-        contenedor.innerHTML = `
-          <section class="space-y-3">
-            <div class="flex items-center gap-2 text-slate-300 font-semibold text-xs border-b border-slate-800/60 pb-1.5">
-              <i class="fa-solid ${info.icono} text-blue-400"></i>
-              <h2>${info.titulo}</h2>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
-            </div>
-          </section>
         `;
         return;
       }
@@ -1033,57 +1133,68 @@
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
       if (items.length === 0) {
-        contenedor.innerHTML = '<div class="py-16 text-center text-slate-500 text-xs">Cargando datos en tiempo real...</div>';
+        contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Cargando datos en tiempo real...</div>';
         return;
       }
 
       contenedor.innerHTML = `
-        <section class="space-y-3">
-          <div class="flex items-center gap-2 text-slate-300 font-semibold text-xs border-b border-slate-800/60 pb-1.5">
+        <section class="space-y-4">
+          <div class="flex items-center gap-2 text-slate-300 font-semibold text-xs border-b border-slate-800/80 pb-2">
             <i class="${info.icono.includes('fa-') ? info.icono : 'fa-solid ' + info.icono} text-sm"></i>
             <h2>${info.titulo}</h2>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             ${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}
           </div>
         </section>
       `;
     }
 
+    // TARJETAS CON LA ESTÉTICA EXACTA DE LA IMAGEN
     function crearTarjeta(item, categoria, valorOficial) {
       if (!item) return "";
 
-      let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
-      let varIcon = "";
       const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
+      let varBadge = "";
+      
       if (variacion.includes("+")) {
-        varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-        varIcon = '<i class="fa-solid fa-arrow-up text-[10px] mr-1"></i>';
+        varBadge = `
+          <span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]">
+            <span>↑</span><span>${variacion}</span>
+          </span>
+        `;
       } else if (variacion.includes("-") || variacion.includes("−")) {
-        varColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
-        varIcon = '<i class="fa-solid fa-arrow-down text-[10px] mr-1"></i>';
+        varBadge = `
+          <span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]">
+            <span>↓</span><span>${variacion}</span>
+          </span>
+        `;
+      } else {
+        varBadge = `
+          <span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">
+            ${variacion || "0,0%"}
+          </span>
+        `;
       }
 
       let badgeBrecha = "";
       if (categoria === "dolar_y_cambiario" || item.categoria === "dolar_y_cambiario") {
         if (item.variable === "DOLAR_OFICIAL") {
-          badgeBrecha = '<span class="text-[9px] uppercase font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded">Ref</span>';
+          badgeBrecha = '<span class="text-[9px] uppercase font-bold text-sky-300 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded tracking-wide shadow-sm">REF</span>';
         } else if (valorOficial && item.valor > 0) {
           const spread = ((item.valor / valorOficial) - 1) * 100;
           const signo = spread >= 0 ? "+" : "";
-          const colorSpread = spread >= 0 ? "text-amber-400 bg-amber-500/10 border-amber-500/20" : "text-sky-400 bg-sky-500/10 border-sky-500/20";
-          badgeBrecha = `<span class="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border ${colorSpread}">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
+          badgeBrecha = `<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border border-amber-500/50 bg-amber-950/40 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)]">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
         }
       }
 
-      let desc = String(item.descripcion || "").replace(/Â/g, "").trim();
+      let desc = String(item.descripcion || "").replace(/Â/g, "").toUpperCase().trim();
       let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
       if (item.variable === "INFLACION_MENSUAL" && fecha) {
-        desc = `Inflación Mensual (${fecha})`;
-        if (!valFmt.includes("(")) valFmt = `${valFmt} (${fecha})`;
+        desc = `INFLACIÓN MENSUAL`;
       }
 
       if (item.variable && item.variable.startsWith("TASA_")) {
@@ -1103,21 +1214,19 @@
       }
 
       return `
-        <div class="bg-brand-card border border-slate-800 rounded-lg p-3 card-glow flex flex-col justify-between hover:border-slate-700 transition">
+        <div class="neon-card rounded-2xl p-4 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between gap-1.5">
-              <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
+              <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
               ${badgeBrecha}
             </div>
-            <div class="mt-1.5 flex items-baseline justify-between gap-2">
-              <span class="text-xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span>
+            <div class="mt-2">
+              <span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span>
             </div>
           </div>
-          <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-            <span class="px-1.5 py-0.5 rounded border font-mono text-[10px] ${varColor}">
-              ${varIcon}${variacion || "0,0%"}
-            </span>
-            <span class="text-slate-500 text-[10px] font-mono">${fecha}</span>
+          <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+            ${varBadge}
+            <span class="text-slate-400 text-[10px] font-mono">${fecha}</span>
           </div>
         </div>
       `;
@@ -1126,19 +1235,11 @@
     function filtrarCategoria(cat, ev) {
       categoriaActiva = cat;
       document.querySelectorAll(".nav-tab").forEach(b => {
-        if (b.innerText.trim().toUpperCase() === "HOME") {
-          b.className = "nav-tab px-5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shrink-0 border border-slate-700/50";
-        } else {
-          b.className = "nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5";
-        }
+        b.classList.remove("active");
       });
 
       if (ev && ev.currentTarget) {
-        if (cat === "home") {
-          ev.currentTarget.className = "nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0";
-        } else {
-          ev.currentTarget.className = "nav-tab active px-2 py-1.5 rounded-lg bg-blue-600 text-white border border-blue-500 font-medium transition truncate flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20";
-        }
+        ev.currentTarget.classList.add("active");
       }
       renderizar();
     }
