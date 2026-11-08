@@ -1,13 +1,15 @@
 import os
-import re
+import urllib3
 from datetime import datetime
 from typing import List, Optional
 import requests
-from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+
+# Deshabilitar advertencias SSL de certificados gubernamentales
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -94,97 +96,100 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-def limpiar_monto_bcra(texto: str) -> float:
-    # Convierte formatos como "28.500" o "28.500,50" a float
-    t = texto.strip().replace("$", "").replace("USD", "").strip()
-    if "," in t and "." in t:
-        t = t.replace(".", "").replace(",", ".")
-    elif "." in t and "," not in t:
-        t = t.replace(".", "")
-    elif "," in t:
-        t = t.replace(",", ".")
-    try:
-        return float(re.findall(r"[-+]?\d*\.\d+|\d+", t)[0])
-    except Exception:
-        return 0.0
-
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
-    url = "https://www.bcra.gob.ar"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    
-    resultado = []
-    try:
-        # Request a la página principal del BCRA desactivando verificación estricta de SSL
-        r = requests.get(url, headers=headers, timeout=12, verify=False)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            
-            # El BCRA expone las variables en una tabla con clase 'table' o paneles estadísticos
-            filas = soup.find_all("tr")
-            for fila in filas:
-                celdas = fila.find_all("td")
-                if len(celdas) >= 2:
-                    desc = celdas[0].get_text(strip=True)
-                    val_texto = celdas[1].get_text(strip=True)
-                    
-                    if "Reservas" in desc:
-                        val = limpiar_monto_bcra(val_texto)
-                        resultado.append({
-                            "variable": "RESERVAS_USD",
-                            "descripcion": desc,
-                            "valor": val,
-                            "fecha": datetime.utcnow().strftime("%Y-%m-%d")
-                        })
-                    elif "Base monetaria" in desc or "Base Monetaria" in desc:
-                        val = limpiar_monto_bcra(val_texto)
-                        resultado.append({
-                            "variable": "BASE_MONETARIA",
-                            "descripcion": desc,
-                            "valor": val,
-                            "fecha": datetime.utcnow().strftime("%Y-%m-%d")
-                        })
-                    elif "Tipo de Cambio Mayorista" in desc or "A 3500" in desc:
-                        val = limpiar_monto_bcra(val_texto)
-                        resultado.append({
-                            "variable": "DOLAR_A3500",
-                            "descripcion": desc,
-                            "valor": val,
-                            "fecha": datetime.utcnow().strftime("%Y-%m-%d")
-                        })
-                    elif "BADLAR" in desc.upper():
-                        val = limpiar_monto_bcra(val_texto)
-                        resultado.append({
-                            "variable": "BADLAR",
-                            "descripcion": desc,
-                            "valor": val,
-                            "fecha": datetime.utcnow().strftime("%Y-%m-%d")
-                        })
+    resultado = {}
 
+    # 1. Traer Reservas desde la API financiera comunitaria (espejo en tiempo real del BCRA)
+    try:
+        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/tasas/depositos30Dias", timeout=8)
+        # Consultamos las series macro de respaldo
+        r_macro = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/inflacionInteranual", timeout=8)
     except Exception:
         pass
 
-    # Si la web del BCRA bloquea la conexión o no parsea, usamos el fallback oficial de datos abiertos para A3500
-    if not resultado:
+    # 2. Intentar API oficial de series de tiempo para Reservas (serie activa de reservas brutas)
+    try:
+        r_res = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_2016_0_21&limit=1&sort=desc", timeout=8)
+        if r_res.status_code == 200:
+            d = r_res.json().get("data", [])
+            if d and len(d[0]) >= 2 and d[0][1] is not None:
+                resultado["RESERVAS_USD"] = {
+                    "variable": "RESERVAS_USD",
+                    "descripcion": "Reservas Internacionales (Millones USD)",
+                    "valor": float(d[0][1]),
+                    "fecha": d[0][0]
+                }
+    except Exception:
+        pass
+
+    # Si la serie anterior no dio datos, probar serie alternativa de Reservas
+    if "RESERVAS_USD" not in resultado:
         try:
-            r_alt = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=8)
-            if r_alt.status_code == 200:
-                data = r_alt.json().get("data", [])
-                if data and len(data[0]) >= 2:
-                    resultado.append({
-                        "variable": "DOLAR_A3500",
-                        "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
-                        "valor": float(data[0][1]),
-                        "fecha": data[0][0]
-                    })
+            r_res2 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_M_0_0_21&limit=1&sort=desc", timeout=8)
+            if r_res2.status_code == 200:
+                d = r_res2.json().get("data", [])
+                if d and len(d[0]) >= 2 and d[0][1] is not None:
+                    resultado["RESERVAS_USD"] = {
+                        "variable": "RESERVAS_USD",
+                        "descripcion": "Reservas Internacionales (Millones USD)",
+                        "valor": float(d[0][1]),
+                        "fecha": d[0][0]
+                    }
         except Exception:
             pass
 
-    # Persistencia en PostgreSQL
-    if db and resultado:
-        for item in resultado:
+    # 3. Base Monetaria (serie de saldo o promedio)
+    try:
+        r_bm = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_2016_0_15&limit=1&sort=desc", timeout=8)
+        if r_bm.status_code == 200:
+            d = r_bm.json().get("data", [])
+            if d and len(d[0]) >= 2 and d[0][1] is not None:
+                resultado["BASE_MONETARIA"] = {
+                    "variable": "BASE_MONETARIA",
+                    "descripcion": "Base Monetaria (Millones ARS)",
+                    "valor": float(d[0][1]),
+                    "fecha": d[0][0]
+                }
+    except Exception:
+        pass
+
+    if "BASE_MONETARIA" not in resultado:
+        try:
+            r_bm2 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_M_0_0_15&limit=1&sort=desc", timeout=8)
+            if r_bm2.status_code == 200:
+                d = r_bm2.json().get("data", [])
+                if d and len(d[0]) >= 2 and d[0][1] is not None:
+                    resultado["BASE_MONETARIA"] = {
+                        "variable": "BASE_MONETARIA",
+                        "descripcion": "Base Monetaria (Millones ARS)",
+                        "valor": float(d[0][1]),
+                        "fecha": d[0][0]
+                    }
+        except Exception:
+            pass
+
+    # 4. Dólar A3500 (ya comprobado y funcionando)
+    try:
+        r_a3500 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=8)
+        if r_a3500.status_code == 200:
+            d = r_a3500.json().get("data", [])
+            if d and len(d[0]) >= 2 and d[0][1] is not None:
+                resultado["DOLAR_A3500"] = {
+                    "variable": "DOLAR_A3500",
+                    "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
+                    "valor": float(d[0][1]),
+                    "fecha": d[0][0]
+                }
+    except Exception:
+        pass
+
+    # Convertir a lista limpia
+    lista_resultado = list(resultado.values())
+
+    # Guardar en Base de Datos
+    if db and lista_resultado:
+        for item in lista_resultado:
             try:
                 db_record = VariableMacro(
                     fuente="BCRA",
@@ -201,7 +206,7 @@ def ver_bcra(db: Session = Depends(get_db)):
         except Exception:
             db.rollback()
 
-    return resultado
+    return lista_resultado
 
 @app.get("/mercado/resumen")
 def ver_resumen_mercado(db: Session = Depends(get_db)):
