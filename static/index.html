@@ -211,9 +211,42 @@
         }
       }
 
-      const desc = item.descripcion || "";
-      const valFmt = item.valor_formateado || item.valor || "-";
+      let desc = item.descripcion || "";
+      let valFmt = item.valor_formateado || item.valor || "-";
       const fecha = item.fecha || "";
+
+      // 1. Inflación mensual con mes explícito
+      if (item.variable === "INFLACION_MENSUAL" && fecha) {
+        desc = `Inflación Mensual (${fecha})`;
+        if (!String(valFmt).includes("(")) {
+          valFmt = `${valFmt} (${fecha})`;
+        }
+      }
+
+      // 2. Tasas con sufijo TNA
+      if (item.variable && item.variable.startsWith("TASA_")) {
+        if (!String(valFmt).toUpperCase().includes("TNA")) {
+          valFmt = `${valFmt} TNA`;
+        }
+      }
+
+      // 3. Montos nominales en pesos
+      const variablesPesos = [
+        "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
+        "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
+      ];
+      if (variablesPesos.includes(item.variable)) {
+        if (!String(valFmt).startsWith("$")) {
+          valFmt = `$${valFmt}`;
+        }
+      }
+
+      // 4. Riesgo País con sufijo puntos básicos
+      if (item.variable === "RIESGO_PAIS") {
+        if (!String(valFmt).toLowerCase().includes("puntos")) {
+          valFmt = `${valFmt} puntos básicos`;
+        }
+      }
 
       return `
         <div class="bg-brand-card border border-slate-800 rounded-xl p-4 card-glow flex flex-col justify-between hover:border-slate-700 transition">
