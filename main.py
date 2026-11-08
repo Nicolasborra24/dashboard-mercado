@@ -1,12 +1,15 @@
 import os
 import re
 import json
+import time
 import urllib3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Depends, Query, Response
+from fastapi import FastAPI, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
@@ -159,61 +162,32 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
-@app.get("/")
-def inicio():
-    if os.path.exists("static/index.html"):
-        return FileResponse(
-            "static/index.html",
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }
-        )
-    return {"mensaje": "Servidor funcionando correctamente", "db_conectada": engine is not None}
+# ==================== SISTEMA DE CACHÉ EN MEMORIA Y TRABAJADOR PARALELO ====================
+CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
+    "tasas_y_monetario": [],
+    "dolar_y_cambiario": [],
+    "monedas": [],
+    "cripto": [],
+    "cotizacion_bonos": [],
+    "inflacion_y_ajuste": [],
+    "mercado_y_deuda": [],
+    "metales": [],
+    "petroleo": [],
+    "macro_y_fiscal": [],
+    "micro_y_sectores": [],
+    "commodities_agro_energia": []
+}
+CACHE_LOCK = threading.Lock()
+ULTIMA_ACTUALIZACION = ""
 
-@app.get("/dolar")
-def ver_dolar(db: Session = Depends(get_db)):
+def obtener_datos_indicadores() -> List[Dict[str, Any]]:
+    items = []
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=8)
-        if r.status_code == 200:
-            datos = r.json()
-            if db:
-                try:
-                    for item in datos:
-                        db.add(CotizacionDolar(
-                            casa=item.get("casa"),
-                            nombre=item.get("nombre"),
-                            compra=float(item.get("compra", 0) or 0),
-                            venta=float(item.get("venta", 0) or 0),
-                            fecha_actualizacion=str(item.get("fechaActualizacion"))
-                        ))
-                    db.commit()
-                except Exception:
-                    db.rollback()
-            return datos
-        return {"error": "Error al conectar con API de divisas"}
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/dolar/historial")
-def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
-    if not db:
-        return {"error": "Base de datos no disponible"}
-    return db.query(CotizacionDolar).order_by(CotizacionDolar.id.desc()).limit(limite).all()
-
-@app.get("/bcra/variables")
-def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: Session = Depends(get_db)):
-    elementos = []
-    cargadas = set()
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    h_sjb = {"User-Agent": "Mozilla/5.0"}
-
-    # 1. Scraping general de indicadores.ar
-    try:
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h_sjb, timeout=8)
+        h = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h, timeout=6)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
+            cargadas = set()
             for tr in soup.find_all("tr"):
                 c = tr.find_all(["td", "th"])
                 if len(c) >= 4:
@@ -222,7 +196,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                         cod, desc, cat = MAPEO[nom]
                         v_num = normalizar_valor(c[1].get_text(strip=True))
                         if v_num is not None:
-                            elementos.append({
+                            items.append({
                                 "variable": cod,
                                 "descripcion": desc,
                                 "categoria": cat,
@@ -234,80 +208,174 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                             cargadas.add(cod)
     except Exception:
         pass
+    return items
 
-    # 2. Tasas del sistema (Call, Pases, TM20)
+def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
+    items = []
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r_t = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers=h_sjb, timeout=5)
-        if r_t.status_code == 200:
-            d_t = r_t.json()
-            for row in d_t.get("principales", []):
-                nom_t = row.get("Tasa", "").upper()
-                tna_val = row.get("TNA", "")
-                tea_val = row.get("TEA", "")
-                num_v = normalizar_valor(tna_val)
-                if nom_t == "TM20" and "TASA_TM20" not in cargadas:
-                    elementos.append({
+        h = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers=h, timeout=4)
+        if r.status_code == 200:
+            d = r.json()
+            for row in d.get("principales", []):
+                if row.get("Tasa", "").upper() == "TM20":
+                    tna_val = row.get("TNA", "")
+                    items.append({
                         "variable": "TASA_TM20",
-                        "descripcion": f"Tasa TM20 (TEA {tea_val})",
+                        "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
                         "categoria": "tasas_y_monetario",
                         "valor_formateado": f"{tna_val} TNA",
                         "variacion": "0,0%",
-                        "valor": num_v or 22.0,
+                        "valor": normalizar_valor(tna_val) or 22.0,
                         "fecha": fec_hoy
                     })
-                    cargadas.add("TASA_TM20")
-
-            for row in d_t.get("otras", []):
+            for row in d.get("otras", []):
                 nom_t = row.get("Tasa", "").lower()
                 tna_val = row.get("TNA", "")
-                num_v = normalizar_valor(tna_val)
-                if "call" in nom_t and "TASA_CALL" not in cargadas:
-                    elementos.append({
+                if "call" in nom_t:
+                    items.append({
                         "variable": "TASA_CALL",
                         "descripcion": "Tasa Call Interbancaria en Pesos",
                         "categoria": "tasas_y_monetario",
                         "valor_formateado": f"{tna_val} TNA",
                         "variacion": "0,0%",
-                        "valor": num_v or 21.66,
+                        "valor": normalizar_valor(tna_val) or 21.66,
                         "fecha": fec_hoy
                     })
-                    cargadas.add("TASA_CALL")
-                elif "pase" in nom_t and "TASA_PASES" not in cargadas:
-                    elementos.append({
+                elif "pase" in nom_t:
+                    items.append({
                         "variable": "TASA_PASES",
                         "descripcion": "Tasa de Pases Pasivos BCRA",
                         "categoria": "tasas_y_monetario",
                         "valor_formateado": f"{tna_val} TNA",
                         "variacion": "0,0%",
-                        "valor": num_v or 22.06,
+                        "valor": normalizar_valor(tna_val) or 22.06,
                         "fecha": fec_hoy
                     })
-                    cargadas.add("TASA_PASES")
     except Exception:
         pass
+    return items
 
-    # 3. Dólar Oficial Mayorista A3500
-    usd_oficial_num = 1015.50
+def obtener_datos_cripto_binance() -> List[Dict[str, Any]]:
+    items = []
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    CRIPTO_DEFS = [
+        ("CRIPTO_BTC", "Bitcoin (BTC)", "BTCUSDT", 76420.0, "+1.85%"),
+        ("CRIPTO_ETH", "Ethereum (ETH)", "ETHUSDT", 2485.0, "-0.45%"),
+        ("CRIPTO_USDT", "Tether (USDT)", None, 1.00, "+0.01%"),
+        ("CRIPTO_SOL", "Solana (SOL)", "SOLUSDT", 198.50, "+3.40%"),
+        ("CRIPTO_PAXG", "PAX Gold (PAXG)", "PAXGUSDT", 2745.0, "+0.40%"),
+        ("CRIPTO_BNB", "BNB Chain (BNB)", "BNBUSDT", 588.0, "+0.75%"),
+        ("CRIPTO_XRP", "Ripple (XRP)", "XRPUSDT", 0.582, "-0.30%"),
+        ("CRIPTO_DOGE", "Dogecoin (DOGE)", "DOGEUSDT", 0.198, "+2.15%"),
+        ("CRIPTO_ADA", "Cardano (ADA)", "ADAUSDT", 0.438, "+1.10%"),
+        ("CRIPTO_USDC", "USD Coin (USDC)", "USDCUSDT", 1.00, "0.00%")
+    ]
     try:
-        r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=6)
+        syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]'
+        r = requests.get(f"https://api.binance.com/api/v3/ticker/24hr?symbols={syms}", timeout=4)
+        b_data = {it["symbol"]: it for it in r.json()} if r.status_code == 200 else {}
+        for cod, desc, sym, def_val, def_var in CRIPTO_DEFS:
+            if sym and sym in b_data:
+                p = float(b_data[sym].get("lastPrice", def_val))
+                chg = float(b_data[sym].get("priceChangePercent", 0))
+                var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+                fmt = f"US$ {p:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"US$ {p:.2f}".replace(".", ",") if p >= 1 else f"US$ {p:.4f}".replace(".", ",")
+                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": var_str, "valor": round(p, 4), "fecha": fec_hoy})
+            elif cod == "CRIPTO_USDT":
+                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": "US$ 1,00", "variacion": "+0,01%", "valor": 1.00, "fecha": fec_hoy})
+            else:
+                fmt = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if def_val >= 1000 else f"US$ {def_val:.2f}".replace(".", ",")
+                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": def_var, "valor": def_val, "fecha": fec_hoy})
+    except Exception:
+        for cod, desc, sym, def_val, def_var in CRIPTO_DEFS:
+            fmt = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if def_val >= 1000 else f"US$ {def_val:.2f}".replace(".", ",")
+            items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": def_var, "valor": def_val, "fecha": fec_hoy})
+    return items
+
+def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
+    items = []
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    usd_oficial = 1015.50
+    try:
+        r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=4)
         if r_a.status_code == 200:
             d = r_a.json().get("data", [])
-            if d and len(d[0]) >= 2 and d[0][1] is not None:
-                val = float(d[0][1])
-                usd_oficial_num = val
-                elementos.append({
+            if d and len(d[0]) >= 2 and d[0][1]:
+                usd_oficial = float(d[0][1])
+                items.append({
                     "variable": "DOLAR_A3500",
                     "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
                     "categoria": "dolar_y_cambiario",
-                    "valor_formateado": f"${val:.2f}",
+                    "valor_formateado": f"${usd_oficial:.2f}",
                     "variacion": "0,0%",
-                    "valor": val,
+                    "valor": usd_oficial,
                     "fecha": d[0][0]
                 })
     except Exception:
         pass
 
-    # 4. Sección Metales
+    rates = {}
+    try:
+        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=4)
+        if r_fx.status_code == 200:
+            rates = r_fx.json().get("rates", {})
+    except Exception:
+        pass
+
+    val_brl = round(float(rates.get("BRL", 5.76)), 2)
+    val_clp = round(float(rates.get("CLP", 958.40)), 2)
+    eur_rate = float(rates.get("EUR", 0.921))
+    val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
+    val_dxy = 104.35
+    usd_ars_val = round(float(rates.get("ARS", usd_oficial)), 2)
+    val_eurars = round(val_eurusd * usd_ars_val, 2)
+
+    MONEDAS = [
+        ("MONEDA_DXY", "Índice Dólar (DXY)", f"{val_dxy:.2f} pts".replace(".", ","), "+0,15%", val_dxy),
+        ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,05%", usd_ars_val),
+        ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.2f}".replace(".", ","), "+0,32%", val_brl),
+        ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), "+0,18%", val_eurusd),
+        ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,22%", val_eurars),
+        ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "-0,25%", val_clp)
+    ]
+    for cod, desc, fmt, var_str, val_n in MONEDAS:
+        items.append({"variable": cod, "descripcion": desc, "categoria": "monedas", "valor_formateado": fmt, "variacion": var_str, "valor": val_n, "fecha": fec_hoy})
+    return items
+
+def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
+    items = []
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    try:
+        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
+        if r.status_code == 200:
+            bonos_raw = r.json()
+            if isinstance(bonos_raw, dict):
+                for tk, val in bonos_raw.items():
+                    if val is not None:
+                        try:
+                            v_float = float(val)
+                            items.append({
+                                "variable": f"BONO_{tk}",
+                                "descripcion": f"Bono {tk}",
+                                "categoria": "cotizacion_bonos",
+                                "valor_formateado": f"{v_float:,.2f}",
+                                "variacion": "0,0%",
+                                "valor": round(v_float, 2),
+                                "fecha": fec_hoy
+                            })
+                        except Exception:
+                            pass
+    except Exception:
+        pass
+    return items
+
+def worker_refresco_continuo():
+    global CACHE_VARIABLES, ULTIMA_ACTUALIZACION
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+
+    # Datos estables base
     METALES_BASE = [
         ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
         ("METALES_XAG", "Plata (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
@@ -328,19 +396,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         ("METALES_U", "Uranio (U)", "91,85 US$/lb", "-0.76%", 91.85),
         ("METALES_VAN", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
     ]
-    for cod_fb, desc_fb, fmt_fb, var_fb, val_fb in METALES_BASE:
-        elementos.append({
-            "variable": cod_fb,
-            "descripcion": desc_fb,
-            "categoria": "metales",
-            "valor_formateado": fmt_fb,
-            "variacion": var_fb,
-            "valor": val_fb,
-            "fecha": fec_hoy
-        })
-
-    # 5. Sección Petróleo
-    MAP_OILPRICE = [
+    PETROLEO_BASE = [
         ("PETROLEO_WTI", "Petróleo Crudo WTI", "90,83 USD/bbl", "+0.34%", 90.83),
         ("PETROLEO_BRENT", "Petróleo Crudo Brent", "98,32 USD/bbl", "+0.03%", 98.32),
         ("PETROLEO_MURBAN", "Petróleo Crudo Murban", "99,17 USD/bbl", "+3.42%", 99.17),
@@ -348,197 +404,102 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "2,777 USD/gal", "+0.48%", 2.777),
         ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "4,332 USD/gal", "-0.46%", 4.332)
     ]
-    for cod_op, desc_op, fmt_op, var_op, val_op in MAP_OILPRICE:
-        elementos.append({
-            "variable": cod_op,
-            "descripcion": desc_op,
-            "categoria": "petroleo",
-            "valor_formateado": fmt_op,
-            "variacion": var_op,
-            "valor": val_op,
-            "fecha": fec_hoy
-        })
 
-    # 6. Sección Monedas
-    rates = {}
-    try:
-        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=5)
-        if r_fx.status_code == 200:
-            rates = r_fx.json().get("rates", {})
-    except Exception:
-        pass
-
-    val_brl = round(float(rates.get("BRL", 5.76)), 2)
-    val_clp = round(float(rates.get("CLP", 958.40)), 2)
-    eur_rate = float(rates.get("EUR", 0.921))
-    val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
-    val_dxy = 104.35
-    usd_ars_val = round(float(rates.get("ARS", usd_oficial_num)), 2)
-    val_eurars = round(val_eurusd * usd_ars_val, 2)
-
-    MONEDAS_LISTA = [
-        ("MONEDA_DXY", "Índice Dólar (DXY)", f"{val_dxy:.2f} pts".replace(".", ","), "+0,15%", val_dxy),
-        ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,05%", usd_ars_val),
-        ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.2f}".replace(".", ","), "+0,32%", val_brl),
-        ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), "+0,18%", val_eurusd),
-        ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,22%", val_eurars),
-        ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "-0,25%", val_clp)
-    ]
-    for cod_m, desc_m, fmt_m, var_m, val_m in MONEDAS_LISTA:
-        elementos.append({
-            "variable": cod_m,
-            "descripcion": desc_m,
-            "categoria": "monedas",
-            "valor_formateado": fmt_m,
-            "variacion": var_m,
-            "valor": val_m,
-            "fecha": fec_hoy
-        })
-
-    # 7. Sección Cripto: Top 10 Cotizaciones (Binance Live + Fallback)
-    CRIPTO_CONFIG = [
-        ("CRIPTO_BTC", "Bitcoin (BTC)", "BTCUSDT", 76420.0, "+1.85%"),
-        ("CRIPTO_ETH", "Ethereum (ETH)", "ETHUSDT", 2485.0, "-0.45%"),
-        ("CRIPTO_USDT", "Tether (USDT)", None, 1.00, "+0.01%"),
-        ("CRIPTO_SOL", "Solana (SOL)", "SOLUSDT", 198.50, "+3.40%"),
-        ("CRIPTO_PAXG", "PAX Gold (PAXG)", "PAXGUSDT", 2745.0, "+0.40%"),
-        ("CRIPTO_BNB", "BNB Chain (BNB)", "BNBUSDT", 588.0, "+0.75%"),
-        ("CRIPTO_XRP", "Ripple (XRP)", "XRPUSDT", 0.582, "-0.30%"),
-        ("CRIPTO_DOGE", "Dogecoin (DOGE)", "DOGEUSDT", 0.198, "+2.15%"),
-        ("CRIPTO_ADA", "Cardano (ADA)", "ADAUSDT", 0.438, "+1.10%"),
-        ("CRIPTO_USDC", "USD Coin (USDC)", "USDCUSDT", 1.00, "0.00%")
-    ]
-
-    cripto_cargadas = set()
-    try:
-        symbols_param = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]'
-        r_bin = requests.get(f"https://api.binance.com/api/v3/ticker/24hr?symbols={symbols_param}", headers=h_sjb, timeout=5)
-        if r_bin.status_code == 200:
-            b_data = {item["symbol"]: item for item in r_bin.json() if "symbol" in item}
-            for cod, desc, sym, def_val, def_var in CRIPTO_CONFIG:
-                if sym and sym in b_data:
-                    raw_p = float(b_data[sym].get("lastPrice", def_val))
-                    raw_chg = float(b_data[sym].get("priceChangePercent", 0))
-                    var_str = f"+{raw_chg:.2f}%" if raw_chg > 0 else f"{raw_chg:.2f}%"
-                    
-                    if raw_p >= 1000:
-                        fmt_val = f"US$ {raw_p:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    elif raw_p >= 1:
-                        fmt_val = f"US$ {raw_p:.2f}".replace(".", ",")
-                    else:
-                        fmt_val = f"US$ {raw_p:.4f}".replace(".", ",")
-
-                    elementos.append({
-                        "variable": cod,
-                        "descripcion": desc,
-                        "categoria": "cripto",
-                        "valor_formateado": fmt_val,
-                        "variacion": var_str,
-                        "valor": round(raw_p, 4),
-                        "fecha": fec_hoy
-                    })
-                    cripto_cargadas.add(cod)
-                elif cod == "CRIPTO_USDT":
-                    elementos.append({
-                        "variable": cod,
-                        "descripcion": desc,
-                        "categoria": "cripto",
-                        "valor_formateado": "US$ 1,00",
-                        "variacion": "+0,01%",
-                        "valor": 1.00,
-                        "fecha": fec_hoy
-                    })
-                    cripto_cargadas.add(cod)
-    except Exception:
-        pass
-
-    for cod, desc, sym, def_val, def_var in CRIPTO_CONFIG:
-        if cod not in cripto_cargadas:
-            if def_val >= 1000:
-                fmt_val = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            elif def_val >= 1:
-                fmt_val = f"US$ {def_val:.2f}".replace(".", ",")
-            else:
-                fmt_val = f"US$ {def_val:.4f}".replace(".", ",")
-
-            elementos.append({
-                "variable": cod,
-                "descripcion": desc,
-                "categoria": "cripto",
-                "valor_formateado": fmt_val,
-                "variacion": def_var,
-                "valor": def_val,
-                "fecha": fec_hoy
-            })
-
-    # 8. Cotización Bonos (precios en vivo)
-    try:
-        r_b = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers=h_sjb, timeout=5)
-        if r_b.status_code == 200:
-            bonos_raw = r_b.json()
-            if isinstance(bonos_raw, dict):
-                for tk, val in bonos_raw.items():
-                    if val is not None:
-                        try:
-                            v_float = float(val)
-                            elementos.append({
-                                "variable": f"BONO_{tk}",
-                                "descripcion": f"Bono {tk}",
-                                "categoria": "cotizacion_bonos",
-                                "valor_formateado": f"{v_float:,.2f}",
-                                "variacion": "0,0%",
-                                "valor": round(v_float, 2),
-                                "fecha": fec_hoy
-                            })
-                        except Exception:
-                            pass
-    except Exception:
-        pass
-
-    if db and elementos:
-        for it in elementos:
-            try:
-                db.add(VariableMacro(
-                    fuente="MERCADO_ARG",
-                    id_variable=it["variable"],
-                    descripcion=it["descripcion"],
-                    valor=it["valor"],
-                    fecha_dato=str(it["fecha"])
-                ))
-            except Exception:
-                db.rollback()
+    while True:
         try:
-            db.commit()
-        except Exception:
-            db.rollback()
+            # Ejecución concurrente en paralelo de las consultas externas
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                f_ind = executor.submit(obtener_datos_indicadores)
+                f_tasas = executor.submit(obtener_datos_tasas_sjb)
+                f_cripto = executor.submit(obtener_datos_cripto_binance)
+                f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
+                f_bonos = executor.submit(obtener_datos_bonos_sjb)
 
-    if formato == "lista":
-        return elementos
+                res_ind = f_ind.result()
+                res_tasas = f_tasas.result()
+                res_cripto = f_cripto.result()
+                res_monedas = f_monedas.result()
+                res_bonos = f_bonos.result()
 
-    agrupado = {
-        "tasas_y_monetario": [],
-        "dolar_y_cambiario": [],
-        "monedas": [],
-        "cripto": [],
-        "cotizacion_bonos": [],
-        "inflacion_y_ajuste": [],
-        "mercado_y_deuda": [],
-        "metales": [],
-        "petroleo": [],
-        "macro_y_fiscal": [],
-        "micro_y_sectores": [],
-        "commodities_agro_energia": []
-    }
-    for it in elementos:
-        cat = it.get("categoria", "macro_y_fiscal")
-        if cat in agrupado:
-            agrupado[cat].append(it)
-    return agrupado
+            nuevo_agrupado = {
+                "tasas_y_monetario": [],
+                "dolar_y_cambiario": [],
+                "monedas": res_monedas,
+                "cripto": res_cripto,
+                "cotizacion_bonos": res_bonos,
+                "inflacion_y_ajuste": [],
+                "mercado_y_deuda": [],
+                "metales": [{"variable": c, "descripcion": d, "categoria": "metales", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in METALES_BASE],
+                "petroleo": [{"variable": c, "descripcion": d, "categoria": "petroleo", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in PETROLEO_BASE],
+                "macro_y_fiscal": [],
+                "micro_y_sectores": [],
+                "commodities_agro_energia": []
+            }
+
+            for item in res_ind:
+                cat = item.get("categoria", "macro_y_fiscal")
+                if cat in nuevo_agrupado:
+                    nuevo_agrupado[cat].append(item)
+
+            for item in res_tasas:
+                nuevo_agrupado["tasas_y_monetario"].append(item)
+
+            # Actualización atómica en memoria
+            with CACHE_LOCK:
+                for k, v in nuevo_agrupado.items():
+                    if len(v) > 0:
+                        CACHE_VARIABLES[k] = v
+                ULTIMA_ACTUALIZACION = datetime.utcnow().strftime("%H:%M:%S UTC")
+
+        except Exception as e:
+            pass
+
+        # Frecuencia de actualización en background: cada 20 segundos
+        time.sleep(20)
+
+# Iniciar trabajador en segundo plano al arrancar el servidor
+hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
+hilo_worker.start()
+
+# ==================== ENDPOINTS DE LA API ====================
+
+@app.get("/")
+def inicio():
+    if os.path.exists("static/index.html"):
+        return FileResponse(
+            "static/index.html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    return {"mensaje": "Servidor funcionando", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
+
+@app.get("/bcra/variables")
+def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"])):
+    with CACHE_LOCK:
+        if formato == "lista":
+            lista_plana = []
+            for v in CACHE_VARIABLES.values():
+                lista_plana.extend(v)
+            return lista_plana
+        return CACHE_VARIABLES
+
+@app.get("/dolar")
+def ver_dolar():
+    try:
+        r = requests.get("https://dolarapi.com/v1/dolares", timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return {"error": "Servicio de divisas temporalmente ocupado"}
 
 @app.get("/mercado/resumen")
-def ver_resumen_mercado(db: Session = Depends(get_db)):
+def ver_resumen_mercado():
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=8)
+        r = requests.get("https://dolarapi.com/v1/dolares", timeout=5)
         dolares = r.json() if r.status_code == 200 else []
         precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
         mayorista = precios.get("mayorista") or precios.get("oficial", 1)
@@ -548,7 +509,7 @@ def ver_resumen_mercado(db: Session = Depends(get_db)):
                 if c in precios and precios[c] > 0:
                     brechas[c] = round(((precios[c] / mayorista) - 1) * 100, 2)
         return {
-            "fecha": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "fecha": ULTIMA_ACTUALIZACION or datetime.utcnow().strftime("%H:%M:%S UTC"),
             "mayorista_referencia": mayorista,
             "cotizaciones": precios,
             "brechas_porcentaje": brechas
@@ -557,13 +518,12 @@ def ver_resumen_mercado(db: Session = Depends(get_db)):
         return {"error": str(e)}
 
 @app.get("/indec/ipc")
-def ver_indec_ipc(db: Session = Depends(get_db)):
+def ver_indec_ipc():
     try:
-        r = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=8)
+        r = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=5)
         if r.status_code == 200:
             puntos = r.json().get("data", [])
-            resultado = [{"fecha": p[0], "indice_ipc": float(p[1])} for p in puntos if p[1] is not None]
-            return resultado
-        return {"error": "Error al conectar con INDEC"}
-    except Exception as e:
-        return {"error": str(e)}
+            return [{"fecha": p[0], "indice_ipc": float(p[1])} for p in puntos if p[1] is not None]
+    except Exception:
+        pass
+    return []
