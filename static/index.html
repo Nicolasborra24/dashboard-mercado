@@ -104,23 +104,30 @@
         if (!res.ok) throw new Error("HTTP " + res.status);
         datosAgrupados = await res.json();
         renderizar();
-        document.getElementById("last-update").innerText = new Date().toLocaleTimeString();
-        document.getElementById("sync-status").className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-        document.getElementById("sync-status").innerHTML = "<span class='w-2 h-2 rounded-full bg-emerald-400 animate-pulse'></span> Sincronizado";
+        const reloj = document.getElementById("last-update");
+        if (reloj) reloj.innerText = new Date().toLocaleTimeString();
+        const st = document.getElementById("sync-status");
+        if (st) {
+          st.className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+          st.innerHTML = <span class='w-2 h-2 rounded-full bg-emerald-400 animate-pulse'></span> Sincronizado;
+        }
       } catch (err) {
-        console.error("Error al cargar:", err);
-        document.getElementById("sync-status").className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
-        document.getElementById("sync-status").innerHTML = "Error de sincronización";
+        console.error("Error render:", err);
+        const st = document.getElementById("sync-status");
+        if (st) {
+          st.className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+          st.innerHTML = "Error de sincronización";
+        }
       }
     }
 
     function renderizar() {
       const contenedor = document.getElementById("dashboard-content");
-      if (!contenedor) return;
+      if (!contenedor || !typeof datosAgrupados === 'object') return;
 
       let valorOficial = null;
       const listaDolar = datosAgrupados.dolar_y_cambiario || [];
-      const itemOficial = listaDolar.find(d => d.variable === "DOLAR_OFICIAL");
+      const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) {
         valorOficial = itemOficial.valor;
       }
@@ -135,23 +142,25 @@
 
         const itemsHome = [];
         for (const cod of VARIABLES_HOME) {
-          const encontrado = todos.find(item => item.variable === cod);
+          const encontrado = todos.find(item => item && item.variable === cod);
           if (encontrado) itemsHome.push(encontrado);
         }
 
-        contenedor.innerHTML = `<section class="space-y-4">
-          <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
-            <i class="fa-solid fa-gauge-high text-blue-400"></i>
-            <h2>Resumen Ejecutivo de Mercado</h2>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
-          </div>
-        </section>`;
+        contenedor.innerHTML = `
+          <section class="space-y-4">
+            <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+              <i class="fa-solid fa-gauge-high text-blue-400"></i>
+              <h2>Resumen Ejecutivo de Mercado</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
+            </div>
+          </section>
+        `;
         return;
       }
 
-      const items = (datosAgrupados[tabActivo] || []).this ? [] : (datosAgrupados[tabActivo] || []).filter(i => i.variable !== "BRECHA_CAMBIARIA");
+      const items = (datosAgrupados[tabActivo] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[tabActivo] || { titulo: tabActivo, icono: "fa-circle-dot" };
 
       if (items.length === 0) {
@@ -159,28 +168,30 @@
         return;
       }
 
-      contenedor.innerHTML = `<section class="space-y-4">
-        <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
-          <i class="fa-solid ${info.icono} text-blue-400"></i>
-          <h2>${info.titulo}</h2>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          ${items.map(item => crearTarjeta(item, tabActivo, valorOficial)).join("")}
-        </div>
-      </section>`;
+      contenedor.innerHTML = `
+        <section class="space-y-4">
+          <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+            <i class="fa-solid ${info.icono} text-blue-400"></i>
+            <h2>${info.titulo}</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            ${items.map(item => crearTarjeta(item, tabActivo, valorOficial)).join("")}
+          </div>
+        </section>
+      `;
     }
 
     function crearTarjeta(item, categoria, valorOficial) {
+      if (!item) return "";
       let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
       let varIcon = "";
-      if (item.variacion) {
-        if (item.variacion.includes("+")) {
-          varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-          varIcon = "<i class='fa-solid fa-arrow-up text-xs mr-1'></i>";
-        } else if (item.variacion.includes("-") || item.variacion.includes("−")) {
-          varColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
-          varIcon = "<i class='fa-solid fa-arrow-down text-xs mr-1'></i>";
-        }
+      const var = String(item.variacion || "");
+      if (var.includes("+")) {
+        varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+        varIcon = "<i class='fa-solid fa-arrow-up text-xs mr-1'></i>";
+      } else if (var.includes("-") || var.includes("−")) {
+        varColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
+        varIcon = "<i class='fa-solid fa-arrow-down text-xs mr-1'></i>";
       }
 
       let badgeBrecha = "";
@@ -195,23 +206,25 @@
         }
       }
 
-      return `<div class="bg-brand-card border border-slate-800 rounded-xl p-4 card-glow flex flex-col justify-between hover:border-slate-700 transition">
-        <div>
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider truncate" title="${item.descripcion}">${item.descripcion}</span>
-            ${badgeBrecha}
+      return `
+        <div class="bg-brand-card border border-slate-800 rounded-xl p-4 card-glow flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider truncate" title="${item.descripcion || ''}">${item.descripcion || ''}</span>
+              ${badgeBrecha}
+            </div>
+            <div class="mt-2 flex items-baseline justify-between gap-2">
+              <span class="text-2xl font-bold tracking-tight text-white font-mono">${item.valor_formateado || item.valor || '-'}</span>
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline justify-between gap-2">
-            <span class="text-2xl font-bold tracking-tight text-white font-mono">${item.valor_formateado || item.valor}</span>
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <span class="px-2 py-0.5 rounded border font-mono ${barColor}">
+              ${varIcon}${item.variacion || "0,0%"}
+            </span>
+            <span class="text-slate-500">${item.fecha || ""}</span>
           </div>
         </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-          <span class="px-2 py-0.5 rounded border font-mono ${barColor}">
-            ${varIcon}${item.variacion || "0,0%"}
-          </span>
-          <span class="text-slate-500">${item.fecha}</span>
-        </div>
-      </div>`;
+      `;
     }
 
     function cambiarTab(cat, ev) {
@@ -220,7 +233,8 @@
         b.className = "nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2";
       });
       if (ev && ev.currentTarget) {
-        ev.currentTarget.className = "nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition flex items-center gap-2";
+        ev.currentTarget.className = "nav-tab active px-4 py-2 rounded-lg
+ bg-blue-600 text-white transition flex items-center gap-2";
       }
       renderizar();
     }
