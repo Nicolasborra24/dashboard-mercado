@@ -61,6 +61,18 @@ def get_db():
     finally:
         db.close()
 
+def sanitizar_texto(texto: str) -> str:
+    if not texto:
+        return ""
+    # Corregir doble codificación UTF-8
+    try:
+        texto = texto.encode("latin1").decode("utf-8")
+    except Exception:
+        pass
+    # Eliminar residuos de mojibake y espacios no separables
+    texto = texto.replace("Â", "").replace("\u00a0", " ").strip()
+    return re.sub(r"\s+", " ", texto)
+
 @app.get("/")
 def inicio():
     if os.path.exists("static/index.html"):
@@ -236,7 +248,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # 3. Metales: Extracción de Panorama Minero vía Next.js RSC Payload
+    # 3. Metales: Extracción limpia de Panorama Minero
     metales_extraidos = False
     try:
         h_pm = {
@@ -257,24 +269,26 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                     
                     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
                     for c in commodities:
-                        nombre = c.get("name", "")
-                        ticker = c.get("ticker", "")
+                        nombre = sanitizar_texto(c.get("name", ""))
+                        ticker = sanitizar_texto(c.get("ticker", ""))
                         val_num = round(float(c.get("priceValue", 0)), 2)
-                        unidad = c.get("unitDisplay", "oz")
+                        unidad = sanitizar_texto(c.get("unitDisplay", "oz"))
                         
-                        # Formato de valor con unidad limpia
-                        p_limpio = c.get("price", "").replace("\u00a0", " ").strip()
+                        # Limpiar valor original y garantizar formato sin 'Â'
+                        p_raw = sanitizar_texto(c.get("price", ""))
+                        # Si quedó algún residuo o viene con formato '4070,10 US$', asegurar espacio y unidad
+                        p_limpio = p_raw.replace("Â", "").strip()
                         if not p_limpio.endswith(unidad):
                             p_limpio = f"{p_limpio}/{unidad}"
 
-                        # Variación (prioriza 24h, o 7d si 24h está en 0)
+                        # Variaciones
                         vars_obj = c.get("variations", {})
                         var_dia = vars_obj.get("one_day", {})
-                        var_str = var_dia.get("formatted", "0.00%")
+                        var_str = sanitizar_texto(var_dia.get("formatted", "0.00%"))
                         if var_str == "0.00%":
                             var_7d = vars_obj.get("seven_days", {})
                             if var_7d.get("formatted"):
-                                var_str = var_7d.get("formatted")
+                                var_str = sanitizar_texto(var_7d.get("formatted"))
                                 if not var_7d.get("isPositive", True) and not var_str.startswith("-"):
                                     var_str = f"-{var_str}"
                                 elif var_7d.get("isPositive", True) and not var_str.startswith("+"):
@@ -304,7 +318,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # Respaldo estructurado en caso de caída temporal de red
+    # Respaldo limpio sin artefactos
     if not metales_extraidos:
         METALES_BASE = [
             ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),

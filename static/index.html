@@ -194,7 +194,7 @@
 
       let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
       let varIcon = "";
-      const variacion = String(item.variacion || "");
+      const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
       if (variacion.includes("+")) {
         varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
         varIcon = '<i class="fa-solid fa-arrow-up text-xs mr-1"></i>';
@@ -215,21 +215,21 @@
         }
       }
 
-      let desc = item.descripcion || "";
-      let valFmt = item.valor_formateado || item.valor || "-";
-      const fecha = item.fecha || "";
+      let desc = String(item.descripcion || "").replace(/Â/g, "").trim();
+      let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
+      const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
 
       // 1. Inflación mensual con mes explícito
       if (item.variable === "INFLACION_MENSUAL" && fecha) {
         desc = `Inflación Mensual (${fecha})`;
-        if (!String(valFmt).includes("(")) {
+        if (!valFmt.includes("(")) {
           valFmt = `${valFmt} (${fecha})`;
         }
       }
 
       // 2. Tasas con sufijo TNA
       if (item.variable && item.variable.startsWith("TASA_")) {
-        if (!String(valFmt).toUpperCase().includes("TNA")) {
+        if (!valFmt.toUpperCase().includes("TNA")) {
           valFmt = `${valFmt} TNA`;
         }
       }
@@ -240,14 +240,14 @@
         "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
       ];
       if (variablesPesos.includes(item.variable)) {
-        if (!String(valFmt).startsWith("$")) {
+        if (!valFmt.startsWith("$")) {
           valFmt = `$${valFmt}`;
         }
       }
 
       // 4. Riesgo País con sufijo puntos básicos
       if (item.variable === "RIESGO_PAIS") {
-        if (!String(valFmt).toLowerCase().includes("puntos")) {
+        if (!valFmt.toLowerCase().includes("puntos")) {
           valFmt = `${valFmt} puntos básicos`;
         }
       }
