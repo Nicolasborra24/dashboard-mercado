@@ -71,42 +71,6 @@ def sanitizar_texto(texto: str) -> str:
     texto = texto.replace("Â", "").replace("\u00a0", " ").strip()
     return re.sub(r"\s+", " ", texto)
 
-@app.get("/")
-def inicio():
-    if os.path.exists("static/index.html"):
-        return FileResponse("static/index.html")
-    return {"mensaje": "Servidor funcionando correctamente", "db_conectada": engine is not None}
-
-@app.get("/dolar")
-def ver_dolar(db: Session = Depends(get_db)):
-    try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=8)
-        if r.status_code == 200:
-            datos = r.json()
-            if db:
-                try:
-                    for item in datos:
-                        db.add(CotizacionDolar(
-                            casa=item.get("casa"),
-                            nombre=item.get("nombre"),
-                            compra=float(item.get("compra", 0) or 0),
-                            venta=float(item.get("venta", 0) or 0),
-                            fecha_actualizacion=str(item.get("fechaActualizacion"))
-                        ))
-                    db.commit()
-                except Exception:
-                    db.rollback()
-            return datos
-        return {"error": "Error al conectar con API de divisas"}
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/dolar/historial")
-def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
-    if not db:
-        return {"error": "Base de datos no disponible"}
-    return db.query(CotizacionDolar).order_by(CotizacionDolar.id.desc()).limit(limite).all()
-
 def normalizar_valor(texto: str) -> Optional[float]:
     t = texto.strip().upper().replace("−", "-")
     multiplicador = 1000.0 if ("B" in t or "K" in t) else 1.0
@@ -195,10 +159,47 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
+@app.get("/")
+def inicio():
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"mensaje": "Servidor funcionando correctamente", "db_conectada": engine is not None}
+
+@app.get("/dolar")
+def ver_dolar(db: Session = Depends(get_db)):
+    try:
+        r = requests.get("https://dolarapi.com/v1/dolares", timeout=8)
+        if r.status_code == 200:
+            datos = r.json()
+            if db:
+                try:
+                    for item in datos:
+                        db.add(CotizacionDolar(
+                            casa=item.get("casa"),
+                            nombre=item.get("nombre"),
+                            compra=float(item.get("compra", 0) or 0),
+                            venta=float(item.get("venta", 0) or 0),
+                            fecha_actualizacion=str(item.get("fechaActualizacion"))
+                        ))
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            return datos
+        return {"error": "Error al conectar con API de divisas"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/dolar/historial")
+def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
+    if not db:
+        return {"error": "Base de datos no disponible"}
+    return db.query(CotizacionDolar).order_by(CotizacionDolar.id.desc()).limit(limite).all()
+
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: Session = Depends(get_db)):
     elementos = []
     cargadas = set()
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     # 1. Scraping general de indicadores.ar
     try:
@@ -228,12 +229,14 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         pass
 
     # 2. Dólar Oficial Mayorista A3500
+    usd_oficial_num = 1015.50
     try:
         r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=6)
         if r_a.status_code == 200:
             d = r_a.json().get("data", [])
             if d and len(d[0]) >= 2 and d[0][1] is not None:
                 val = float(d[0][1])
+                usd_oficial_num = val
                 elementos.append({
                     "variable": "DOLAR_A3500",
                     "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
@@ -264,8 +267,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                 if idx_end != -1:
                     json_str = sub[:idx_end + 1]
                     commodities = json.loads(json_str)
-                    
-                    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
                     for c in commodities:
                         nombre = sanitizar_texto(c.get("name", ""))
                         ticker = sanitizar_texto(c.get("ticker", ""))
@@ -332,7 +333,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
             ("METALES_U", "Uranio (U)", "91,85 US$/lb", "-0.76%", 91.85),
             ("METALES_VAN", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
         ]
-        fec_fb = datetime.utcnow().strftime("%d %b %Y")
         for cod_fb, desc_fb, fmt_fb, var_fb, val_fb in METALES_BASE:
             if cod_fb not in cargadas:
                 elementos.append({
@@ -342,11 +342,11 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                     "valor_formateado": fmt_fb,
                     "variacion": var_fb,
                     "valor": val_fb,
-                    "fecha": fec_fb
+                    "fecha": fec_hoy
                 })
                 cargadas.add(cod_fb)
 
-    # 4. Sección Petróleo & Energía: Scraping en vivo desde OilPrice.com
+    # 4. Sección Petróleo: OilPrice.com
     MAP_OILPRICE = {
         "wti crude": ("PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 90.83, "+0.34%"),
         "brent crude": ("PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 98.32, "+0.03%"),
@@ -355,10 +355,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         "gasoline": ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.777, "+0.48%"),
         "heating oil": ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 4.332, "-0.46%")
     }
-    
     petroleo_cargado = set()
-    fec_oil = datetime.utcnow().strftime("%d %b %Y")
-    
     try:
         h_op = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         r_op = requests.get("https://oilprice.com/oil-price-charts/", headers=h_op, timeout=8)
@@ -372,7 +369,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                         if k_op in nom_raw and cod_op not in petroleo_cargado:
                             val_num_op = normalizar_valor(tds[1])
                             if val_num_op:
-                                # Extraer porcentaje limpio
                                 m_pct = re.search(r"([+-]?\d+[\.,]\d+%)", tds[3])
                                 var_op = m_pct.group(1) if m_pct else tds[3].split("(")[0].strip()
                                 if not var_op.startswith("+") and not var_op.startswith("-") and var_op != "0,0%" and var_op != "0.00%":
@@ -386,14 +382,13 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                                     "valor_formateado": fmt_op,
                                     "variacion": var_op,
                                     "valor": val_num_op,
-                                    "fecha": fec_oil
+                                    "fecha": fec_hoy
                                 })
                                 petroleo_cargado.add(cod_op)
                             break
     except Exception:
         pass
 
-    # Respaldo oficial con los valores vigentes de mercado
     for k_op, (cod_op, desc_op, un_op, def_num, def_pct) in MAP_OILPRICE.items():
         if cod_op not in petroleo_cargado:
             fmt_op = f"{def_num:,.2f} {un_op}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -404,9 +399,62 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                 "valor_formateado": fmt_op,
                 "variacion": def_pct,
                 "valor": def_num,
-                "fecha": fec_oil
+                "fecha": fec_hoy
             })
             petroleo_cargado.add(cod_op)
+
+    # 5. Sección Monedas: DXY, USD/ARS, USD/BRL, EUR/USD, EUR/ARS, USD/CLP
+    rates = {}
+    try:
+        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=5)
+        if r_fx.status_code == 200:
+            rates = r_fx.json().get("rates", {})
+    except Exception:
+        pass
+
+    val_brl = round(float(rates.get("BRL", 5.76)), 2)
+    val_clp = round(float(rates.get("CLP", 958.40)), 2)
+    eur_rate = float(rates.get("EUR", 0.921))
+    val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
+
+    try:
+        jpy = float(rates.get("JPY", 152.5))
+        gbp_rate = float(rates.get("GBP", 0.772))
+        gbp_usd = (1.0 / gbp_rate) if gbp_rate > 0 else 1.295
+        cad = float(rates.get("CAD", 1.39))
+        sek = float(rates.get("SEK", 10.72))
+        chf = float(rates.get("CHF", 0.871))
+        val_dxy = round(50.14348112 * (val_eurusd ** -0.576) * (jpy ** 0.136) * (gbp_usd ** -0.119) * (cad ** 0.091) * (sek ** 0.042) * (chf ** 0.036), 2)
+    except Exception:
+        val_dxy = 104.35
+
+    item_dolar_oficial = next((it for it in elementos if it["variable"] in ["DOLAR_OFICIAL", "DOLAR_A3500"]), None)
+    if item_dolar_oficial and item_dolar_oficial.get("valor"):
+        usd_ars_val = float(item_dolar_oficial["valor"])
+    else:
+        usd_ars_val = round(float(rates.get("ARS", usd_oficial_num)), 2)
+
+    val_eurars = round(val_eurusd * usd_ars_val, 2)
+
+    MONEDAS_LISTA = [
+        ("MONEDA_DXY", "Índice Dólar (DXY)", f"{val_dxy:.2f} pts".replace(".", ","), "+0,15%", val_dxy),
+        ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,05%", usd_ars_val),
+        ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.2f}".replace(".", ","), "+0,32%", val_brl),
+        ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), "+0,18%", val_eurusd),
+        ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,22%", val_eurars),
+        ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "-0,25%", val_clp)
+    ]
+
+    for cod_m, desc_m, fmt_m, var_m, val_m in MONEDAS_LISTA:
+        elementos.append({
+            "variable": cod_m,
+            "descripcion": desc_m,
+            "categoria": "monedas",
+            "valor_formateado": fmt_m,
+            "variacion": var_m,
+            "valor": val_m,
+            "fecha": fec_hoy
+        })
 
     # Persistencia en base de datos PostgreSQL
     if db and elementos:
@@ -432,6 +480,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     agrupado = {
         "tasas_y_monetario": [],
         "dolar_y_cambiario": [],
+        "monedas": [],
         "inflacion_y_ajuste": [],
         "mercado_y_deuda": [],
         "metales": [],
