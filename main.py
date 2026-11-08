@@ -439,7 +439,7 @@ def inicio():
     return {"mensaje": "Servidor funcionando correctamente", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
 
 @app.get("/bcra/variables")
-def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"])):
+def ver_bcra(formato: str = Query("agrupado")):
     with CACHE_LOCK:
         if formato == "lista":
             lista_plana = []
