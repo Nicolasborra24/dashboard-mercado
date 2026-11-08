@@ -6,6 +6,8 @@ from typing import List, Optional, Dict, Any
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, Query
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -45,6 +47,10 @@ if engine:
 
 app = FastAPI(title="API Mercado Argentino")
 
+# Montar archivos estaticos si existen
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
 def get_db():
     if not SessionLocal:
         yield None
@@ -57,6 +63,8 @@ def get_db():
 
 @app.get("/")
 def inicio():
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
     return {"mensaje": "Servidor funcionando correctamente", "db_conectada": engine is not None}
 
 @app.get("/dolar")

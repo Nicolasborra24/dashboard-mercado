@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Financiero Argentino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              900: "#0b0f19",
+              800: "#111827",
+              700: "#1f2937",
+              card: "#131b2e"
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #080c14; }
+    .card-glow { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5); }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xl">
+        <i class="fa-solid fa-chart-line"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white">Dashboard Mercado & Macro</h1>
+        <p class="text-xs text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="sync-status" class="flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado
+      </span>
+      <span id="last-update" class="text-xs text-slate-400 font-mono">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- Navigation / Filtros -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-800/80 text-sm font-medium">
+      <button onclick="filtrarCategoria('todos')" class="nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition">Todos</button>
+      <button onclick="filtrarCategoria('tasas_y_monetario')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Tasas y BCRA</button>
+      <button onclick="filtrarCategoria('dolar_y_cambiario')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Dólar y Brechas</button>
+      <button onclick="filtrarCategoria('inflacion_y_ajuste')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Inflación, CER y UVA</button>
+      <button onclick="filtrarCategoria('mercado_y_deuda')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Mercado y Renta</button>
+      <button onclick="filtrarCategoria('macro_y_fiscal')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Macro & Fiscal</button>
+      <button onclick="filtrarCategoria('micro_y_sectores')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Micro & Actividad</button>
+      <button onclick="filtrarCategoria('commodities_agro_energia')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Agro & Energía</button>
+    </div>
+
+    <!-- Contenedor General de Secciones -->
+    <div id="dashboard-content" class="space-y-10">
+      <!-- Se inyecta con Javascript -->
+      <div class="flex justify-center items-center py-20 text-slate-500">
+        <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const NOMBRES_SECCIONES = {
+      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario", icono: "fa-landmark" },
+      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
+      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
+      mercado_y_deuda: { titulo: "Mercado Bursátil y Deuda Soberana", icono: "fa-money-bill-transfer" },
+      macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Fiscal", icono: "fa-scale-balanced" },
+      micro_y_sectores: { titulo: "Economía Real y Crédito", icono: "fa-industry" },
+      commodities_agro_energia: { titulo: "Commodities, Agro y Energía", icono: "fa-wheat-awn" }
+    };
+
+    let datosGlobales = {};
+    let categoriaActiva = "todos";
+
+    async function cargarDatos() {
+      try {
+        const res = await fetch("/bcra/variables?formato=agrupado");
+        if (!res.ok) throw new Error("Fallo al consultar API");
+        datosGlobales = await res.json();
+        renderizar();
+        document.getElementById("last-update").innerText = new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error("Error al cargar variables:", err);
+      }
+    }
+
+    function renderizar() {
+      const contenedor = document.getElementById("dashboard-content");
+      contenedor.innerHTML = "";
+
+      for (const [clave, items] of Object.entries(datosGlobales)) {
+        if (!items || items.length === 0) continue;
+        if (categoriaActiva !== "todos" && categoriaActiva !== clave) continue;
+
+        const info = NOMBRES_SECCIONES[clave] || { titulo: clave, icono: "fa-circle-dot" };
+
+        const seccion = document.createElement("section");
+        seccion.className = "space-y-4";
+        seccion.innerHTML = `
+          <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+            <i class="fa-solid ${info.icono} text-blue-400"></i>
+            <h2>${info.titulo}</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            ${items.map(crearTarjeta).join("")}
+          </div>
+        `;
+        contenedor.appendChild(seccion);
+      }
+    }
+
+    function crearTarjeta(item) {
+      let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
+      let varIcon = "";
+      if (item.variacion) {
+        if (item.variacion.includes("+")) {
+          varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+          varIcon = "<i class='fa-solid fa-arrow-up text-xs mr-1'></i>";
+        } else if (item.variacion.includes("-") || item.variacion.includes("−")) {
+          varColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
+          varIcon = "<i class='fa-solid fa-arrow-down text-xs mr-1'></i>";
+        }
+      }
+
+      return `
+        <div class="bg-brand-card border border-slate-800 rounded-xl p-4 card-glow flex flex-col justify-between hover:border-slate-700 transition">
+          <div>
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block truncate" title="${item.descripcion}">${item.descripcion}</span>
+            <div class="mt-2 flex items-baseline justify-between gap-2">
+              <span class="text-2xl font-bold tracking-tight text-white font-mono">${item.valor_formateado || item.valor}</span>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <span class="px-2 py-0.5 rounded border font-mono ${varColor}">
+              ${varIcon}${item.variacion || "0,0%"}
+            </span>
+            <span class="text-slate-500">${item.fecha}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function filtrarCategoria(cat) {
+      categoriaActiva = cat;
+      document.querySelectorAll(".nav-tab").forEach(b => {
+        b.className = "nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition";
+      });
+      event.target.className = "nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition";
+      renderizar();
+    }
+
+    cargarDatos();
+    setInterval(cargarDatos, 60000);
+  </script>
+</body>
+</html>
