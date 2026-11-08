@@ -34,7 +34,7 @@ class VariableMacro(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     fuente = Column(String, index=True) # BCRA o INDEC
-    id_variable = Column(Integer, nullable=True)
+    id_variable = Column(String, nullable=True)
     descripcion = Column(String)
     valor = Column(Float)
     fecha_dato = Column(String)
@@ -88,35 +88,84 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
 
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
-    # API Oficial BCRA - Estadísticas Monetarias
-    url = "https://api.bcra.gob.ar/estadisticas/v3.0/monetarias"
+    # Fuente consolidada de series de tiempo oficiales de Argentina (BCRA)
+    series_bcra = {
+        "RESERVAS": {"id": "174.1_RO_2016_0_21", "desc": "Reservas Internacionales (Millones USD)"},
+        "BASE_MONETARIA": {"id": "174.1_BMA_2016_0_15", "desc": "Base Monetaria (Millones ARS)"},
+        "TIPO_CAMBIO_A3500": {"id": "168.1_T_CAMBIOR_D_0_0_26", "desc": "Tipo de Cambio Mayorista Comunicación A3500"}
+    }
+    
+    ids_param = ",".join([item["id"] for item in series_bcra.values()])
+    url = f"https://apis.datos.gob.ar/series/api/series/?ids={ids_param}&limit=1&sort=desc"
+    
     try:
-        respuesta = requests.get(url, timeout=15, verify=False)
+        respuesta = requests.get(url, timeout=15)
         if respuesta.status_code == 200:
-            resultado = respuesta.json().get("results", [])
+            datos = respuesta.json()
+            data_points = datos.get("data", [])
             
-            # IDs de variables clave en BCRA:
-            # 1: Reservas Internacionales
-            # 4: Base Monetaria
-            # 6: Tasa de Política Monetaria
-            # 7: Badlar bancos privados
-            claves = {1: "Reservas Internacionales", 4: "Base Monetaria", 6: "Tasa Política Monetaria", 7: "Tasa Badlar"}
+            if not data_points:
+                return {"mensaje": "No se encontraron datos recientes"}
             
-            filtrados = [item for item in resultado if item.get("idVariable") in claves]
+            ultimo_registro = data_points[0]
+            fecha = ultimo_registro[0]
             
-            if db:
-                for item in filtrados:
+            resultado = []
+            keys = list(series_bcra.keys())
+            for idx, key in enumerate(keys):
+                valor = ultimo_registro[idx + 1]
+                info = series_bcra[key]
+                item_data = {
+                    "variable": key,
+                    "descripcion": info["desc"],
+                    "valor": valor,
+                    "fecha": fecha
+                }
+                resultado.append(item_data)
+                
+                if db and valor is not None:
                     registro = VariableMacro(
                         fuente="BCRA",
-                        id_variable=item.get("idVariable"),
-                        descripcion=claves.get(item.get("idVariable"), item.get("descripcion", "")),
-                        valor=float(item.get("valor", 0) or 0),
-                        fecha_dato=str(item.get("fecha"))
+                        id_variable=key,
+                        descripcion=info["desc"],
+                        valor=float(valor),
+                        fecha_dato=str(fecha)
                     )
                     db.add(registro)
+            
+            if db:
                 db.commit()
+            return resultado
+        return {"error": f"API de series devolvió código {respuesta.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/indec/ipc")
+def ver_indec_ipc(db: Session = Depends(get_db)):
+    url = "https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=12&sort=desc"
+    try:
+        respuesta = requests.get(url, timeout=15)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            data_points = datos.get("data", [])
+            
+            resultado = []
+            for punto in data_points:
+                fecha, valor = punto[0], punto[1]
+                resultado.append({"fecha": fecha, "indice_ipc": valor})
                 
-            return filtrados
-        return {"error": f"BCRA API devolvió código {respuesta.status_code}"}
+                if db and valor is not None:
+                    registro = VariableMacro(
+                        fuente="INDEC",
+                        id_variable="IPC_NACIONAL",
+                        descripcion="Índice de Precios al Consumidor (Nivel General)",
+                        valor=float(valor),
+                        fecha_dato=str(fecha)
+                    )
+                    db.add(registro)
+            if db:
+                db.commit()
+            return resultado
+        return {"error": f"INDEC API devolvió código {respuesta.status_code}"}
     except Exception as e:
         return {"error": str(e)}
