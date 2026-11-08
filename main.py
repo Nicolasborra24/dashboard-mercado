@@ -64,12 +64,10 @@ def get_db():
 def sanitizar_texto(texto: str) -> str:
     if not texto:
         return ""
-    # Corregir doble codificación UTF-8
     try:
         texto = texto.encode("latin1").decode("utf-8")
     except Exception:
         pass
-    # Eliminar residuos de mojibake y espacios no separables
     texto = texto.replace("Â", "").replace("\u00a0", " ").strip()
     return re.sub(r"\s+", " ", texto)
 
@@ -248,7 +246,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # 3. Metales: Extracción limpia de Panorama Minero
+    # 3. Metales: Panorama Minero
     metales_extraidos = False
     try:
         h_pm = {
@@ -274,14 +272,10 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                         val_num = round(float(c.get("priceValue", 0)), 2)
                         unidad = sanitizar_texto(c.get("unitDisplay", "oz"))
                         
-                        # Limpiar valor original y garantizar formato sin 'Â'
-                        p_raw = sanitizar_texto(c.get("price", ""))
-                        # Si quedó algún residuo o viene con formato '4070,10 US$', asegurar espacio y unidad
-                        p_limpio = p_raw.replace("Â", "").strip()
-                        if not p_limpio.endswith(unidad):
-                            p_limpio = f"{p_limpio}/{unidad}"
+                        p_raw = sanitizar_texto(c.get("price", "")).replace("Â", "").strip()
+                        if not p_raw.endswith(unidad):
+                            p_raw = f"{p_raw}/{unidad}"
 
-                        # Variaciones
                         vars_obj = c.get("variations", {})
                         var_dia = vars_obj.get("one_day", {})
                         var_str = sanitizar_texto(var_dia.get("formatted", "0.00%"))
@@ -301,14 +295,13 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
 
                         cod_ticker = re.sub(r'[^A-Z0-9]', '_', ticker.upper())
                         cod_var = f"METALES_{cod_ticker}"
-
                         desc = f"{nombre} ({ticker})" if ticker else nombre
 
                         elementos.append({
                             "variable": cod_var,
                             "descripcion": desc,
                             "categoria": "metales",
-                            "valor_formateado": p_limpio,
+                            "valor_formateado": p_raw,
                             "variacion": var_str,
                             "valor": val_num,
                             "fecha": fec_hoy
@@ -318,7 +311,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # Respaldo limpio sin artefactos
     if not metales_extraidos:
         METALES_BASE = [
             ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
@@ -354,6 +346,80 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                 })
                 cargadas.add(cod_fb)
 
+    # 4. Sección Petróleo: Ámbito Financiero + Futuros Stooq
+    PETROLEO_TARGETS = [
+        ("petroleo-wti", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 70.38, "+0.85%"),
+        ("petroleo-brent", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.20, "+0.68%")
+    ]
+    for amb_slug, st_sym, cod_pet, desc_pet, un_pet, def_p, def_v in PETROLEO_TARGETS:
+        cargado_pet = False
+        fec_pet = datetime.utcnow().strftime("%d %b %Y")
+
+        # Intento A: API abierta de Ámbito Financiero
+        try:
+            h_amb = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+            r_amb = requests.get(f"https://mercados.ambito.com//{amb_slug}/variacion", headers=h_amb, timeout=5)
+            if r_amb.status_code == 200:
+                d_amb = r_amb.json()
+                raw_v = d_amb.get("ultimo") or d_amb.get("venta") or d_amb.get("valor")
+                if raw_v:
+                    v_num = normalizar_valor(str(raw_v))
+                    if v_num is not None:
+                        var_amb = str(d_amb.get("variacion", "0,0%")).strip()
+                        if not var_amb.startswith("+") and not var_amb.startswith("-") and var_amb != "0,0%":
+                            var_amb = f"+{var_amb}"
+                        elementos.append({
+                            "variable": cod_pet,
+                            "descripcion": desc_pet,
+                            "categoria": "petroleo",
+                            "valor_formateado": f"{v_num:.2f} {un_pet}".replace(".", ","),
+                            "variacion": var_amb,
+                            "valor": v_num,
+                            "fecha": fec_pet
+                        })
+                        cargado_pet = True
+        except Exception:
+            pass
+
+        # Intento B: Feed de futuros Stooq
+        if not cargado_pet:
+            try:
+                r_st = requests.get(f"https://stooq.com/q/d/l/?s={st_sym}&i=d", timeout=5)
+                if r_st.status_code == 200:
+                    lines = [l.strip() for l in r_st.text.strip().split("\n") if l.strip()]
+                    if len(lines) >= 3:
+                        u_st = lines[-1].split(",")
+                        p_st = lines[-2].split(",")
+                        if len(u_st) >= 5 and len(p_st) >= 5:
+                            val_st = round(float(u_st[4]), 2)
+                            prev_st = round(float(p_st[4]), 2)
+                            diff_st = round(((val_st / prev_st) - 1) * 100, 2) if prev_st > 0 else 0.0
+                            var_st = f"{'+' if diff_st >= 0 else ''}{str(diff_st).replace('.', ',')}%"
+                            elementos.append({
+                                "variable": cod_pet,
+                                "descripcion": desc_pet,
+                                "categoria": "petroleo",
+                                "valor_formateado": f"{val_st:.2f} {un_pet}".replace(".", ","),
+                                "variacion": var_st,
+                                "valor": val_st,
+                                "fecha": u_st[0]
+                            })
+                            cargado_pet = True
+            except Exception:
+                pass
+
+        # Intento C: Respaldo garantizado
+        if not cargado_pet:
+            elementos.append({
+                "variable": cod_pet,
+                "descripcion": desc_pet,
+                "categoria": "petroleo",
+                "valor_formateado": f"{def_p:.2f} {un_pet}".replace(".", ","),
+                "variacion": def_v,
+                "valor": def_p,
+                "fecha": fec_pet
+            })
+
     # Persistencia en base de datos PostgreSQL
     if db and elementos:
         for it in elementos:
@@ -381,6 +447,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         "inflacion_y_ajuste": [],
         "mercado_y_deuda": [],
         "metales": [],
+        "petroleo": [],
         "macro_y_fiscal": [],
         "micro_y_sectores": [],
         "commodities_agro_energia": []
