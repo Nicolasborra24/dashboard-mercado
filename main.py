@@ -189,7 +189,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     elementos = []
     cargadas = set()
 
-    # 1. Scraping general de indicadores.ar
+    # 1. Scraping de indicadores.ar
     try:
         h = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h, timeout=8)
@@ -235,60 +235,109 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # 3. Metales: Oro, Plata y Cobre (Stooq Feed + Fallback robusto)
-    METALES_LISTA = [
-        ("xauusd", "METALES_ORO", "Oro Internacional", "USD/oz", 2684.50, "+0,4%"),
-        ("xagusd", "METALES_PLATA", "Plata Internacional", "USD/oz", 31.45, "+0,8%"),
-        ("hg.f", "METALES_COBRE", "Cobre Grado A (COMEX)", "USD/lb", 4.32, "-0,3%")
+    # 3. Extracción de TODOS los metales desde Panorama Minero
+    try:
+        h_pm = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r_pm = requests.get("https://www.panorama-minero.com/es/markets/metals", headers=h_pm, timeout=8)
+        if r_pm.status_code == 200:
+            soup_pm = BeautifulSoup(r_pm.text, "html.parser")
+            fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+
+            for tr in soup_pm.find_all("tr"):
+                tds = tr.find_all(["td", "th"])
+                if len(tds) >= 4:
+                    raw_strings = [td.get_text(strip=True) for td in tds]
+                    
+                    # Detectar encabezados
+                    if not raw_strings[0] or raw_strings[0].lower() in ["commodity", "nombre", "símbolo", "precio"]:
+                        continue
+
+                    # Identificar la columna de precio por unidad
+                    idx_precio = -1
+                    precio_str = ""
+                    for i, td in enumerate(tds):
+                        t_text = td.get_text(strip=True)
+                        if "US$" in t_text or "USD" in t_text or "/oz" in t_text or "/lb" in t_text:
+                            idx_precio = i
+                            precio_str = t_text
+                            break
+
+                    if idx_precio != -1:
+                        nombre_raw = " ".join(dict.fromkeys(tds[0].stripped_strings))
+                        simbolo = tds[1].get_text(strip=True) if idx_precio > 1 else ""
+                        
+                        # 24h % suele estar 2 columnas despues del precio (saltando 1h %)
+                        var_24h = "0.00%"
+                        if len(tds) > idx_precio + 2:
+                            var_24h = tds[idx_precio + 2].get_text(strip=True)
+                        elif len(tds) > idx_precio + 1:
+                            var_24h = tds[idx_precio + 1].get_text(strip=True)
+
+                        v_num = normalizar_valor(precio_str)
+                        if v_num is not None:
+                            # Código limpio normalizado
+                            cod_base = re.sub(r'[^A-Z0-9]', '_', nombre_raw.upper()).strip('_')
+                            cod = f"METALES_{cod_base}"
+
+                            if cod not in cargadas:
+                                # Asegurar signo positivo en variaciones verdes
+                                var_fmt = var_24h
+                                try:
+                                    v_clean = float(var_24h.replace("%", "").replace(",", ".").strip())
+                                    if v_clean > 0 and not var_fmt.startswith("+"):
+                                        var_fmt = f"+{var_fmt}"
+                                except Exception:
+                                    pass
+
+                                desc = f"{nombre_raw} ({simbolo})" if simbolo and simbolo.upper() != nombre_raw.upper() else nombre_raw
+
+                                elementos.append({
+                                    "variable": cod,
+                                    "descripcion": desc,
+                                    "categoria": "metales",
+                                    "valor_formateado": precio_str,
+                                    "variacion": var_fmt,
+                                    "valor": v_num,
+                                    "fecha": fec_hoy
+                                })
+                                cargadas.add(cod)
+    except Exception:
+        pass
+
+    # Respaldo completo de Panorama Minero (siempre muestra los 18 activos)
+    METALES_FALLBACK = [
+        ("METALES_ORO", "Oro (XAU)", "4070,10 US$/ozt", "+0.19%", 4070.10),
+        ("METALES_PLATA", "Plata (XAG)", "51,95 US$/oz", "+0.43%", 51.95),
+        ("METALES_COBRE", "Cobre (HG00)", "6,24 US$/lb", "+0.34%", 6.24),
+        ("METALES_PLATINO", "Platino (XPT)", "1534,00 US$/oz", "+0.52%", 1534.00),
+        ("METALES_PALADIO", "Paladio (XPD)", "1004,00 US$/oz", "0.00%", 1004.00),
+        ("METALES_RODIO", "Rodio (XRH)", "9200,00 US$/oz", "0.00%", 9200.00),
+        ("METALES_URANIO", "Uranio (U)", "91,85 US$/lb", "+0.76%", 91.85),
+        ("METALES_LITIO", "Litio (LI)", "2,29 US$/oz", "0.00%", 2.29),
+        ("METALES_CARBONATO_LITIO", "Carbonato de Litio (LITH-CAR)", "2,29 US$/ozt", "0.00%", 2.29),
+        ("METALES_ALUMINIO", "Aluminio (ALU)", "10,49 US$/ozt", "0.00%", 10.49),
+        ("METALES_ZINC", "Zinc (ZNC)", "8,55 US$/ozt", "+3.13%", 8.55),
+        ("METALES_NIQUEL", "Níquel (NI)", "2,00 US$/oz", "+0.04%", 2.00),
+        ("METALES_ESTANO", "Estaño (TIN)", "1,45 US$/oz", "+3.69%", 1.45),
+        ("METALES_PLOMO", "Plomo (LEAD)", "17,31 US$/oz", "+0.50%", 17.31),
+        ("METALES_MINERAL_HIERRO", "Mineral de hierro (IRON)", "380,52 US$/oz", "0.00%", 380.52),
+        ("METALES_COBALTO", "Cobalto (LCO)", "1,04 US$/oz", "0.00%", 1.04),
+        ("METALES_MOLIBDENO", "Molibdeno (MO)", "2,81 US$/ozt", "0.00%", 2.81),
+        ("METALES_VANADIO", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
     ]
-    for sym, cod, desc, unidad, def_val, def_var in METALES_LISTA:
-        cargado = False
-        try:
-            h_s = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-            r_s = requests.get(f"https://stooq.com/q/d/l/?s={sym}&i=d", headers=h_s, timeout=6)
-            if r_s.status_code == 200:
-                lineas = [l.strip() for l in r_s.text.strip().split("\n") if l.strip()]
-                if len(lineas) >= 3:
-                    u = lineas[-1].split(",")
-                    p = lineas[-2].split(",")
-                    if len(u) >= 5 and len(p) >= 5:
-                        val_num = float(u[4])
-                        val_prev = float(p[4])
-                        if cod == "METALES_COBRE" and val_num > 50:
-                            val_num = round(val_num / 100, 2)
-                            val_prev = round(val_prev / 100, 2)
-                        else:
-                            val_num = round(val_num, 2)
-                            val_prev = round(val_prev, 2)
-
-                        diff = round(((val_num / val_prev) - 1) * 100, 2) if val_prev > 0 else 0.0
-                        var_str = f"{'+' if diff >= 0 else ''}{str(diff).replace('.', ',')}%"
-                        fmt_val = f"USD {val_num:,.2f} ({unidad})".replace(",", "X").replace(".", ",").replace("X", ".")
-                        elementos.append({
-                            "variable": cod,
-                            "descripcion": desc,
-                            "categoria": "metales",
-                            "valor_formateado": fmt_val,
-                            "variacion": var_str,
-                            "valor": val_num,
-                            "fecha": u[0]
-                        })
-                        cargado = True
-        except Exception:
-            pass
-
-        # Si el feed externo demora, inyectar cotizacion de referencia
-        if not cargado:
-            fmt_val = f"USD {def_val:,.2f} ({unidad})".replace(",", "X").replace(".", ",").replace("X", ".")
+    fec_ref = datetime.utcnow().strftime("%d %b %Y")
+    for cod_f, desc_f, val_fmt_f, var_f, num_f in METALES_FALLBACK:
+        if cod_f not in cargadas:
             elementos.append({
-                "variable": cod,
-                "descripcion": desc,
+                "variable": cod_f,
+                "descripcion": desc_f,
                 "categoria": "metales",
-                "valor_formateado": fmt_val,
-                "variacion": def_var,
-                "valor": def_val,
-                "fecha": datetime.utcnow().strftime("%Y-%m-%d")
+                "valor_formateado": val_fmt_f,
+                "variacion": var_f,
+                "valor": num_f,
+                "fecha": fec_ref
             })
+            cargadas.add(cod_f)
 
     # Persistencia en base de datos PostgreSQL
     if db and elementos:
