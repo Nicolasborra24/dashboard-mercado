@@ -43,7 +43,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">v3.2 - Cripto</span>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.3 - Renta Fija Completa</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
       </div>
@@ -196,6 +196,24 @@
         desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA",
         icono: "fa-shield-halved",
         color: "text-emerald-400"
+      },
+      dollar_linked: {
+        titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)",
+        desc: "Precios en ARS por 100 VN • Cobertura cambiaria oficial",
+        icono: "fa-link",
+        color: "text-emerald-400"
+      },
+      tamar: {
+        titulo: "Curva Tasa Flotante TAMAR y Badlar",
+        desc: "Precios en ARS • Bonos Soberanos y Provinciales a Tasa Variable",
+        icono: "fa-chart-simple",
+        color: "text-sky-400"
+      },
+      duales: {
+        titulo: "Curva Bonos Duales (Mayor entre Inflación CER y Devaluación USD)",
+        desc: "Precios en ARS • Títulos con doble cobertura de capital",
+        icono: "fa-arrows-split-up-and-left",
+        color: "text-rose-400"
       }
     };
 
@@ -260,6 +278,24 @@
         { ticker: "BPC7D", precio: 96.80, var: "0.05%", tir: "7.80%",  duration: 0.60, paridad: "96.80", cupon: "0.00%", vto: "2025-06-30" },
         { ticker: "BPD7D", precio: 92.50, var: "0.20%", tir: "9.40%",  duration: 1.30, paridad: "92.50", cupon: "3.00%", vto: "2026-05-31" },
         { ticker: "BPD8D", precio: 88.70, var: "0.10%", tir: "10.10%", duration: 1.80, paridad: "88.70", cupon: "3.00%", vto: "2026-11-30" }
+      ],
+      dollar_linked: [
+        { ticker: "TZV25", precio: 104250, var: "0.15%", tir: "DLR - 2.80%", duration: 0.35, paridad: "100.80", cupon: "0.00%", vto: "2025-06-30" },
+        { ticker: "TZV26", precio: 101800, var: "-0.20%", tir: "DLR + 1.25%", duration: 1.15, paridad: "98.90",  cupon: "0.00%", vto: "2026-06-30" },
+        { ticker: "TZV27", precio: 99400,  var: "0.30%",  tir: "DLR + 4.80%", duration: 1.85, paridad: "96.50",  cupon: "0.00%", vto: "2027-06-30" },
+        { ticker: "TZV28", precio: 96200,  var: "-0.10%", tir: "DLR + 6.10%", duration: 2.45, paridad: "94.20",  cupon: "0.00%", vto: "2028-06-30" }
+      ],
+      tamar: [
+        { ticker: "TB27",  precio: 102.50, var: "0.10%", tir: "TAMAR + 2.50%", duration: 0.85, paridad: "99.80", cupon: "Flotante", vto: "2027-11-20" },
+        { ticker: "TMF27", precio: 101.20, var: "-0.05%", tir: "BADLAR + 3.20%", duration: 1.10, paridad: "99.10", cupon: "Flotante", vto: "2027-12-15" },
+        { ticker: "TMF28", precio: 99.80,  var: "0.15%", tir: "BADLAR + 4.10%", duration: 1.65, paridad: "98.40", cupon: "Flotante", vto: "2028-05-30" },
+        { ticker: "TMG28", precio: 98.40,  var: "0.00%", tir: "TAMAR + 4.50%", duration: 2.15, paridad: "97.60", cupon: "Flotante", vto: "2028-10-15" }
+      ],
+      duales: [
+        { ticker: "TDJ25", precio: 142500, var: "0.12%", tir: "Max(CER, DLR)", duration: 0.40, paridad: "100.20", cupon: "Dual", vto: "2025-06-30" },
+        { ticker: "TDG25", precio: 138900, var: "-0.18%", tir: "Max(CER, DLR)", duration: 0.65, paridad: "99.70",  cupon: "Dual", vto: "2025-08-29" },
+        { ticker: "TDE25", precio: 135400, var: "0.25%", tir: "Max(CER, DLR)", duration: 0.95, paridad: "99.10",  cupon: "Dual", vto: "2025-12-15" },
+        { ticker: "TDM26", precio: 129800, var: "-0.08%", tir: "Max(CER, DLR)", duration: 1.35, paridad: "98.50",  cupon: "Dual", vto: "2026-03-31" }
       ]
     };
 
@@ -267,7 +303,10 @@
       soberanos: { col: null, asc: true },
       bopreales: { col: null, asc: true },
       lecaps: { col: null, asc: true },
-      cer: { col: null, asc: true }
+      cer: { col: null, asc: true },
+      dollar_linked: { col: null, asc: true },
+      tamar: { col: null, asc: true },
+      duales: { col: null, asc: true }
     };
 
     let datosGlobales = {};
@@ -413,7 +452,7 @@
         valorOficial = itemOficial.valor;
       }
 
-      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL + TABLA DEDICADA
+      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL CON 7 CURVAS + TABLA DEDICADA
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva];
         
@@ -556,16 +595,110 @@
               </tbody>
             </table>
           `;
+        } else if (curvaActiva === "dollar_linked") {
+          tablaHtml = `
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>
+                  ${renderTh("dollar_linked", "ticker", "TICKER", "text-left")}
+                  ${renderTh("dollar_linked", "precio", "ÚLTIMO PRECIO", "text-right")}
+                  ${renderTh("dollar_linked", "var", "VAR. DIARIA", "text-center")}
+                  ${renderTh("dollar_linked", "tir", "TIR REAL TC", "text-center")}
+                  ${renderTh("dollar_linked", "duration", "MOD. DURATION", "text-center")}
+                  ${renderTh("dollar_linked", "paridad", "PARIDAD", "text-center")}
+                  ${renderTh("dollar_linked", "cupon", "CUPÓN", "text-center")}
+                  ${renderTh("dollar_linked", "vto", "VENCIMIENTO", "text-center")}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                ${TABLAS_BONOS.dollar_linked.map(b => `
+                  <tr class="table-dark-row transition">
+                    <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (curvaActiva === "tamar") {
+          tablaHtml = `
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>
+                  ${renderTh("tamar", "ticker", "TICKER", "text-left")}
+                  ${renderTh("tamar", "precio", "ÚLTIMO PRECIO", "text-right")}
+                  ${renderTh("tamar", "var", "VAR. DIARIA", "text-center")}
+                  ${renderTh("tamar", "tir", "MARGEN SOBRE TASA", "text-center")}
+                  ${renderTh("tamar", "duration", "MOD. DURATION", "text-center")}
+                  ${renderTh("tamar", "paridad", "PARIDAD", "text-center")}
+                  ${renderTh("tamar", "cupon", "CUPÓN", "text-center")}
+                  ${renderTh("tamar", "vto", "VENCIMIENTO", "text-center")}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                ${TABLAS_BONOS.tamar.map(b => `
+                  <tr class="table-dark-row transition">
+                    <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (curvaActiva === "duales") {
+          tablaHtml = `
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>
+                  ${renderTh("duales", "ticker", "TICKER", "text-left")}
+                  ${renderTh("duales", "precio", "ÚLTIMO PRECIO", "text-right")}
+                  ${renderTh("duales", "var", "VAR. DIARIA", "text-center")}
+                  ${renderTh("duales", "tir", "COBERTURA", "text-center")}
+                  ${renderTh("duales", "duration", "MOD. DURATION", "text-center")}
+                  ${renderTh("duales", "paridad", "PARIDAD", "text-center")}
+                  ${renderTh("duales", "cupon", "CUPÓN", "text-center")}
+                  ${renderTh("duales", "vto", "VENCIMIENTO", "text-center")}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                ${TABLAS_BONOS.duales.map(b => `
+                  <tr class="table-dark-row transition">
+                    <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
+                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
         }
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
+            <!-- Menú Lateral Completo (7 Curvas) -->
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
               </div>
               
-              <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-money-bill-trend-up text-amber-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Lecaps y Boncaps</span>
@@ -573,7 +706,7 @@
                 <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'lecaps' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">9</span>
               </button>
 
-              <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-arrow-trend-up text-purple-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bonos CER</span>
@@ -581,7 +714,7 @@
                 <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'cer' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">22</span>
               </button>
 
-              <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Soberanos en Dólares</span>
@@ -589,15 +722,40 @@
                 <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'soberanos' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">15</span>
               </button>
 
-              <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+              <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
                 </div>
                 <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'bopreales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">7</span>
               </button>
+
+              <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                <div class="flex items-center gap-2 truncate">
+                  <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
+                  <span class="text-xs font-semibold truncate">Dollar Linked</span>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'dollar_linked' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+              </button>
+
+              <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                <div class="flex items-center gap-2 truncate">
+                  <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
+                  <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'tamar' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+              </button>
+
+              <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                <div class="flex items-center gap-2 truncate">
+                  <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
+                  <span class="text-xs font-semibold truncate">Bonos Duales (TD)</span>
+                </div>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'duales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+              </button>
             </aside>
 
+            <!-- Cuadro Activo -->
             <section class="flex-1 w-full space-y-3 overflow-hidden">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div class="flex items-center gap-2">
@@ -654,7 +812,7 @@
         return;
       }
 
-      // VISTA GENERAL (Cripto, Monedas, Metales, etc. organizadas en 4 por fila)
+      // RESTO DE CATEGORÍAS
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
