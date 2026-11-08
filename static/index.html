@@ -45,7 +45,7 @@
 </head>
 <body class="text-slate-100 font-sans antialiased min-h-screen">
 
-  <!-- Header -->
+  <!-- Header con versión numérica pura -->
   <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-base">
@@ -54,7 +54,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.5</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">3.6</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados en Tiempo Real</p>
       </div>
@@ -67,7 +67,7 @@
     </div>
   </header>
 
-  <!-- Navigation (Simétrica: 6 botones arriba y 6 abajo) -->
+  <!-- Navigation -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
@@ -198,20 +198,19 @@
     const PRECIOS_ANTERIORES = {};
     const FLASH_REGISTRO = {};
 
-    // ----------------- SUB-PESTAÑAS DE ÍNDICES -----------------
     let subIndiceActivo = "argentina";
 
     const SUB_INDICES_INFO = {
       argentina: {
-        titulo: "Índices y Renta Argentina",
-        desc: "Bolsa de Comercio de Buenos Aires • Medición en ARS y USD",
+        titulo: "Índices Argentina",
+        desc: "Bolsa de Buenos Aires (S&P Merval en ARS y USD) y Riesgo País EMBI+",
         icono: "fa-landmark-flag",
         color: "text-sky-400",
-        count: 4
+        count: 3
       },
       estados_unidos: {
         titulo: "Índices Principales Estados Unidos",
-        desc: "Wall Street • Medición de mercado amplio, tecnológico y volatilidad",
+        desc: "Wall Street: S&P 500, Nasdaq 100, Dow Jones, VIX y Russell 2000",
         icono: "fa-flag-usa",
         color: "text-blue-400",
         count: 5
@@ -225,36 +224,6 @@
       }
     };
 
-    const TABLAS_INDICES = {
-      argentina: [
-        { ticker: "MERVAL", nombre: "S&P Merval en Pesos", precio: 2085420.0, var: "+1.25%", moneda: "ARS", fecha: "Cierre" },
-        { ticker: "MERVAL_USD", nombre: "S&P Merval en Dólares (CCL)", precio: 1812.50, var: "+0.85%", moneda: "USD", fecha: "Cierre" },
-        { ticker: "RIESGO_PAIS", nombre: "Riesgo País EMBI+ Argentina", precio: 852.0, var: "-1.85%", moneda: "pb", fecha: "Cierre" },
-        { ticker: "BURCAP", nombre: "Índice Burcap", precio: 1452890.0, var: "+1.10%", moneda: "ARS", fecha: "Cierre" }
-      ],
-      estados_unidos: [
-        { ticker: "SPX", nombre: "S&P 500", precio: 5995.54, var: "+0.38%", moneda: "pts", fecha: "En vivo" },
-        { ticker: "NDX", nombre: "Nasdaq 100", precio: 21117.20, var: "+0.09%", moneda: "pts", fecha: "En vivo" },
-        { ticker: "VIX", nombre: "CBOE Volatility Index (VIX)", precio: 14.94, var: "-1.71%", moneda: "pts", fecha: "En vivo" },
-        { ticker: "DJI", nombre: "Dow Jones Industrial Average", precio: 43988.99, var: "+0.59%", moneda: "pts", fecha: "En vivo" },
-        { ticker: "RUT", nombre: "Russell 2000 (Small Caps)", precio: 2399.61, var: "+0.71%", moneda: "pts", fecha: "En vivo" }
-      ],
-      sectores: [
-        { ticker: "XLK", nombre: "Technology Select Sector SPDR", sector: "Tecnología", precio: 228.45, var: "+0.52%", moneda: "USD" },
-        { ticker: "XLF", nombre: "Financial Select Sector SPDR", sector: "Financiero", precio: 49.32, var: "+1.15%", moneda: "USD" },
-        { ticker: "XLE", nombre: "Energy Select Sector SPDR", sector: "Energía", precio: 91.80, var: "+0.84%", moneda: "USD" },
-        { ticker: "XLV", nombre: "Health Care Select Sector SPDR", sector: "Salud", precio: 146.22, var: "-0.28%", moneda: "USD" },
-        { ticker: "XLI", nombre: "Industrial Select Sector SPDR", sector: "Industria", precio: 139.15, var: "+0.65%", moneda: "USD" },
-        { ticker: "XLY", nombre: "Consumer Discretionary SPDR", sector: "Consumo Discrecional", precio: 206.88, var: "+1.40%", moneda: "USD" },
-        { ticker: "XLP", nombre: "Consumer Staples Select Sector SPDR", sector: "Consumo Masivo", precio: 78.90, var: "-0.15%", moneda: "USD" },
-        { ticker: "XLU", nombre: "Utilities Select Sector SPDR", sector: "Servicios Públicos", precio: 81.42, var: "-0.45%", moneda: "USD" },
-        { ticker: "XLB", nombre: "Materials Select Sector SPDR", sector: "Materiales Básicos", precio: 93.65, var: "+0.35%", moneda: "USD" },
-        { ticker: "XLRE", nombre: "Real Estate Select Sector SPDR", sector: "Bienes Raíces", precio: 43.10, var: "-0.62%", moneda: "USD" },
-        { ticker: "XLC", nombre: "Communication Services SPDR", sector: "Comunicaciones", precio: 92.74, var: "+0.48%", moneda: "USD" }
-      ]
-    };
-
-    // ----------------- SUB-PESTAÑAS DE BONOS -----------------
     const CURVAS_INFO = {
       lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
       cer: { titulo: "Curva Bonos CER (Ajustables por Inflación)", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
@@ -365,17 +334,14 @@
       cer: { col: null, asc: true },
       dollar_linked: { col: null, asc: true },
       tamar: { col: null, asc: true },
-      duales: { col: null, asc: true },
-      ind_arg: { col: null, asc: true },
-      ind_usa: { col: null, asc: true },
-      ind_sec: { col: null, asc: true }
+      duales: { col: null, asc: true }
     };
 
     let datosGlobales = {};
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
 
-    // CARGA DE CRIPTO EN VIVO
+    // ACTUALIZACIÓN CRIPTO EN VIVO
     async function actualizarCriptosEnVivo() {
       try {
         const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
@@ -518,7 +484,7 @@
       if (st.col === colKey) st.asc = !st.asc;
       else { st.col = colKey; st.asc = true; }
       
-      const destino = TABLAS_BONOS[tablaKey] || TABLAS_INDICES[tablaKey];
+      const destino = TABLAS_BONOS[tablaKey];
       if (!destino) return;
 
       destino.sort((a, b) => {
@@ -600,97 +566,40 @@
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
-      // ----------------- VISTA DE ÍNDICES CON MENÚ LATERAL (ARG, USA, SECTORES) -----------------
+      // ----------------- VISTA DE ÍNDICES: MENÚ LATERAL + TARJETAS EN VIVO -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
-        let tablaHtml = "";
+        const todosIndices = (datosGlobales.indices || []).concat(datosGlobales.mercado_y_deuda || []);
+        
+        // Filtrar tarjetas por subcategoría activa (sin duplicados y sin Burcap)
+        const itemsSub = [];
+        todosIndices.forEach(item => {
+          if (!item) return;
+          if (item.variable === "BURCAP" || (item.descripcion && item.descripcion.toLowerCase().includes("burcap"))) return;
 
-        if (subIndiceActivo === "argentina") {
-          tablaHtml = `
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  ${renderTh("argentina", "ticker", "TICKER", "text-left")}
-                  ${renderTh("argentina", "nombre", "DESCRIPCIÓN", "text-left")}
-                  ${renderTh("argentina", "precio", "ÚLTIMO VALOR", "text-right")}
-                  ${renderTh("argentina", "var", "VAR. DIARIA", "text-center")}
-                  ${renderTh("argentina", "moneda", "UNIDAD", "text-center")}
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_INDICES.argentina.map(it => {
-                  const fl = FLASH_REGISTRO[it.ticker] || "";
-                  const pFmt = it.moneda === "ARS" ? "$ " + Number(it.precio).toLocaleString("es-AR") : it.moneda === "USD" ? "US$ " + Number(it.precio).toLocaleString("es-AR", { minimumFractionDigits: 2 }) : Number(it.precio).toFixed(0);
-                  return `
-                  <tr class="table-dark-row transition">
-                    <td class="py-3 px-4 font-bold text-white tracking-wide">${it.ticker}</td>
-                    <td class="py-3 px-4 text-slate-300 font-sans">${it.nombre}</td>
-                    <td class="py-3 px-4 text-right font-medium text-slate-100 ${fl}">${pFmt}</td>
-                    <td class="py-3 px-4 text-center">${renderFilaTerminal(it.var, "var")}</td>
-                    <td class="py-3 px-4 text-center text-slate-400 font-semibold">${it.moneda}</td>
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          `;
-        } else if (subIndiceActivo === "estados_unidos") {
-          tablaHtml = `
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  ${renderTh("estados_unidos", "ticker", "TICKER", "text-left")}
-                  ${renderTh("estados_unidos", "nombre", "ÍNDICE", "text-left")}
-                  ${renderTh("estados_unidos", "precio", "ÚLTIMO PRECIO", "text-right")}
-                  ${renderTh("estados_unidos", "var", "VAR. DIARIA", "text-center")}
-                  ${renderTh("estados_unidos", "moneda", "UNIDAD", "text-center")}
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_INDICES.estados_unidos.map(it => {
-                  const fl = FLASH_REGISTRO[it.ticker] || "";
-                  return `
-                  <tr class="table-dark-row transition">
-                    <td class="py-3 px-4 font-bold text-white tracking-wide">${it.ticker}</td>
-                    <td class="py-3 px-4 text-slate-300 font-sans">${it.nombre}</td>
-                    <td class="py-3 px-4 text-right font-medium text-slate-100 ${fl}">${Number(it.precio).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td class="py-3 px-4 text-center">${renderFilaTerminal(it.var, "var")}</td>
-                    <td class="py-3 px-4 text-center text-slate-400 font-semibold">${it.moneda}</td>
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          `;
-        } else if (subIndiceActivo === "sectores") {
-          tablaHtml = `
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  ${renderTh("sectores", "ticker", "TICKER", "text-left")}
-                  ${renderTh("sectores", "sector", "SECTOR", "text-left")}
-                  ${renderTh("sectores", "nombre", "ETF (SPDR)", "text-left")}
-                  ${renderTh("sectores", "precio", "PRECIO (USD)", "text-right")}
-                  ${renderTh("sectores", "var", "VAR. DIARIA", "text-center")}
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_INDICES.sectores.map(it => {
-                  const fl = FLASH_REGISTRO[it.ticker] || "";
-                  return `
-                  <tr class="table-dark-row transition">
-                    <td class="py-2.5 px-4 font-bold text-white tracking-wide">${it.ticker}</td>
-                    <td class="py-2.5 px-4 font-semibold text-amber-300">${it.sector}</td>
-                    <td class="py-2.5 px-4 text-slate-300 font-sans truncate">${it.nombre}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-100 ${fl}">US$ ${Number(it.precio).toFixed(2)}</td>
-                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(it.var, "var")}</td>
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          `;
-        }
+          let pertenece = false;
+          if (subIndiceActivo === "argentina") {
+            if (item.subcategoria === "argentina" || ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS", "MERVAL"].includes(item.variable)) {
+              pertenece = true;
+            }
+          } else if (subIndiceActivo === "estados_unidos") {
+            if (item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL"].includes(item.variable)) {
+              pertenece = true;
+            }
+          } else if (subIndiceActivo === "sectores") {
+            if (item.subcategoria === "sectores" || (item.variable && item.variable.startsWith("SPDR_"))) {
+              pertenece = true;
+            }
+          }
+
+          if (pertenece && !itemsSub.some(x => x.variable === item.variable)) {
+            itemsSub.push(item);
+          }
+        });
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
+            <!-- Menú Lateral -->
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Índices</span>
@@ -701,7 +610,7 @@
                   <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Argentina</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'argentina' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'argentina' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">3</span>
               </button>
 
               <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
@@ -721,16 +630,17 @@
               </button>
             </aside>
 
+            <!-- Cuadro de Tarjetas Activo -->
             <section class="flex-1 w-full space-y-3 overflow-hidden">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i>
                   <h2 class="text-sm font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h2>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">${infoSub.desc} • Clic en columna para ordenar</span>
+                <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
               </div>
-              <div class="overflow-x-auto rounded-xl border border-slate-800 bg-brand-card shadow-2xl">
-                ${tablaHtml}
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
               </div>
             </section>
           </div>
@@ -1083,16 +993,6 @@
         }
 
         const itemsHome = [];
-        
-        // Agregar S&P 500, Nasdaq y VIX para el Home
-        const homeDirectos = [
-          { variable: "INDICE_SP500", descripcion: "S&P 500 Index (SPX)", categoria: "indices", valor_formateado: "5.995,54 pts", variacion: "+0.38%", valor: 5995.54, fecha: "En vivo" },
-          { variable: "INDICE_NASDAQ", descripcion: "Nasdaq 100 Index (NDX)", categoria: "indices", valor_formateado: "21.117,20 pts", variacion: "+0.09%", valor: 21117.20, fecha: "En vivo" },
-          { variable: "INDICE_VIX", descripcion: "Índice de Volatilidad (VIX)", categoria: "indices", valor_formateado: "14,94 pts", variacion: "-1.71%", valor: 14.94, fecha: "En vivo" }
-        ];
-
-        todos = todos.concat(homeDirectos);
-
         for (const cod of VARIABLES_HOME) {
           const item = todos.find(i => {
             if (!i) return false;
@@ -1237,7 +1137,6 @@
       renderizar();
     }
 
-    // CICLOS DE ACTUALIZACIÓN
     cargarDatos();
     actualizarCriptosEnVivo();
 

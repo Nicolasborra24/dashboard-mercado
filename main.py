@@ -48,7 +48,6 @@ class VariableMacro(Base):
     fecha_dato = Column(String)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
 
-# Arranque tolerante a fallos de BD: la app funciona siempre, con o sin Postgres
 if DATABASE_URL:
     try:
         engine = create_engine(DATABASE_URL, pool_pre_ping=True)
@@ -117,9 +116,13 @@ MAPEO = {
     "índice cer": ("INDICE_CER", "Índice CER", "inflacion_y_ajuste"),
     "índice uva": ("INDICE_UVA", "Índice UVA", "inflacion_y_ajuste"),
     "índice icl": ("INDICE_ICL", "Índice ICL (Alquileres)", "inflacion_y_ajuste"),
-    "riesgo país": ("RIESGO_PAIS", "Riesgo País EMBI+", "mercado_y_deuda"),
-    "merval": ("MERVAL_ARS", "S&P Merval en Pesos", "mercado_y_deuda"),
-    "merval en usd": ("MERVAL_USD", "S&P Merval en Dólares", "mercado_y_deuda"),
+    # Mapeo a categoría indices
+    "riesgo país": ("RIESGO_PAIS", "Riesgo País EMBI+", "indices"),
+    "riesgo pais": ("RIESGO_PAIS", "Riesgo País EMBI+", "indices"),
+    "merval": ("MERVAL_ARS", "S&P Merval en Pesos", "indices"),
+    "s&p merval": ("MERVAL_ARS", "S&P Merval en Pesos", "indices"),
+    "merval en usd": ("MERVAL_USD", "S&P Merval en Dólares", "indices"),
+    "s&p merval en usd": ("MERVAL_USD", "S&P Merval en Dólares", "indices"),
     "balanza comercial": ("BALANZA_COMERCIAL", "Balanza Comercial", "macro_y_fiscal"),
     "exportaciones": ("EXPORTACIONES", "Exportaciones", "macro_y_fiscal"),
     "importaciones": ("IMPORTACIONES", "Importaciones", "macro_y_fiscal"),
@@ -163,15 +166,15 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
-# ==================== CACHÉ EN MEMORIA ====================
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
     "dolar_y_cambiario": [],
     "monedas": [],
     "cripto": [],
     "cotizacion_bonos": [],
-    "inflacion_y_ajuste": [],
+    "indices": [],
     "mercado_y_deuda": [],
+    "inflacion_y_ajuste": [],
     "metales": [],
     "petroleo": [],
     "macro_y_fiscal": [],
@@ -191,21 +194,23 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
             for tr in soup.find_all("tr"):
                 c = tr.find_all(["td", "th"])
                 if len(c) >= 4:
-                    nom = c[0].get_text(strip=True).lower()
-                    if nom in MAPEO and MAPEO[nom][0] not in cargadas:
-                        cod, desc, cat = MAPEO[nom]
-                        v_num = normalizar_valor(c[1].get_text(strip=True))
-                        if v_num is not None:
-                            items.append({
-                                "variable": cod,
-                                "descripcion": desc,
-                                "categoria": cat,
-                                "valor_formateado": c[1].get_text(strip=True),
-                                "variacion": c[2].get_text(strip=True),
-                                "valor": v_num,
-                                "fecha": c[3].get_text(strip=True)
-                            })
-                            cargadas.add(cod)
+                    nom = c[0].get_text(strip=True).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+                    for k_map, v_map in MAPEO.items():
+                        k_clean = k_map.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+                        if k_clean == nom and v_map[0] not in cargadas:
+                            cod, desc, cat = v_map
+                            v_num = normalizar_valor(c[1].get_text(strip=True))
+                            if v_num is not None:
+                                items.append({
+                                    "variable": cod,
+                                    "descripcion": desc,
+                                    "categoria": cat,
+                                    "valor_formateado": c[1].get_text(strip=True),
+                                    "variacion": c[2].get_text(strip=True),
+                                    "valor": v_num,
+                                    "fecha": c[3].get_text(strip=True)
+                                })
+                                cargadas.add(v_map[0])
     except Exception:
         pass
     return items
@@ -366,6 +371,32 @@ def worker_refresco_continuo():
         ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "4,332 USD/gal", "-0.46%", 4.332)
     ]
 
+    # Lista base de Índices Internacionales y Sectores SPDR
+    INDICES_DEFAULT = [
+        # Argentina (Valores actualizados de mercado)
+        {"variable": "MERVAL_ARS", "descripcion": "S&P Merval en Pesos", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "$ 2.085.420", "variacion": "+1,25%", "valor": 2085420.0, "fecha": fec_hoy},
+        {"variable": "MERVAL_USD", "descripcion": "S&P Merval en Dólares (CCL)", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "US$ 1.812,50", "variacion": "+0,85%", "valor": 1812.50, "fecha": fec_hoy},
+        {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "939 pb", "variacion": "+1,51%", "valor": 939.0, "fecha": fec_hoy},
+        # Estados Unidos
+        {"variable": "INDICE_SP500", "descripcion": "S&P 500 Index (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
+        {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 Index (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
+        {"variable": "INDICE_VIX", "descripcion": "Índice de Volatilidad (VIX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "14,94 pts", "variacion": "-1,71%", "valor": 14.94, "fecha": "Cierre"},
+        {"variable": "INDICE_DJI", "descripcion": "Dow Jones Industrial (DJI)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "43.988,99 pts", "variacion": "+0,59%", "valor": 43988.99, "fecha": "Cierre"},
+        {"variable": "INDICE_RUSSELL", "descripcion": "Russell 2000 (RUT)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "2.399,61 pts", "variacion": "+0,71%", "valor": 2399.61, "fecha": "Cierre"},
+        # Sectores SPDR
+        {"variable": "SPDR_XLK", "descripcion": "Technology SPDR (XLK)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 228,45", "variacion": "+0,52%", "valor": 228.45, "fecha": "Cierre"},
+        {"variable": "SPDR_XLF", "descripcion": "Financial SPDR (XLF)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 49,32", "variacion": "+1,15%", "valor": 49.32, "fecha": "Cierre"},
+        {"variable": "SPDR_XLE", "descripcion": "Energy SPDR (XLE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 91,80", "variacion": "+0,84%", "valor": 91.80, "fecha": "Cierre"},
+        {"variable": "SPDR_XLV", "descripcion": "Health Care SPDR (XLV)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 146,22", "variacion": "-0,28%", "valor": 146.22, "fecha": "Cierre"},
+        {"variable": "SPDR_XLI", "descripcion": "Industrial SPDR (XLI)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 139,15", "variacion": "+0,65%", "valor": 139.15, "fecha": "Cierre"},
+        {"variable": "SPDR_XLY", "descripcion": "Consumer Discretionary (XLY)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 206,88", "variacion": "+1,40%", "valor": 206.88, "fecha": "Cierre"},
+        {"variable": "SPDR_XLP", "descripcion": "Consumer Staples (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
+        {"variable": "SPDR_XLU", "descripcion": "Utilities SPDR (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
+        {"variable": "SPDR_XLB", "descripcion": "Materials SPDR (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
+        {"variable": "SPDR_XLRE", "descripcion": "Real Estate SPDR (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
+        {"variable": "SPDR_XLC", "descripcion": "Communication Services (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
+    ]
+
     while True:
         try:
             with ThreadPoolExecutor(max_workers=4) as executor:
@@ -379,14 +410,17 @@ def worker_refresco_continuo():
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
 
+            indices_actualizados = [dict(it) for it in INDICES_BASE]
+
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
                 "dolar_y_cambiario": [],
                 "monedas": res_monedas,
                 "cripto": [],
                 "cotizacion_bonos": res_bonos,
+                "indices": indices_actualizados,
+                "mercado_y_deuda": indices_actualizados,
                 "inflacion_y_ajuste": [],
-                "mercado_y_deuda": [],
                 "metales": [{"variable": c, "descripcion": d, "categoria": "metales", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in METALES_BASE],
                 "petroleo": [{"variable": c, "descripcion": d, "categoria": "petroleo", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in PETROLEO_BASE],
                 "macro_y_fiscal": [],
@@ -396,7 +430,15 @@ def worker_refresco_continuo():
 
             for item in res_ind:
                 cat = item.get("categoria", "macro_y_fiscal")
-                if cat in nuevo_agrupado:
+                if cat == "indices":
+                    # Actualizar en vivo Merval / Riesgo País si el scraping devuelve dato fresco
+                    for idx_item in nuevo_agrupado["indices"]:
+                        if idx_item["variable"] == item["variable"]:
+                            idx_item["valor_formateado"] = item["valor_formateado"]
+                            idx_item["variacion"] = item["variacion"]
+                            idx_item["valor"] = item["valor"]
+                            idx_item["fecha"] = item["fecha"]
+                elif cat in nuevo_agrupado:
                     nuevo_agrupado[cat].append(item)
 
             for item in res_tasas:
@@ -416,8 +458,6 @@ def worker_refresco_continuo():
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
 hilo_worker.start()
 
-# ==================== ENDPOINTS ====================
-
 @app.get("/")
 def inicio():
     if os.path.exists("static/index.html"):
@@ -431,7 +471,6 @@ def inicio():
         )
     return {"mensaje": "Servidor activo", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
 
-# Sin el argumento obsoleto 'enum' para compatibilidad total con Pydantic v2
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado")):
     with CACHE_LOCK:
@@ -484,7 +523,6 @@ def ver_indec_ipc():
         pass
     return []
 
-# ENLACE DIRECTO DEL PUERTO ASIGNADO POR RAILWAY
 if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8080))
