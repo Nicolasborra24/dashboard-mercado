@@ -122,10 +122,10 @@ def normalizar_valor(texto: str) -> Optional[float]:
 MAPEO = {
     "reservas bcra": ("RESERVAS_USD", "Reservas Internacionales BCRA", "tasas_y_monetario"),
     "base monetaria": ("BASE_MONETARIA", "Base Monetaria", "tasas_y_monetario"),
-    "tasa badlar": ("TASA_BADLAR", "Tasa BADLAR", "tasas_y_monetario"),
-    "tasa plazo fijo": ("TASA_PLAZO_FIJO", "Tasa Nominal Anual Plazo Fijo", "tasas_y_monetario"),
-    "tasa referencia (tamar)": ("TASA_TAMAR", "Tasa Referencia TAMAR", "tasas_y_monetario"),
-    "tasa hipotecaria": ("TASA_HIPOTECARIA", "Tasa Hipotecaria", "tasas_y_monetario"),
+    "tasa badlar": ("TASA_BADLAR", "Tasa BADLAR (TNA)", "tasas_y_monetario"),
+    "tasa plazo fijo": ("TASA_PLAZO_FIJO", "Tasa Plazo Fijo (TNA)", "tasas_y_monetario"),
+    "tasa referencia (tamar)": ("TASA_TAMAR", "Tasa Referencia TAMAR (TNA)", "tasas_y_monetario"),
+    "tasa hipotecaria": ("TASA_HIPOTECARIA", "Tasa Hipotecaria (TNA)", "tasas_y_monetario"),
     "m2 var. interanual": ("M2_VAR_INTERANUAL", "M2 Variacion Interanual", "tasas_y_monetario"),
     "balance cambiario": ("BALANCE_CAMBIARIO", "Balance Cambiario", "tasas_y_monetario"),
     "dólar blue": ("DOLAR_BLUE", "Dolar Blue", "dolar_y_cambiario"),
@@ -200,16 +200,38 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                     nom = c[0].get_text(strip=True).lower()
                     if nom in MAPEO and MAPEO[nom][0] not in cargadas:
                         cod, desc, cat = MAPEO[nom]
-                        v_num = normalizar_valor(c[1].get_text(strip=True))
+                        raw_val = c[1].get_text(strip=True)
+                        raw_fec = c[3].get_text(strip=True)
+                        v_num = normalizar_valor(raw_val)
                         if v_num is not None:
+                            val_fmt = raw_val
+
+                            # Tasas con sufijo TNA
+                            if "TASA" in cod:
+                                if not val_fmt.endswith("TNA"):
+                                    val_fmt = f"{val_fmt} TNA"
+
+                            # Inflacion mensual con referencia explicita de mes
+                            if cod == "INFLACION_MENSUAL":
+                                val_fmt = f"{val_fmt} ({raw_fec})"
+
+                            # Montos en pesos de Macro & Fiscal
+                            if cat == "macro_y_fiscal" and cod in [
+                                "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", 
+                                "SALARIO_MINIMO", "JUBILACION_MINIMA", 
+                                "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
+                            ]:
+                                if not val_fmt.startswith("$"):
+                                    val_fmt = f"${val_fmt}"
+
                             elementos.append({
                                 "variable": cod,
                                 "descripcion": desc,
                                 "categoria": cat,
-                                "valor_formateado": c[1].get_text(strip=True),
+                                "valor_formateado": val_fmt,
                                 "variacion": c[2].get_text(strip=True),
                                 "valor": v_num,
-                                "fecha": c[3].get_text(strip=True)
+                                "fecha": raw_fec
                             })
                             cargadas.add(cod)
     except Exception:
