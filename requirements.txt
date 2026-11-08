@@ -3,4 +3,5 @@ uvicorn
 requests
 beautifulsoup4
 sqlalchemy
+psycopg2-binary
 urllib3
