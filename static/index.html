@@ -30,10 +30,17 @@
     body { background-color: #080c14; }
     .card-glow { box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.45); }
     .table-dark-row:hover { background-color: rgba(30, 41, 59, 0.45); }
-    @keyframes flash-up { 0% { color: #34d399; } 100% { color: #ffffff; } }
-    @keyframes flash-down { 0% { color: #f43f5e; } 100% { color: #ffffff; } }
-    .flash-green { animation: flash-up 1.2s ease; }
-    .flash-red { animation: flash-down 1.2s ease; }
+    
+    @keyframes flash-up {
+      0% { color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.7); }
+      100% { color: #ffffff; text-shadow: none; }
+    }
+    @keyframes flash-down {
+      0% { color: #f43f5e; text-shadow: 0 0 12px rgba(244, 63, 94, 0.7); }
+      100% { color: #ffffff; text-shadow: none; }
+    }
+    .flash-green { animation: flash-up 1.4s ease; }
+    .flash-red { animation: flash-down 1.4s ease; }
   </style>
 </head>
 <body class="text-slate-100 font-sans antialiased min-h-screen">
@@ -47,7 +54,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Feed Activo</span>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Feed Activo Universal</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados en Tiempo Real</p>
       </div>
@@ -189,7 +196,9 @@
       { cod: "CRIPTO_USDT", desc: "Tether (USDT)", sym: null, defP: 1.00 }
     ];
 
+    // MEMORIA DE PRECIOS ANTERIORES PARA EL EFECTO DESTELLO UNIVERSAL
     const PRECIOS_ANTERIORES = {};
+    const FLASH_REGISTRO = {};
 
     const CURVAS_INFO = {
       lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
@@ -308,7 +317,7 @@
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
 
-    // CARGA DE CRIPTO EN VIVO DIRECTO DE BINANCE (SIN BLOQUEO DE RAILWAY)
+    // ACTUALIZACIÓN UNIVERSAL DE CRIPTO EN VIVO CON ANIMACIÓN
     async function actualizarCriptosEnVivo() {
       try {
         const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
@@ -339,13 +348,13 @@
             fmt = "US$ " + p.toFixed(4);
           }
 
-          // Detección de cambio para animación visual
           let flashClass = "";
           if (PRECIOS_ANTERIORES[c.cod] !== undefined) {
             if (p > PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-green";
             else if (p < PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-red";
           }
           PRECIOS_ANTERIORES[c.cod] = p;
+          FLASH_REGISTRO[c.cod] = flashClass;
 
           const idx = datosGlobales.cripto.findIndex(it => it.variable === c.cod);
           const itemObj = {
@@ -355,33 +364,69 @@
             valor_formateado: fmt,
             variacion: varStr,
             valor: p,
-            fecha: fec,
-            flash: flashClass
+            fecha: fec
           };
 
-          if (idx >= 0) {
-            datosGlobales.cripto[idx] = itemObj;
-          } else {
-            datosGlobales.cripto.push(itemObj);
-          }
+          if (idx >= 0) datosGlobales.cripto[idx] = itemObj;
+          else datosGlobales.cripto.push(itemObj);
         });
 
-        // Refrescar tarjetas activas si estamos en Cripto o Home
         if (categoriaActiva === "cripto" || categoriaActiva === "home") {
           renderizar();
         }
       } catch (err) {
-        console.warn("Binance fetch diferido:", err);
+        console.warn("Binance stream:", err);
       }
     }
 
+    // CARGA DE DATOS DEL BACKEND CON DESTELLO EN CUALQUIER VARIABLE QUE CAMBIE
     async function cargarDatos() {
       try {
         const res = await fetch("/bcra/variables?formato=agrupado&t=" + Date.now());
         if (!res.ok) throw new Error("Error HTTP " + res.status);
         const data = await res.json();
         
-        // Conservar cripto en vivo
+        // Registrar destello si cambia cualquier variable del backend
+        for (const cat in data) {
+          if (cat === "cripto") continue;
+          if (Array.isArray(data[cat])) {
+            data[cat].forEach(item => {
+              if (item && item.variable && item.valor !== undefined) {
+                const k = item.variable;
+                const v = parseFloat(item.valor);
+                let fClass = "";
+                if (PRECIOS_ANTERIORES[k] !== undefined && !isNaN(v)) {
+                  if (v > PRECIOS_ANTERIORES[k]) fClass = "flash-green";
+                  else if (v < PRECIOS_ANTERIORES[k]) fClass = "flash-red";
+                }
+                PRECIOS_ANTERIORES[k] = v;
+                FLASH_REGISTRO[k] = fClass;
+              }
+            });
+          }
+        }
+
+        // Actualizar tablas de bonos si vienen precios recientes
+        if (data.cotizacion_bonos && Array.isArray(data.cotizacion_bonos)) {
+          data.cotizacion_bonos.forEach(b => {
+            const tk = b.variable.replace("BONO_", "");
+            for (const key in TABLAS_BONOS) {
+              const it = TABLAS_BONOS[key].find(s => s.ticker === tk);
+              if (it && b.valor > 0) {
+                const numV = parseFloat(b.valor);
+                let fClass = "";
+                if (PRECIOS_ANTERIORES["BONO_" + tk] !== undefined) {
+                  if (numV > PRECIOS_ANTERIORES["BONO_" + tk]) fClass = "flash-green";
+                  else if (numV < PRECIOS_ANTERIORES["BONO_" + tk]) fClass = "flash-red";
+                }
+                PRECIOS_ANTERIORES["BONO_" + tk] = numV;
+                FLASH_REGISTRO["BONO_" + tk] = fClass;
+                it.precio = numV;
+              }
+            }
+          });
+        }
+
         const criptoBackup = datosGlobales.cripto;
         datosGlobales = data;
         if (criptoBackup && criptoBackup.length > 0) {
@@ -515,10 +560,12 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.lecaps.map(b => `
+                ${TABLAS_BONOS.lecaps.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-3 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-3 text-right font-medium text-slate-200">${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-3 text-right font-medium text-slate-200 ${fl}">${Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.t_directa, "neutro")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
@@ -530,8 +577,8 @@
                     <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
                     <td class="py-2.5 px-3 text-center text-slate-300 font-semibold">${b.dias}</td>
                     <td class="py-2.5 px-3 text-right text-slate-300 font-mono">${b.vto_val}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -553,10 +600,12 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.cer.map(b => `
+                ${TABLAS_BONOS.cer.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-3 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-3 text-right font-medium text-slate-200">${Number(b.precio).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
+                    <td class="py-2.5 px-3 text-right font-medium text-slate-200 ${fl}">${Number(b.precio).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.tem, "neutro")}</td>
@@ -565,8 +614,8 @@
                     <td class="py-2.5 px-3 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
                     <td class="py-2.5 px-3 text-center text-slate-300 font-semibold">${b.dias}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -586,18 +635,20 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.soberanos.map(b => `
+                ${TABLAS_BONOS.soberanos.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -617,18 +668,20 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.bopreales.map(b => `
+                ${TABLAS_BONOS.bopreales.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">US$ ${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">US$ ${Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -649,10 +702,12 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.dollar_linked.map(b => `
+                ${TABLAS_BONOS.dollar_linked.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-3 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-3 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-3 text-right font-medium text-slate-200 ${fl}">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-3 text-center text-slate-300">${b.duration}</td>
@@ -660,8 +715,8 @@
                     <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
                     <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
                     <td class="py-2.5 px-3 text-center text-slate-300 font-semibold">${b.dias}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -681,18 +736,20 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.tamar.map(b => `
+                ${TABLAS_BONOS.tamar.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">${Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -712,18 +769,20 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${TABLAS_BONOS.duales.map(b => `
+                ${TABLAS_BONOS.duales.map(b => {
+                  const fl = FLASH_REGISTRO["BONO_" + b.ticker] || "";
+                  return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">${b.precio >= 1000 ? '$ ' + Number(b.precio).toLocaleString('es-AR') : Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">${b.precio >= 1000 ? '$ ' + Number(b.precio).toLocaleString('es-AR') : Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
-                  </tr>
-                `).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           `;
@@ -849,7 +908,7 @@
         return;
       }
 
-      // RESTO DE CATEGORÍAS (Cripto, Monedas, etc.)
+      // RESTO DE CATEGORÍAS
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
@@ -900,7 +959,28 @@
       let desc = String(item.descripcion || "").replace(/Â/g, "").trim();
       let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
-      const animFlash = item.flash || "";
+      const animFlash = FLASH_REGISTRO[item.variable] || "";
+
+      if (item.variable === "INFLACION_MENSUAL" && fecha) {
+        desc = `Inflación Mensual (${fecha})`;
+        if (!valFmt.includes("(")) valFmt = `${valFmt} (${fecha})`;
+      }
+
+      if (item.variable && item.variable.startsWith("TASA_")) {
+        if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
+      }
+
+      const variablesPesos = [
+        "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
+        "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
+      ];
+      if (variablesPesos.includes(item.variable)) {
+        if (!valFmt.startsWith("$")) valFmt = `$${valFmt}`;
+      }
+
+      if (item.variable === "RIESGO_PAIS") {
+        if (!valFmt.toLowerCase().includes("puntos")) valFmt = `${valFmt} pb`;
+      }
 
       return `
         <div class="bg-brand-card border border-slate-800 rounded-lg p-3 card-glow flex flex-col justify-between hover:border-slate-700 transition">
@@ -943,14 +1023,14 @@
       renderizar();
     }
 
-    // Inicialización y ciclos independientes
+    // CICLOS DE ACTUALIZACIÓN
     cargarDatos();
     actualizarCriptosEnVivo();
 
-    // Cripto en vivo cada 5 segundos (Binance Spot)
+    // Criptomonedas: Binance Spot cada 5 segundos
     setInterval(actualizarCriptosEnVivo, 5000);
 
-    // Variables generales del servidor cada 15 segundos
+    // Servidor Backend (Tasas, Bonos, Divisas, Macro): Cada 15 segundos
     setInterval(cargarDatos, 15000);
   </script>
 </body>
