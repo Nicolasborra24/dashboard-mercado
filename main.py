@@ -4,6 +4,7 @@ import urllib3
 from datetime import datetime
 from typing import List, Optional
 import requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -100,52 +101,48 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
 def ver_bcra(db: Session = Depends(get_db)):
     resultado = []
 
-    # 1. Scraping específico para Reservas y Base Monetaria
+    # 1. Scraping fila por fila sobre la tabla de indicadores.ar
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         r = requests.get("https://indicadores.ar/indicadores-economicos", headers=headers, timeout=8)
         if r.status_code == 200:
-            html = r.text
-
-            # Reservas BCRA: busca 'USD 50.3B' y su fecha '3 nov 2026'
-            match_res = re.search(r"Reservas\s+BCRA.*?USD\s*([0-9]+(?:[.,][0-9]+)?)\s*([BMKbmk])", html, re.DOTALL | re.IGNORECASE)
-            match_fecha_res = re.search(r"Reservas\s+BCRA.*?(\d{1,2}\s+[a-zA-Z]{3,4}\s+\d{4})", html, re.DOTALL)
+            soup = BeautifulSoup(r.text, "html.parser")
             
-            if match_res:
-                num_base = float(match_res.group(1).replace(",", "."))
-                sufijo = match_res.group(2).upper()
-                # USD 50.3B -> 50.300 millones de USD
-                val_millones = round(num_base * 1000.0, 2) if sufijo == "B" else num_base
-                fecha_res = match_fecha_res.group(1) if match_fecha_res else datetime.utcnow().strftime("%Y-%m-%d")
+            for tr in soup.find_all("tr"):
+                texto_tr = tr.get_text(" | ", strip=True)
+                
+                # Fila exclusiva de Reservas BCRA
+                if "Reservas BCRA" in texto_tr and not any(x["variable"] == "RESERVAS_USD" for x in resultado):
+                    match_res = re.search(r"USD\s*([0-9]+(?:[.,][0-9]+)?)\s*([BMKbmk])", texto_tr, re.IGNORECASE)
+                    match_fecha = re.search(r"(\d{1,2}\s+[a-zA-Z]{3,4}\s+\d{4})", texto_tr)
+                    if match_res:
+                        num = float(match_res.group(1).replace(",", "."))
+                        sufijo = match_res.group(2).upper()
+                        val_m = round(num * 1000.0, 2) if sufijo == "B" else num
+                        resultado.append({
+                            "variable": "RESERVAS_USD",
+                            "descripcion": "Reservas Internacionales BCRA",
+                            "valor_formateado": f"USD {num}{sufijo}",
+                            "valor": val_m,
+                            "fecha": match_fecha.group(1) if match_fecha else datetime.utcnow().strftime("%Y-%m-%d")
+                        })
 
-                resultado.append({
-                    "variable": "RESERVAS_USD",
-                    "descripcion": "Reservas Internacionales BCRA",
-                    "valor_formateado": f"USD {num_base}{sufijo}",
-                    "valor": val_millones,
-                    "fecha": fecha_res
-                })
-
-            # Base Monetaria: busca '$47.0B' y su fecha '3 nov 2026'
-            match_bm = re.search(r"Base\s+Monetaria.*?\$\s*([0-9]+(?:[.,][0-9]+)?)\s*([BMKbmk])", html, re.DOTALL | re.IGNORECASE)
-            match_fecha_bm = re.search(r"Base\s+Monetaria.*?(\d{1,2}\s+[a-zA-Z]{3,4}\s+\d{4})", html, re.DOTALL)
-
-            if match_bm:
-                num_base = float(match_bm.group(1).replace(",", "."))
-                sufijo = match_bm.group(2).upper()
-                # $47.0B -> Billones
-                val_num = num_base
-                fecha_bm = match_fecha_bm.group(1) if match_fecha_bm else datetime.utcnow().strftime("%Y-%m-%d")
-
-                resultado.append({
-                    "variable": "BASE_MONETARIA",
-                    "descripcion": "Base Monetaria BCRA",
-                    "valor_formateado": f"${num_base}{sufijo}",
-                    "valor": val_num,
-                    "fecha": fecha_bm
-                })
+                # Fila exclusiva de Base Monetaria
+                elif "Base Monetaria" in texto_tr and not any(x["variable"] == "BASE_MONETARIA" for x in resultado):
+                    match_bm = re.search(r"\$\s*([0-9]+(?:[.,][0-9]+)?)\s*([BMKbmk])", texto_tr, re.IGNORECASE)
+                    match_fecha = re.search(r"(\d{1,2}\s+[a-zA-Z]{3,4}\s+\d{4})", texto_tr)
+                    if match_bm:
+                        num = float(match_bm.group(1).replace(",", "."))
+                        sufijo = match_bm.group(2).upper()
+                        resultado.append({
+                            "variable": "BASE_MONETARIA",
+                            "descripcion": "Base Monetaria BCRA",
+                            "valor_formateado": f"${num}{sufijo}",
+                            "valor": num,
+                            "fecha": match_fecha.group(1) if match_fecha else datetime.utcnow().strftime("%Y-%m-%d")
+                        })
     except Exception:
         pass
 
