@@ -99,7 +99,10 @@
       "TASA_TAMAR",
       "TASA_BADLAR",
       "AGRO_SOJA",
-      "AGRO_MAIZ"
+      "AGRO_MAIZ",
+      "METALES_XAU",
+      "METALES_XAG",
+      "METALES_HG00"
     ];
 
     let datosGlobales = {};
@@ -149,8 +152,17 @@
 
         const itemsHome = [];
         for (const cod of VARIABLES_HOME) {
-          const item = todos.find(i => i && i.variable === cod);
-          if (item) itemsHome.push(item);
+          const item = todos.find(i => {
+            if (!i) return false;
+            if (i.variable === cod) return true;
+            if (cod === "METALES_XAU" && (i.variable === "METALES_ORO" || i.variable === "METALES_XAU")) return true;
+            if (cod === "METALES_XAG" && (i.variable === "METALES_PLATA" || i.variable === "METALES_XAG")) return true;
+            if (cod === "METALES_HG00" && (i.variable === "METALES_COBRE" || i.variable === "METALES_HG00")) return true;
+            return false;
+          });
+          if (item && !itemsHome.some(it => it.variable === item.variable)) {
+            itemsHome.push(item);
+          }
         }
 
         const info = NOMBRES_SECCIONES.home;
@@ -219,7 +231,7 @@
       let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
 
-      // 1. Inflación mensual con mes explícito
+      // Inflación mensual con mes explícito
       if (item.variable === "INFLACION_MENSUAL" && fecha) {
         desc = `Inflación Mensual (${fecha})`;
         if (!valFmt.includes("(")) {
@@ -227,14 +239,14 @@
         }
       }
 
-      // 2. Tasas con sufijo TNA
+      // Tasas con sufijo TNA
       if (item.variable && item.variable.startsWith("TASA_")) {
         if (!valFmt.toUpperCase().includes("TNA")) {
           valFmt = `${valFmt} TNA`;
         }
       }
 
-      // 3. Montos nominales en pesos
+      // Montos nominales en pesos
       const variablesPesos = [
         "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
         "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
@@ -245,7 +257,7 @@
         }
       }
 
-      // 4. Riesgo País con sufijo puntos básicos
+      // Riesgo País con sufijo puntos básicos
       if (item.variable === "RIESGO_PAIS") {
         if (!valFmt.toLowerCase().includes("puntos")) {
           valFmt = `${valFmt} puntos básicos`;
