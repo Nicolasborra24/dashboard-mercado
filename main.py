@@ -1,8 +1,10 @@
 import os
+import re
 import urllib3
 from datetime import datetime
 from typing import List, Optional
 import requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -95,11 +97,70 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
+def parsear_numero_ar(texto: str) -> Optional[float]:
+    # Limpia formatos argentinos como $ 28.540 M, 30.120,50 o USD 29.800
+    limpio = re.sub(r"[^\d,\.]", "", texto.strip())
+    if not limpio:
+        return None
+    if "," in limpio and "." in limpio:
+        limpio = limpio.replace(".", "").replace(",", ".")
+    elif "." in limpio and "," not in limpio:
+        # Si tiene puntos como separadores de miles
+        partes = limpio.split(".")
+        if len(partes[-1]) == 3 or len(partes) > 2:
+            limpio = limpio.replace(".", "")
+    elif "," in limpio:
+        limpio = limpio.replace(",", ".")
+    try:
+        return float(limpio)
+    except Exception:
+        return None
+
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
     resultado = []
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
 
-    # 1. Dólar A3500 Mayorista
+    # 1. Scrapeo de Reservas y Base Monetaria desde indicadores.ar
+    try:
+        r_ind = requests.get("https://indicadores.ar/indicadores-economicos", headers=headers, timeout=10)
+        if r_ind.status_code == 200:
+            soup = BeautifulSoup(r_ind.text, "html.parser")
+            
+            # Buscamos en todas las filas de la tabla
+            for fila in soup.find_all("tr"):
+                texto_fila = fila.get_text(" ", strip=True)
+                celdas = fila.find_all(["td", "th"])
+                
+                if "Reservas" in texto_fila and not any(x["variable"] == "RESERVAS_USD" for x in resultado):
+                    for c in celdas:
+                        val = parsear_numero_ar(c.get_text(strip=True))
+                        if val and val > 100: # Las reservas brutas superan holgadamente 100 M USD
+                            resultado.append({
+                                "variable": "RESERVAS_USD",
+                                "descripcion": "Reservas Internacionales BCRA",
+                                "valor": val,
+                                "fecha": datetime.utcnow().strftime("%Y-%m-%d")
+                            })
+                            break
+                            
+                elif "Base Monetaria" in texto_fila and not any(x["variable"] == "BASE_MONETARIA" for x in resultado):
+                    for c in celdas:
+                        val = parsear_numero_ar(c.get_text(strip=True))
+                        if val and val > 100:
+                            resultado.append({
+                                "variable": "BASE_MONETARIA",
+                                "descripcion": "Base Monetaria BCRA",
+                                "valor": val,
+                                "fecha": datetime.utcnow().strftime("%Y-%m-%d")
+                            })
+                            break
+    except Exception:
+        pass
+
+    # 2. Dólar A3500 Mayorista oficial (datos.gob.ar)
     try:
         r_a3500 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=8)
         if r_a3500.status_code == 200:
@@ -114,75 +175,7 @@ def ver_bcra(db: Session = Depends(get_db)):
     except Exception:
         pass
 
-    # 2. Reservas Internacionales
-    try:
-        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/tasas/depositos30Dias", timeout=8)
-        # Endpoint alternativo directo para reservas del BCRA
-        r_bcra = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/inflacionInteranual", timeout=8)
-    except Exception:
-        pass
-
-    # Consulta directa de Reservas en serie activa de balance semanal/mensual
-    try:
-        url_reservas = "https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_2016_0_21&limit=5&sort=desc"
-        r_r = requests.get(url_reservas, timeout=8)
-        if r_r.status_code == 200:
-            d = r_r.json().get("data", [])
-            for row in d:
-                if len(row) >= 2 and row[1] is not None:
-                    resultado.append({
-                        "variable": "RESERVAS_USD",
-                        "descripcion": "Reservas Internacionales (Millones USD)",
-                        "valor": float(row[1]),
-                        "fecha": row[0]
-                    })
-                    break
-    except Exception:
-        pass
-
-    # Si la serie oficial 174.1 no trajo valor, consultar la serie monetaria 148
-    if not any(x["variable"] == "RESERVAS_USD" for x in resultado):
-        try:
-            r_alt = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_M_0_0_21&limit=1&sort=desc", timeout=8)
-            if r_alt.status_code == 200:
-                d = r_alt.json().get("data", [])
-                if d and len(d[0]) >= 2 and d[0][1] is not None:
-                    resultado.append({
-                        "variable": "RESERVAS_USD",
-                        "descripcion": "Reservas Internacionales (Millones USD)",
-                        "valor": float(d[0][1]),
-                        "fecha": d[0][0]
-                    })
-        except Exception:
-            pass
-
-    # 3. Base Monetaria
-    try:
-        url_bm = "https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_2016_0_15&limit=5&sort=desc"
-        r_b = requests.get(url_bm, timeout=8)
-        if r_b.status_code == 200:
-            d = r_b.json().get("data", [])
-            for row in d:
-                if len(row) >= 2 and row[1] is not None:
-                    resultado.append({
-                        "variable": "BASE_MONETARIA",
-                        "descripcion": "Base Monetaria (Millones ARS)",
-                        "valor": float(row[1]),
-                        "fecha": row[0]
-                    })
-                    break
-    except Exception:
-        pass
-
-    # Si todavía faltan Reservas o Base Monetaria, consultar directamente el endpoint de variables de Ámbito/DolarApi
-    if len(resultado) < 3:
-        try:
-            r_amb = requests.get("https://dolarapi.com/v1/ambito/dolares", timeout=8)
-            # Respaldo de contingencia
-        except Exception:
-            pass
-
-    # Persistencia en base de datos
+    # Persistencia en PostgreSQL
     if db and resultado:
         for item in resultado:
             try:
