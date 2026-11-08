@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
@@ -162,7 +162,14 @@ MAPEO = {
 @app.get("/")
 def inicio():
     if os.path.exists("static/index.html"):
-        return FileResponse("static/index.html")
+        return FileResponse(
+            "static/index.html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
     return {"mensaje": "Servidor funcionando correctamente", "db_conectada": engine is not None}
 
 @app.get("/dolar")
@@ -200,12 +207,11 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     elementos = []
     cargadas = set()
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    h_sjb = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    h_sjb = {"User-Agent": "Mozilla/5.0"}
 
     # 1. Scraping general de indicadores.ar
     try:
-        h_ind = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h_ind, timeout=8)
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h_sjb, timeout=8)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
             for tr in soup.find_all("tr"):
@@ -229,7 +235,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # 2. Tasas del sistema (Call, Pases, TM20) desde SJB Dashboards
+    # 2. Tasas del sistema (Call, Pases, TM20)
     try:
         r_t = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers=h_sjb, timeout=5)
         if r_t.status_code == 200:
@@ -280,25 +286,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # Respaldo de Tasas
-    tasas_fb = [
-        ("TASA_TM20", "Tasa TM20 Bancaria", "22,00% TNA", "0,0%", 22.0),
-        ("TASA_CALL", "Tasa Call Interbancaria", "21,66% TNA", "0,0%", 21.66),
-        ("TASA_PASES", "Tasa Pases BCRA", "22,06% TNA", "0,0%", 22.06)
-    ]
-    for cod_fb, desc_fb, fmt_fb, var_fb, val_fb in tasas_fb:
-        if cod_fb not in cargadas:
-            elementos.append({
-                "variable": cod_fb,
-                "descripcion": desc_fb,
-                "categoria": "tasas_y_monetario",
-                "valor_formateado": fmt_fb,
-                "variacion": var_fb,
-                "valor": val_fb,
-                "fecha": fec_hoy
-            })
-            cargadas.add(cod_fb)
-
     # 3. Dólar Oficial Mayorista A3500
     usd_oficial_num = 1015.50
     try:
@@ -320,161 +307,59 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
-    # 4. Metales: Panorama Minero
-    metales_extraidos = False
-    try:
-        h_pm = {
-            "User-Agent": "Mozilla/5.0",
-            "RSC": "1",
-            "Accept": "text/x-component"
-        }
-        r_pm = requests.get("https://www.panorama-minero.com/es/markets/metals", headers=h_pm, timeout=8)
-        if r_pm.status_code == 200:
-            texto_rsc = r_pm.text
-            idx_start = texto_rsc.find('"commodities":[')
-            if idx_start != -1:
-                sub = texto_rsc[idx_start + len('"commodities":'):]
-                idx_end = sub.find('],"content"')
-                if idx_end != -1:
-                    json_str = sub[:idx_end + 1]
-                    commodities = json.loads(json_str)
-                    for c in commodities:
-                        nombre = sanitizar_texto(c.get("name", ""))
-                        ticker = sanitizar_texto(c.get("ticker", ""))
-                        val_num = round(float(c.get("priceValue", 0)), 2)
-                        unidad = sanitizar_texto(c.get("unitDisplay", "oz"))
-                        
-                        p_raw = sanitizar_texto(c.get("price", "")).replace("Â", "").strip()
-                        if not p_raw.endswith(unidad):
-                            p_raw = f"{p_raw}/{unidad}"
+    # 4. Sección Metales
+    METALES_BASE = [
+        ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
+        ("METALES_XAG", "Plata (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
+        ("METALES_HG00", "Cobre (HG00)", "6,24 US$/lb", "-3.77%", 6.24),
+        ("METALES_XPT", "Platino (XPT)", "1534,00 US$/oz", "+7.35%", 1534.00),
+        ("METALES_XPD", "Paladio (XPD)", "1004,00 US$/oz", "+4.47%", 1004.00),
+        ("METALES_ALU", "Aluminio (ALU)", "10,49 US$/ozt", "-0.19%", 10.49),
+        ("METALES_XRH", "Rodio (XRH)", "9200,00 US$/oz", "+1.10%", 9200.00),
+        ("METALES_ZNC", "Zinc (ZNC)", "8,55 US$/ozt", "+5.23%", 8.55),
+        ("METALES_NI", "Níquel (NI)", "2,00 US$/oz", "-5.31%", 2.00),
+        ("METALES_TIN", "Estaño (TIN)", "1,45 US$/oz", "-5.06%", 1.45),
+        ("METALES_LEAD", "Plomo (LEAD)", "17,31 US$/oz", "+1.78%", 17.31),
+        ("METALES_MO", "Molibdeno (MO)", "2,81 US$/ozt", "+0.72%", 2.81),
+        ("METALES_IRON", "Mineral de hierro (IRON)", "380,52 US$/oz", "-2.15%", 380.52),
+        ("METALES_LI", "Litio (LI)", "2,29 US$/oz", "+0.35%", 2.29),
+        ("METALES_LITH_CAR", "Carbonato de Litio (LITH-CAR)", "2,29 US$/ozt", "+0.23%", 2.29),
+        ("METALES_LCO", "Cobalto (LCO)", "1,04 US$/oz", "+0.04%", 1.04),
+        ("METALES_U", "Uranio (U)", "91,85 US$/lb", "-0.76%", 91.85),
+        ("METALES_VAN", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
+    ]
+    for cod_fb, desc_fb, fmt_fb, var_fb, val_fb in METALES_BASE:
+        elementos.append({
+            "variable": cod_fb,
+            "descripcion": desc_fb,
+            "categoria": "metales",
+            "valor_formateado": fmt_fb,
+            "variacion": var_fb,
+            "valor": val_fb,
+            "fecha": fec_hoy
+        })
 
-                        vars_obj = c.get("variations", {})
-                        var_dia = vars_obj.get("one_day", {})
-                        var_str = sanitizar_texto(var_dia.get("formatted", "0.00%"))
-                        if var_str == "0.00%":
-                            var_7d = vars_obj.get("seven_days", {})
-                            if var_7d.get("formatted"):
-                                var_str = sanitizar_texto(var_7d.get("formatted"))
-                                if not var_7d.get("isPositive", True) and not var_str.startswith("-"):
-                                    var_str = f"-{var_str}"
-                                elif var_7d.get("isPositive", True) and not var_str.startswith("+"):
-                                    var_str = f"+{var_str}"
-                        else:
-                            if not var_dia.get("isPositive", True) and not var_str.startswith("-"):
-                                var_str = f"-{var_str}"
-                            elif var_dia.get("isPositive", True) and not var_str.startswith("+"):
-                                var_str = f"+{var_str}"
+    # 5. Sección Petróleo
+    MAP_OILPRICE = [
+        ("PETROLEO_WTI", "Petróleo Crudo WTI", "90,83 USD/bbl", "+0.34%", 90.83),
+        ("PETROLEO_BRENT", "Petróleo Crudo Brent", "98,32 USD/bbl", "+0.03%", 98.32),
+        ("PETROLEO_MURBAN", "Petróleo Crudo Murban", "99,17 USD/bbl", "+3.42%", 99.17),
+        ("ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "2,998 USD/MMBtu", "+1.73%", 2.998),
+        ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "2,777 USD/gal", "+0.48%", 2.777),
+        ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "4,332 USD/gal", "-0.46%", 4.332)
+    ]
+    for cod_op, desc_op, fmt_op, var_op, val_op in MAP_OILPRICE:
+        elementos.append({
+            "variable": cod_op,
+            "descripcion": desc_op,
+            "categoria": "petroleo",
+            "valor_formateado": fmt_op,
+            "variacion": var_op,
+            "valor": val_op,
+            "fecha": fec_hoy
+        })
 
-                        cod_ticker = re.sub(r'[^A-Z0-9]', '_', ticker.upper())
-                        cod_var = f"METALES_{cod_ticker}"
-                        desc = f"{nombre} ({ticker})" if ticker else nombre
-
-                        elementos.append({
-                            "variable": cod_var,
-                            "descripcion": desc,
-                            "categoria": "metales",
-                            "valor_formateado": p_raw,
-                            "variacion": var_str,
-                            "valor": val_num,
-                            "fecha": fec_hoy
-                        })
-                        cargadas.add(cod_var)
-                    metales_extraidos = True
-    except Exception:
-        pass
-
-    if not metales_extraidos:
-        METALES_BASE = [
-            ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
-            ("METALES_XAG", "Plata (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
-            ("METALES_HG00", "Cobre (HG00)", "6,24 US$/lb", "-3.77%", 6.24),
-            ("METALES_XPT", "Platino (XPT)", "1534,00 US$/oz", "+7.35%", 1534.00),
-            ("METALES_XPD", "Paladio (XPD)", "1004,00 US$/oz", "+4.47%", 1004.00),
-            ("METALES_ALU", "Aluminio (ALU)", "10,49 US$/ozt", "-0.19%", 10.49),
-            ("METALES_XRH", "Rodio (XRH)", "9200,00 US$/oz", "+1.10%", 9200.00),
-            ("METALES_ZNC", "Zinc (ZNC)", "8,55 US$/ozt", "+5.23%", 8.55),
-            ("METALES_NI", "Níquel (NI)", "2,00 US$/oz", "-5.31%", 2.00),
-            ("METALES_TIN", "Estaño (TIN)", "1,45 US$/oz", "-5.06%", 1.45),
-            ("METALES_LEAD", "Plomo (LEAD)", "17,31 US$/oz", "+1.78%", 17.31),
-            ("METALES_MO", "Molibdeno (MO)", "2,81 US$/ozt", "+0.72%", 2.81),
-            ("METALES_IRON", "Mineral de hierro (IRON)", "380,52 US$/oz", "-2.15%", 380.52),
-            ("METALES_LI", "Litio (LI)", "2,29 US$/oz", "+0.35%", 2.29),
-            ("METALES_LITH_CAR", "Carbonato de Litio (LITH-CAR)", "2,29 US$/ozt", "+0.23%", 2.29),
-            ("METALES_LCO", "Cobalto (LCO)", "1,04 US$/oz", "+0.04%", 1.04),
-            ("METALES_U", "Uranio (U)", "91,85 US$/lb", "-0.76%", 91.85),
-            ("METALES_VAN", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
-        ]
-        for cod_fb, desc_fb, fmt_fb, var_fb, val_fb in METALES_BASE:
-            if cod_fb not in cargadas:
-                elementos.append({
-                    "variable": cod_fb,
-                    "descripcion": desc_fb,
-                    "categoria": "metales",
-                    "valor_formateado": fmt_fb,
-                    "variacion": var_fb,
-                    "valor": val_fb,
-                    "fecha": fec_hoy
-                })
-                cargadas.add(cod_fb)
-
-    # 5. Sección Petróleo: OilPrice.com
-    MAP_OILPRICE = {
-        "wti crude": ("PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 90.83, "+0.34%"),
-        "brent crude": ("PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 98.32, "+0.03%"),
-        "murban": ("PETROLEO_MURBAN", "Petróleo Crudo Murban", "USD/bbl", 99.17, "+3.42%"),
-        "natural gas": ("ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "USD/MMBtu", 2.998, "+1.73%"),
-        "gasoline": ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.777, "+0.48%"),
-        "heating oil": ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 4.332, "-0.46%")
-    }
-    petroleo_cargado = set()
-    try:
-        h_op = {"User-Agent": "Mozilla/5.0"}
-        r_op = requests.get("https://oilprice.com/oil-price-charts/", headers=h_op, timeout=8)
-        if r_op.status_code == 200:
-            soup_op = BeautifulSoup(r_op.text, "html.parser")
-            for tr in soup_op.find_all("tr"):
-                tds = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-                if len(tds) >= 4:
-                    nom_raw = tds[0].lower()
-                    for k_op, (cod_op, desc_op, un_op, _, _) in MAP_OILPRICE.items():
-                        if k_op in nom_raw and cod_op not in petroleo_cargado:
-                            val_num_op = normalizar_valor(tds[1])
-                            if val_num_op:
-                                m_pct = re.search(r"([+-]?\d+[\.,]\d+%)", tds[3])
-                                var_op = m_pct.group(1) if m_pct else tds[3].split("(")[0].strip()
-                                if not var_op.startswith("+") and not var_op.startswith("-") and var_op != "0,0%" and var_op != "0.00%":
-                                    var_op = f"+{var_op}"
-                                
-                                fmt_op = f"{val_num_op:,.2f} {un_op}".replace(",", "X").replace(".", ",").replace("X", ".")
-                                elementos.append({
-                                    "variable": cod_op,
-                                    "descripcion": desc_op,
-                                    "categoria": "petroleo",
-                                    "valor_formateado": fmt_op,
-                                    "variacion": var_op,
-                                    "valor": val_num_op,
-                                    "fecha": fec_hoy
-                                })
-                                petroleo_cargado.add(cod_op)
-                            break
-    except Exception:
-        pass
-
-    for k_op, (cod_op, desc_op, un_op, def_num, def_pct) in MAP_OILPRICE.items():
-        if cod_op not in petroleo_cargado:
-            fmt_op = f"{def_num:,.2f} {un_op}".replace(",", "X").replace(".", ",").replace("X", ".")
-            elementos.append({
-                "variable": cod_op,
-                "descripcion": desc_op,
-                "categoria": "petroleo",
-                "valor_formateado": fmt_op,
-                "variacion": def_pct,
-                "valor": def_num,
-                "fecha": fec_hoy
-            })
-            petroleo_cargado.add(cod_op)
-
-    # 6. Sección Monedas: DXY, USD/ARS, USD/BRL, EUR/USD, EUR/ARS, USD/CLP
+    # 6. Sección Monedas
     rates = {}
     try:
         r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=5)
@@ -487,24 +372,8 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     val_clp = round(float(rates.get("CLP", 958.40)), 2)
     eur_rate = float(rates.get("EUR", 0.921))
     val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
-
-    try:
-        jpy = float(rates.get("JPY", 152.5))
-        gbp_rate = float(rates.get("GBP", 0.772))
-        gbp_usd = (1.0 / gbp_rate) if gbp_rate > 0 else 1.295
-        cad = float(rates.get("CAD", 1.39))
-        sek = float(rates.get("SEK", 10.72))
-        chf = float(rates.get("CHF", 0.871))
-        val_dxy = round(50.14348112 * (val_eurusd ** -0.576) * (jpy ** 0.136) * (gbp_usd ** -0.119) * (cad ** 0.091) * (sek ** 0.042) * (chf ** 0.036), 2)
-    except Exception:
-        val_dxy = 104.35
-
-    item_dolar_oficial = next((it for it in elementos if it["variable"] in ["DOLAR_OFICIAL", "DOLAR_A3500"]), None)
-    if item_dolar_oficial and item_dolar_oficial.get("valor"):
-        usd_ars_val = float(item_dolar_oficial["valor"])
-    else:
-        usd_ars_val = round(float(rates.get("ARS", usd_oficial_num)), 2)
-
+    val_dxy = 104.35
+    usd_ars_val = round(float(rates.get("ARS", usd_oficial_num)), 2)
     val_eurars = round(val_eurusd * usd_ars_val, 2)
 
     MONEDAS_LISTA = [
@@ -515,7 +384,6 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,22%", val_eurars),
         ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "-0,25%", val_clp)
     ]
-
     for cod_m, desc_m, fmt_m, var_m, val_m in MONEDAS_LISTA:
         elementos.append({
             "variable": cod_m,
@@ -527,77 +395,30 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
             "fecha": fec_hoy
         })
 
-    # 7. Sección Cotización Bonos (con respaldo garantizado)
-    BONOS_SELECCION = [
-        ("AL30", "Bono Soberano AL30 (ARS)", "ARS", 104500.0, "-0.45%"),
-        ("AL30D", "Bono Soberano AL30D (MEP)", "USD", 66.80, "+0.30%"),
-        ("GD30", "Bono Global GD30 (ARS)", "ARS", 108200.0, "-0.20%"),
-        ("GD30D", "Bono Global GD30D (MEP)", "USD", 69.15, "+0.55%"),
-        ("AL29D", "Bono Soberano AL29D (MEP)", "USD", 69.50, "+0.40%"),
-        ("GD29D", "Bono Global GD29D (MEP)", "USD", 72.10, "+0.25%"),
-        ("AL35D", "Bono Soberano AL35D (MEP)", "USD", 54.30, "+0.10%"),
-        ("GD35D", "Bono Global GD35D (MEP)", "USD", 56.40, "-0.15%"),
-        ("AE38D", "Bono Soberano AE38D (MEP)", "USD", 66.20, "+0.60%"),
-        ("GD38D", "Bono Global GD38D (MEP)", "USD", 68.75, "+0.35%"),
-        ("AL41D", "Bono Soberano AL41D (MEP)", "USD", 52.80, "+0.20%"),
-        ("GD41D", "Bono Global GD41D (MEP)", "USD", 54.60, "-0.05%"),
-        ("BPOA7", "Bopreal Serie 1 Strip A", "USD", 95.40, "+0.10%"),
-        ("BPOB7", "Bopreal Serie 1 Strip B", "USD", 89.20, "+0.15%"),
-        ("BPOC7", "Bopreal Serie 1 Strip C", "USD", 83.50, "0.0%"),
-        ("BPOD7", "Bopreal Serie 1 Strip D", "USD", 81.10, "-0.20%"),
-        ("BPC7D", "Bopreal Serie 2 (BPC7D)", "USD", 96.80, "+0.05%"),
-        ("BPD7D", "Bopreal Serie 3 (BPD7D)", "USD", 92.50, "+0.20%"),
-        ("TX26", "Boncer 2026 (TX26)", "ARS", 1850.0, "+0.15%"),
-        ("TX28", "Boncer 2028 (TX28)", "ARS", 2210.0, "+0.30%"),
-        ("TX31", "Boncer 2031 (TX31)", "ARS", 1640.0, "-0.10%"),
-        ("DICP", "Bono Discount en Pesos (DICP)", "ARS", 42300.0, "+0.50%"),
-        ("PARP", "Bono Par en Pesos (PARP)", "ARS", 28900.0, "+0.25%"),
-        ("CUAP", "Bono Cuasipar (CUAP)", "ARS", 19500.0, "0.0%"),
-        ("YMCIO", "ON YPF 2026 (YMCIO)", "USD", 102.50, "+0.10%"),
-        ("YM34O", "ON YPF 2034 (YM34O)", "USD", 98.40, "+0.20%"),
-        ("IRCFO", "ON IRSA 2028 (IRCFO)", "USD", 101.20, "+0.05%"),
-        ("MGCUD", "ON Pampa Energía (MGCUD)", "USD", 103.80, "+0.15%")
-    ]
-
-    bonos_cargados = False
+    # 7. Cotización Bonos (con precios en vivo de SJB)
     try:
         r_b = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers=h_sjb, timeout=5)
         if r_b.status_code == 200:
             bonos_raw = r_b.json()
-            if isinstance(bonos_raw, dict) and len(bonos_raw) > 0:
-                for ticker, desc_bono, mon, def_val, def_var in BONOS_SELECCION:
-                    val_b = bonos_raw.get(ticker)
-                    val_final = float(val_b) if val_b is not None else def_val
-                    signo_mon = "$" if mon == "ARS" else "US$"
-                    fmt_b = f"{signo_mon} {val_final:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    elementos.append({
-                        "variable": f"BONO_{ticker}",
-                        "descripcion": desc_bono,
-                        "categoria": "cotizacion_bonos",
-                        "valor_formateado": fmt_b,
-                        "variacion": def_var,
-                        "valor": round(val_final, 2),
-                        "fecha": fec_hoy
-                    })
-                bonos_cargados = True
+            if isinstance(bonos_raw, dict):
+                for tk, val in bonos_raw.items():
+                    if val is not None:
+                        try:
+                            v_float = float(val)
+                            elementos.append({
+                                "variable": f"BONO_{tk}",
+                                "descripcion": f"Bono {tk}",
+                                "categoria": "cotizacion_bonos",
+                                "valor_formateado": f"{v_float:,.2f}",
+                                "variacion": "0,0%",
+                                "valor": round(v_float, 2),
+                                "fecha": fec_hoy
+                            })
+                        except Exception:
+                            pass
     except Exception:
         pass
 
-    if not bonos_cargados:
-        for ticker, desc_bono, mon, def_val, def_var in BONOS_SELECCION:
-            signo_mon = "$" if mon == "ARS" else "US$"
-            fmt_b = f"{signo_mon} {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            elementos.append({
-                "variable": f"BONO_{ticker}",
-                "descripcion": desc_bono,
-                "categoria": "cotizacion_bonos",
-                "valor_formateado": fmt_b,
-                "variacion": def_var,
-                "valor": round(def_val, 2),
-                "fecha": fec_hoy
-            })
-
-    # Persistencia en base de datos PostgreSQL
     if db and elementos:
         for it in elementos:
             try:
@@ -665,19 +486,6 @@ def ver_indec_ipc(db: Session = Depends(get_db)):
         if r.status_code == 200:
             puntos = r.json().get("data", [])
             resultado = [{"fecha": p[0], "indice_ipc": float(p[1])} for p in puntos if p[1] is not None]
-            if db:
-                try:
-                    for res in resultado:
-                        db.add(VariableMacro(
-                            fuente="INDEC",
-                            id_variable="IPC_NACIONAL",
-                            descripcion="IPC Nivel General",
-                            valor=res["indice_ipc"],
-                            fecha_dato=str(res["fecha"])
-                        ))
-                    db.commit()
-                except Exception:
-                    db.rollback()
             return resultado
         return {"error": "Error al conectar con INDEC"}
     except Exception as e:

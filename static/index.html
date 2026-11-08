@@ -41,7 +41,10 @@
         <i class="fa-solid fa-chart-line"></i>
       </div>
       <div>
-        <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.0 - Curvas</span>
+        </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
       </div>
     </div>
@@ -168,29 +171,25 @@
         titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)",
         desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS",
         icono: "fa-money-bill-trend-up",
-        color: "text-amber-400",
-        count: 9
+        color: "text-amber-400"
       },
       cer: {
         titulo: "Curva Bonos CER (Ajustables por Inflación)",
-        desc: "Precios en ARS • Boncer, Bonos Descuento y Par Ajustables",
+        desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par",
         icono: "fa-arrow-trend-up",
-        color: "text-purple-400",
-        count: 22
+        color: "text-purple-400"
       },
       soberanos: {
         titulo: "Curva Soberana en Dólares (Globales y Bonares)",
         desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY",
         icono: "fa-file-invoice-dollar",
-        color: "text-cyan-400",
-        count: 15
+        color: "text-cyan-400"
       },
       bopreales: {
         titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)",
-        desc: "Precios en USD Cable • Bonos para Reconstrucción de Argentina",
+        desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA",
         icono: "fa-shield-halved",
-        color: "text-emerald-400",
-        count: 7
+        color: "text-emerald-400"
       }
     };
 
@@ -547,7 +546,7 @@
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <!-- Menú Lateral de Curvas -->
+            <!-- Menú Lateral -->
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
@@ -604,7 +603,6 @@
         return;
       }
 
-      // VISTA HOME: Resumen de mercado
       if (categoriaActiva === "home") {
         let todos = [];
         for (const cat in datosGlobales) {
@@ -643,7 +641,6 @@
         return;
       }
 
-      // RESTO DE LAS CATEGORÍAS (Tarjetas estándar)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-circle-dot" };
 
