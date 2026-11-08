@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Depends, Query, Response
+from fastapi import FastAPI, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
@@ -20,7 +20,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL and DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine = None
 SessionLocal = None
@@ -46,14 +48,15 @@ class VariableMacro(Base):
     fecha_dato = Column(String)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
 
-# Conexión tolerante a fallos: si la DB no responde, el servidor arranca igual sin caerse
+# Arranque tolerante a fallos de BD: la app funciona siempre, con o sin Postgres
 if DATABASE_URL:
     try:
         engine = create_engine(DATABASE_URL, pool_pre_ping=True)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         Base.metadata.create_all(bind=engine)
+        print("[DB] Conexión establecida con éxito.")
     except Exception as e:
-        print(f"[Aviso DB] No se pudo conectar a la base de datos: {e}")
+        print(f"[DB Aviso] Modo en memoria activo (DB no disponible: {e})")
         engine = None
         SessionLocal = None
 
@@ -71,16 +74,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-def sanitizar_texto(texto: str) -> str:
-    if not texto:
-        return ""
-    try:
-        texto = texto.encode("latin1").decode("utf-8")
-    except Exception:
-        pass
-    texto = texto.replace("Â", "").replace("\u00a0", " ").strip()
-    return re.sub(r"\s+", " ", texto)
 
 def normalizar_valor(texto: str) -> Optional[float]:
     t = texto.strip().upper().replace("−", "-")
@@ -170,7 +163,7 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
-# ==================== CACHÉ EN MEMORIA Y TRABAJADOR ====================
+# ==================== CACHÉ EN MEMORIA ====================
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
     "dolar_y_cambiario": [],
@@ -436,8 +429,9 @@ def inicio():
                 "Expires": "0"
             }
         )
-    return {"mensaje": "Servidor funcionando correctamente", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
+    return {"mensaje": "Servidor activo", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
 
+# Sin el argumento obsoleto 'enum' para compatibilidad total con Pydantic v2
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado")):
     with CACHE_LOCK:
@@ -495,4 +489,4 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8080))
     print(f"Iniciando Uvicorn en el puerto asignado: {puerto}")
-    uvicorn.run("main:app", host="0.0.0.0", port=puerto)
+    uvicorn.run(app, host="0.0.0.0", port=puerto)
