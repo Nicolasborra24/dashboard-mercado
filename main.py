@@ -92,30 +92,53 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-def consultar_serie_simple(serie_id: str):
-    url = f"https://apis.datos.gob.ar/series/api/series/?ids={serie_id}&limit=1&sort=desc"
-    try:
-        r = requests.get(url, timeout=8)
-        if r.status_code == 200:
-            data = r.json().get("data", [])
-            if data and len(data[0]) >= 2:
-                return {"fecha": data[0][0], "valor": data[0][1]}
-    except Exception:
-        pass
+def consultar_serie_robusta(series_posibles: List[str]):
+    # Itera sobre posibles IDs hasta encontrar el último dato válido
+    for s_id in series_posibles:
+        url = f"https://apis.datos.gob.ar/series/api/series/?ids={s_id}&limit=1&sort=desc"
+        try:
+            r = requests.get(url, timeout=6)
+            if r.status_code == 200:
+                data = r.json().get("data", [])
+                if data and len(data[0]) >= 2 and data[0][1] is not None:
+                    return {"id_utilizado": s_id, "fecha": data[0][0], "valor": data[0][1]}
+        except Exception:
+            continue
     return None
 
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
-    series = [
-        {"clave": "DOLAR_A3500", "id": "168.1_T_CAMBIOR_D_0_0_26", "desc": "Tipo de Cambio Mayorista Comunicación A3500"},
-        {"clave": "RESERVAS_USD", "id": "174.1_RO_D_0_0_21", "desc": "Reservas Internacionales (Millones USD)"},
-        {"clave": "BASE_MONETARIA", "id": "174.1_BMA_M_0_0_15", "desc": "Base Monetaria (Millones ARS)"},
-        {"clave": "BADLAR", "id": "174.1_TB_D_0_0_19", "desc": "Tasa Badlar Bancos Privados (% TNA)"}
+    config_variables = [
+        {
+            "clave": "DOLAR_A3500",
+            "desc": "Tipo de Cambio Mayorista Comunicación A3500",
+            "candidatos": ["168.1_T_CAMBIOR_D_0_0_26"]
+        },
+        {
+            "clave": "RESERVAS_USD",
+            "desc": "Reservas Internacionales (Millones USD)",
+            "candidatos": [
+                "174.1_RO_2016_M_21",
+                "174.1_RO_M_0_0_21",
+                "174.1_RO_D_0_0_21",
+                "174.1_RO_2016_0_21"
+            ]
+        },
+        {
+            "clave": "BASE_MONETARIA",
+            "desc": "Base Monetaria (Millones ARS)",
+            "candidatos": [
+                "174.1_BMA_2016_M_15",
+                "174.1_BMA_M_0_0_15",
+                "174.1_BMA_D_0_0_15",
+                "174.1_BMA_2016_0_15"
+            ]
+        }
     ]
     
     resultado = []
-    for item in series:
-        dato = consultar_serie_simple(item["id"])
+    for item in config_variables:
+        dato = consultar_serie_robusta(item["candidatos"])
         if dato and dato["valor"] is not None:
             registro_dict = {
                 "variable": item["clave"],
@@ -148,15 +171,11 @@ def ver_bcra(db: Session = Depends(get_db)):
 
 @app.get("/mercado/resumen")
 def ver_resumen_mercado(db: Session = Depends(get_db)):
-    # Endpoint consolidado con cotizaciones, mayorista y brechas calculadas
     try:
         r_dolar = requests.get("https://dolarapi.com/v1/dolares", timeout=10)
         dolares = r_dolar.json() if r_dolar.status_code == 200 else []
         
-        # Mapear precios de venta
         precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
-        
-        # Buscar mayorista (preferencia A3500 oficial o de dolarapi)
         mayorista = precios.get("mayorista") or precios.get("oficial", 1)
         
         brechas = {}
