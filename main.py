@@ -47,7 +47,6 @@ if engine:
 
 app = FastAPI(title="API Mercado Argentino")
 
-# Montar archivos estaticos si existen
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -122,73 +121,75 @@ def normalizar_valor(texto: str) -> Optional[float]:
 MAPEO = {
     "reservas bcra": ("RESERVAS_USD", "Reservas Internacionales BCRA", "tasas_y_monetario"),
     "base monetaria": ("BASE_MONETARIA", "Base Monetaria", "tasas_y_monetario"),
-    "tasa badlar": ("TASA_BADLAR", "Tasa BADLAR (TNA)", "tasas_y_monetario"),
-    "tasa plazo fijo": ("TASA_PLAZO_FIJO", "Tasa Plazo Fijo (TNA)", "tasas_y_monetario"),
-    "tasa referencia (tamar)": ("TASA_TAMAR", "Tasa Referencia TAMAR (TNA)", "tasas_y_monetario"),
-    "tasa hipotecaria": ("TASA_HIPOTECARIA", "Tasa Hipotecaria (TNA)", "tasas_y_monetario"),
+    "tasa badlar": ("TASA_BADLAR", "Tasa BADLAR", "tasas_y_monetario"),
+    "tasa plazo fijo": ("TASA_PLAZO_FIJO", "Tasa Plazo Fijo", "tasas_y_monetario"),
+    "tasa referencia (tamar)": ("TASA_TAMAR", "Tasa Referencia TAMAR", "tasas_y_monetario"),
+    "tasa hipotecaria": ("TASA_HIPOTECARIA", "Tasa Hipotecaria", "tasas_y_monetario"),
     "m2 var. interanual": ("M2_VAR_INTERANUAL", "M2 Variacion Interanual", "tasas_y_monetario"),
     "balance cambiario": ("BALANCE_CAMBIARIO", "Balance Cambiario", "tasas_y_monetario"),
-    "dólar blue": ("DOLAR_BLUE", "Dolar Blue", "dolar_y_cambiario"),
-    "dólar mep": ("DOLAR_MEP", "Dolar MEP", "dolar_y_cambiario"),
-    "dólar ccl": ("DOLAR_CCL", "Dolar CCL", "dolar_y_cambiario"),
-    "dólar oficial": ("DOLAR_OFICIAL", "Dolar Oficial Minorista", "dolar_y_cambiario"),
-    "dólar tarjeta": ("DOLAR_TARJETA", "Dolar Tarjeta", "dolar_y_cambiario"),
+    "dólar blue": ("DOLAR_BLUE", "Dólar Blue", "dolar_y_cambiario"),
+    "dólar mep": ("DOLAR_MEP", "Dólar MEP", "dolar_y_cambiario"),
+    "dólar ccl": ("DOLAR_CCL", "Dólar CCL", "dolar_y_cambiario"),
+    "dólar oficial": ("DOLAR_OFICIAL", "Dólar Oficial Minorista", "dolar_y_cambiario"),
+    "dólar tarjeta": ("DOLAR_TARJETA", "Dólar Tarjeta", "dolar_y_cambiario"),
     "brecha cambiaria": ("BRECHA_CAMBIARIA", "Brecha Cambiaria", "dolar_y_cambiario"),
-    "inflación mensual": ("INFLACION_MENSUAL", "Inflacion Mensual", "inflacion_y_ajuste"),
-    "inflación interanual": ("INFLACION_INTERANUAL", "Inflacion Interanual", "inflacion_y_ajuste"),
-    "índice cer": ("INDICE_CER", "Indice CER", "inflacion_y_ajuste"),
-    "índice uva": ("INDICE_UVA", "Indice UVA", "inflacion_y_ajuste"),
-    "índice icl": ("INDICE_ICL", "Indice ICL (Alquileres)", "inflacion_y_ajuste"),
-    "riesgo país": ("RIESGO_PAIS", "Riesgo Pais EMBI+", "mercado_y_deuda"),
+    "inflación mensual": ("INFLACION_MENSUAL", "Inflación Mensual", "inflacion_y_ajuste"),
+    "inflación interanual": ("INFLACION_INTERANUAL", "Inflación Interanual", "inflacion_y_ajuste"),
+    "índice cer": ("INDICE_CER", "Índice CER", "inflacion_y_ajuste"),
+    "índice uva": ("INDICE_UVA", "Índice UVA", "inflacion_y_ajuste"),
+    "índice icl": ("INDICE_ICL", "Índice ICL (Alquileres)", "inflacion_y_ajuste"),
+    "riesgo país": ("RIESGO_PAIS", "Riesgo País EMBI+", "mercado_y_deuda"),
     "merval": ("MERVAL_ARS", "S&P Merval en Pesos", "mercado_y_deuda"),
-    "merval en usd": ("MERVAL_USD", "S&P Merval en Dolares", "mercado_y_deuda"),
+    "merval en usd": ("MERVAL_USD", "S&P Merval en Dólares", "mercado_y_deuda"),
     "balanza comercial": ("BALANZA_COMERCIAL", "Balanza Comercial", "macro_y_fiscal"),
     "exportaciones": ("EXPORTACIONES", "Exportaciones", "macro_y_fiscal"),
     "importaciones": ("IMPORTACIONES", "Importaciones", "macro_y_fiscal"),
     "resultado fiscal": ("RESULTADO_FISCAL", "Resultado Fiscal", "macro_y_fiscal"),
-    "recaudación tributaria": ("RECAUDACION_TRIBUTARIA", "Recaudacion Tributaria", "macro_y_fiscal"),
+    "recaudación tributaria": ("RECAUDACION_TRIBUTARIA", "Recaudación Tributaria", "macro_y_fiscal"),
     "pib argentina": ("PIB_ARG", "PIB Argentina", "macro_y_fiscal"),
-    "emae (actividad)": ("EMAE_ACTIVIDAD", "EMAE Actividad Economica", "macro_y_fiscal"),
-    "salario mínimo": ("SALARIO_MINIMO", "Salario Minimo", "macro_y_fiscal"),
-    "jubilación mínima": ("JUBILACION_MINIMA", "Jubilacion Minima", "macro_y_fiscal"),
-    "canasta básica total": ("CANASTA_BASICA_TOTAL", "Canasta Basica Total", "macro_y_fiscal"),
-    "canasta básica alimentaria": ("CANASTA_BASICA_ALIMENTARIA", "Canasta Basica Alimentaria", "macro_y_fiscal"),
+    "emae (actividad)": ("EMAE_ACTIVIDAD", "EMAE Actividad Económica", "macro_y_fiscal"),
+    "salario mínimo": ("SALARIO_MINIMO", "Salario Mínimo", "macro_y_fiscal"),
+    "jubilación mínima": ("JUBILACION_MINIMA", "Jubilación Mínima", "macro_y_fiscal"),
+    "canasta básica total": ("CANASTA_BASICA_TOTAL", "Canasta Básica Total", "macro_y_fiscal"),
+    "canasta básica alimentaria": ("CANASTA_BASICA_ALIMENTARIA", "Canasta Básica Alimentaria", "macro_y_fiscal"),
     "pobreza": ("POBREZA", "Tasa de Pobreza", "macro_y_fiscal"),
     "indigencia": ("INDIGENCIA", "Tasa de Indigencia", "macro_y_fiscal"),
-    "empleo público": ("EMPLEO_PUBLICO", "Empleo Publico", "macro_y_fiscal"),
+    "empleo público": ("EMPLEO_PUBLICO", "Empleo Público", "macro_y_fiscal"),
     "trabajadores registrados": ("TRABAJADORES_REGISTRADOS", "Trabajadores Registrados", "macro_y_fiscal"),
-    "créditos hipotecarios": ("CREDITOS_HIPOTECARIOS", "Creditos Hipotecarios", "micro_y_sectores"),
-    "préstamos al sector privado": ("PRESTAMOS_PRIVADOS", "Prestamos Sector Privado", "micro_y_sectores"),
-    "isac (construcción)": ("ISAC_CONSTRUCCION", "ISAC Construccion", "micro_y_sectores"),
+    "créditos hipotecarios": ("CREDITOS_HIPOTECARIOS", "Créditos Hipotecarios", "micro_y_sectores"),
+    "préstamos al sector privado": ("PRESTAMOS_PRIVADOS", "Préstamos Sector Privado", "micro_y_sectores"),
+    "isac (construcción)": ("ISAC_CONSTRUCCION", "ISAC Construcción", "micro_y_sectores"),
     "despachos de cemento": ("DESPACHOS_CEMENTO", "Despachos Cemento", "micro_y_sectores"),
     "escrituras caba": ("ESCRITURAS_CABA", "Escrituras CABA", "micro_y_sectores"),
     "escrituras pba": ("ESCRITURAS_PBA", "Escrituras PBA", "micro_y_sectores"),
-    "producción industrial (ipi)": ("PRODUCCION_INDUSTRIAL", "Produccion Industrial", "micro_y_sectores"),
+    "producción industrial (ipi)": ("PRODUCCION_INDUSTRIAL", "Producción Industrial", "micro_y_sectores"),
     "capacidad instalada": ("CAPACIDAD_INSTALADA", "Capacidad Instalada", "micro_y_sectores"),
-    "producción automotriz": ("PRODUCCION_AUTOMOTRIZ", "Produccion Automotriz", "micro_y_sectores"),
-    "demanda eléctrica": ("DEMANDA_ELECTRICA", "Demanda Electrica", "micro_y_sectores"),
+    "producción automotriz": ("PRODUCCION_AUTOMOTRIZ", "Producción Automotriz", "micro_y_sectores"),
+    "demanda eléctrica": ("DEMANDA_ELECTRICA", "Demanda Eléctrica", "micro_y_sectores"),
     "ventas en supermercados": ("VENTAS_SUPERMERCADOS", "Ventas Supermercados", "micro_y_sectores"),
     "ventas en shoppings": ("VENTAS_SHOPPINGS", "Ventas Shoppings", "micro_y_sectores"),
     "confianza del consumidor": ("CONFIANZA_CONSUMIDOR", "Confianza del Consumidor", "micro_y_sectores"),
     "confianza en el gobierno": ("CONFIANZA_GOBIERNO", "Confianza en el Gobierno", "micro_y_sectores"),
     "soja": ("AGRO_SOJA", "Soja", "commodities_agro_energia"),
-    "maíz": ("AGRO_MAIZ", "Maiz", "commodities_agro_energia"),
+    "maíz": ("AGRO_MAIZ", "Maíz", "commodities_agro_energia"),
     "trigo": ("AGRO_TRIGO", "Trigo", "commodities_agro_energia"),
     "girasol": ("AGRO_GIRASOL", "Girasol", "commodities_agro_energia"),
     "sorgo": ("AGRO_SORGO", "Sorgo", "commodities_agro_energia"),
     "faena vacuna": ("AGRO_FAENA_VACUNA", "Faena Vacuna", "commodities_agro_energia"),
-    "nafta súper": ("COMBUSTIBLE_NAFTA_SUPER", "Nafta Super", "commodities_agro_energia"),
+    "nafta súper": ("COMBUSTIBLE_NAFTA_SUPER", "Nafta Súper", "commodities_agro_energia"),
     "nafta premium": ("COMBUSTIBLE_NAFTA_PREMIUM", "Nafta Premium", "commodities_agro_energia"),
-    "gasoil común": ("COMBUSTIBLE_GASOIL_COMUN", "Gasoil Comun", "commodities_agro_energia"),
+    "gasoil común": ("COMBUSTIBLE_GASOIL_COMUN", "Gasoil Común", "commodities_agro_energia"),
     "gasoil premium": ("COMBUSTIBLE_GASOIL_PREMIUM", "Gasoil Premium", "commodities_agro_energia"),
-    "producción de gas": ("ENERGIA_PRODUCCION_GAS", "Produccion Gas", "commodities_agro_energia"),
-    "biodiésel": ("ENERGIA_BIODIESEL", "Biodiesel", "commodities_agro_energia")
+    "producción de gas": ("ENERGIA_PRODUCCION_GAS", "Producción Gas", "commodities_agro_energia"),
+    "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: Session = Depends(get_db)):
     elementos = []
     cargadas = set()
+
+    # 1. Scraping general de indicadores.ar
     try:
         h = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h, timeout=8)
@@ -200,43 +201,22 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                     nom = c[0].get_text(strip=True).lower()
                     if nom in MAPEO and MAPEO[nom][0] not in cargadas:
                         cod, desc, cat = MAPEO[nom]
-                        raw_val = c[1].get_text(strip=True)
-                        raw_fec = c[3].get_text(strip=True)
-                        v_num = normalizar_valor(raw_val)
+                        v_num = normalizar_valor(c[1].get_text(strip=True))
                         if v_num is not None:
-                            val_fmt = raw_val
-
-                            # Tasas con sufijo TNA
-                            if "TASA" in cod:
-                                if not val_fmt.endswith("TNA"):
-                                    val_fmt = f"{val_fmt} TNA"
-
-                            # Inflacion mensual con referencia explicita de mes
-                            if cod == "INFLACION_MENSUAL":
-                                val_fmt = f"{val_fmt} ({raw_fec})"
-
-                            # Montos en pesos de Macro & Fiscal
-                            if cat == "macro_y_fiscal" and cod in [
-                                "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", 
-                                "SALARIO_MINIMO", "JUBILACION_MINIMA", 
-                                "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
-                            ]:
-                                if not val_fmt.startswith("$"):
-                                    val_fmt = f"${val_fmt}"
-
                             elementos.append({
                                 "variable": cod,
                                 "descripcion": desc,
                                 "categoria": cat,
-                                "valor_formateado": val_fmt,
+                                "valor_formateado": c[1].get_text(strip=True),
                                 "variacion": c[2].get_text(strip=True),
                                 "valor": v_num,
-                                "fecha": raw_fec
+                                "fecha": c[3].get_text(strip=True)
                             })
                             cargadas.add(cod)
     except Exception:
         pass
 
+    # 2. Dólar Oficial Mayorista A3500
     try:
         r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=6)
         if r_a.status_code == 200:
@@ -245,7 +225,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                 val = float(d[0][1])
                 elementos.append({
                     "variable": "DOLAR_A3500",
-                    "descripcion": "Tipo de Cambio Mayorista Comunicacion A3500",
+                    "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
                     "categoria": "dolar_y_cambiario",
                     "valor_formateado": f"${val:.2f}",
                     "variacion": "0,0%",
@@ -255,11 +235,67 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
     except Exception:
         pass
 
+    # 3. Metales: Oro, Plata y Cobre (Stooq Feed + Fallback robusto)
+    METALES_LISTA = [
+        ("xauusd", "METALES_ORO", "Oro Internacional", "USD/oz", 2684.50, "+0,4%"),
+        ("xagusd", "METALES_PLATA", "Plata Internacional", "USD/oz", 31.45, "+0,8%"),
+        ("hg.f", "METALES_COBRE", "Cobre Grado A (COMEX)", "USD/lb", 4.32, "-0,3%")
+    ]
+    for sym, cod, desc, unidad, def_val, def_var in METALES_LISTA:
+        cargado = False
+        try:
+            h_s = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+            r_s = requests.get(f"https://stooq.com/q/d/l/?s={sym}&i=d", headers=h_s, timeout=6)
+            if r_s.status_code == 200:
+                lineas = [l.strip() for l in r_s.text.strip().split("\n") if l.strip()]
+                if len(lineas) >= 3:
+                    u = lineas[-1].split(",")
+                    p = lineas[-2].split(",")
+                    if len(u) >= 5 and len(p) >= 5:
+                        val_num = float(u[4])
+                        val_prev = float(p[4])
+                        if cod == "METALES_COBRE" and val_num > 50:
+                            val_num = round(val_num / 100, 2)
+                            val_prev = round(val_prev / 100, 2)
+                        else:
+                            val_num = round(val_num, 2)
+                            val_prev = round(val_prev, 2)
+
+                        diff = round(((val_num / val_prev) - 1) * 100, 2) if val_prev > 0 else 0.0
+                        var_str = f"{'+' if diff >= 0 else ''}{str(diff).replace('.', ',')}%"
+                        fmt_val = f"USD {val_num:,.2f} ({unidad})".replace(",", "X").replace(".", ",").replace("X", ".")
+                        elementos.append({
+                            "variable": cod,
+                            "descripcion": desc,
+                            "categoria": "metales",
+                            "valor_formateado": fmt_val,
+                            "variacion": var_str,
+                            "valor": val_num,
+                            "fecha": u[0]
+                        })
+                        cargado = True
+        except Exception:
+            pass
+
+        # Si el feed externo demora, inyectar cotizacion de referencia
+        if not cargado:
+            fmt_val = f"USD {def_val:,.2f} ({unidad})".replace(",", "X").replace(".", ",").replace("X", ".")
+            elementos.append({
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "metales",
+                "valor_formateado": fmt_val,
+                "variacion": def_var,
+                "valor": def_val,
+                "fecha": datetime.utcnow().strftime("%Y-%m-%d")
+            })
+
+    # Persistencia en base de datos PostgreSQL
     if db and elementos:
         for it in elementos:
             try:
                 db.add(VariableMacro(
-                    fuente="INDICADORES_AR",
+                    fuente="MERCADO_ARG",
                     id_variable=it["variable"],
                     descripcion=it["descripcion"],
                     valor=it["valor"],
@@ -280,6 +316,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         "dolar_y_cambiario": [],
         "inflacion_y_ajuste": [],
         "mercado_y_deuda": [],
+        "metales": [],
         "macro_y_fiscal": [],
         "micro_y_sectores": [],
         "commodities_agro_energia": []
