@@ -30,7 +30,6 @@
 </head>
 <body class="text-slate-100 font-sans antialiased min-h-screen">
 
-  <!-- Header -->
   <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xl">
@@ -49,20 +48,20 @@
     </div>
   </header>
 
-  <!-- Navigation / Filtros -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
     <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-800/80 text-sm font-medium">
-      <button onclick="filtrarCategoria('todos')" class="nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition">Todos</button>
-      <button onclick="filtrarCategoria('tasas_y_monetario')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Tasas y BCRA</button>
-      <button onclick="filtrarCategoria('dolar_y_cambiario')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Dólar y Brechas</button>
-      <button onclick="filtrarCategoria('inflacion_y_ajuste')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Inflación, CER y UVA</button>
-      <button onclick="filtrarCategoria('mercado_y_deuda')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Mercado y Renta</button>
-      <button onclick="filtrarCategoria('macro_y_fiscal')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Macro & Fiscal</button>
-      <button onclick="filtrarCategoria('micro_y_sectores')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Micro & Actividad</button>
-      <button onclick="filtrarCategoria('commodities_agro_energia')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Agro & Energía</button>
+      <button onclick="filtrarCategoria("home", event)" class="nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition flex items-center gap-2">
+        <i class="fa-solid fa-house text-xs"></i> HOME
+      </button>
+      <button onclick="filtrarCategoria("tasas_y_monetario", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Tasas y BCRA</button>
+      <button onclick="filtrarCategoria("dolar_y_cambiario", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Dólar y Brechas</button>
+      <button onclick="filtrarCategoria("inflacion_y_ajuste", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Inflación, CER y UVA</button>
+      <button onclick="filtrarCategoria("mercado_y_deuda", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Mercado y Renta</button>
+      <button onclick="filtrarCategoria("macro_y_fiscal", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Macro & Fiscal</button>
+      <button onclick="filtrarCategoria("micro_y_sectores", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Micro & Actividad</button>
+      <button onclick="filtrarCategoria("commodities_agro_energia", event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Agro & Energía</button>
     </div>
 
-    <!-- Contenedor General -->
     <div id="dashboard-content" class="space-y-10">
       <div class="flex justify-center items-center py-20 text-slate-500">
         <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
@@ -72,6 +71,7 @@
 
   <script>
     const NOMBRES_SECCIONES = {
+      home: { titulo: "Indicadores Clave del Mercado", icono: "fa-gauge-high" },
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario", icono: "fa-landmark" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
@@ -81,8 +81,22 @@
       commodities_agro_energia: { titulo: "Commodities, Agro y Energía", icono: "fa-wheat-awn" }
     };
 
+    const VARIABLES_HOME = [
+      "DOLAR_OFICIAL",
+      "DOLAR_MEP",
+      "DOLAR_CCL",
+      "INFLACION_MENSUAL",
+      "RIESGO_PAIS",
+      "MERVAL_ARS",
+      "MERVAL_USD",
+      "TASA_TAMAR",
+      "TASA_BADLAR",
+      "AGRO_SOJA",
+      "AGRO_MAIZ"
+    ];
+
     let datosGlobales = {};
-    let categoriaActiva = "todos";
+    let categoriaActiva = "home";
 
     async function cargarDatos() {
       try {
@@ -100,18 +114,40 @@
       const contenedor = document.getElementById("dashboard-content");
       contenedor.innerHTML = "";
 
-      // Obtener el valor del A3500 para el calculo de brechas
-      let valorA3500 = null;
+      let valorOficial = null;
       const dolares = datosGlobales.dolar_y_cambiario || [];
-      const itemA3500 = dolares.find(d => d.variable === "DOLAR_OFICIAL");
-      if (itemA3500 && itemA3500.valor > 0) {
-        valorA3500 = itemA3500.valor;
+      const itemOficial = dolares.find(d => d.variable === "DOLAR_OFICIAL");
+      if (itemOficial && itemOficial.valor > 0) {
+        valorOficial = itemOficial.valor;
+      }
+
+      if (categoriaActiva === "home") {
+        const todosLosItems = Object.values(datosGlobales).flat();
+        const itemsHome = VARIABLES_HOME
+          .map(v => todosLosItems.find(i => i.variable === v))
+          .filter(Boolean);
+
+        const seccion = document.createElement("section");
+        seccion.className = "space-y-4";
+        seccion.innerHTML = `
+          <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+            <i class="fa-solid fa-gauge-high text-blue-400"></i>
+            <h2>Resumen Ejecutivo de Mercado</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
+          </div>
+        `;
+        contenedor.appendChild(seccion);
+        return;
       }
 
       for (const [clave, items] of Object.entries(datosGlobales)) {
-        const itemsFiltrados = items.filter(i => i.variable !== "BRECHA_CAMBIARIA");
         if (!items || items.length === 0) continue;
-        if (categoriaActiva !== "todos" && categoriaActiva !== clave) continue;
+        if (categoriaActiva !== clave) continue;
+
+        const itemsFiltrados = items.filter(i => i.variable !== "BRECHA_CAMBIARIA");
+        if (itemsFiltrados.length === 0) continue;
 
         const info = NOMBRES_SECCIONES[clave] || { titulo: clave, icono: "fa-circle-dot" };
 
@@ -123,33 +159,32 @@
             <h2>${info.titulo}</h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            ${itemsFiltrados.map(item => crearTarjeta(item, clave, valorA3500)).join("")}
+            ${itemsFiltrados.map(item => crearTarjeta(item, clave, valorOficial)).join("")}
           </div>
         `;
         contenedor.appendChild(seccion);
       }
     }
 
-    function crearTarjeta(item, categoria, valorA3500) {
+    function crearTarjeta(item, categoria, valorOficial) {
       let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
       let varIcon = "";
       if (item.variacion) {
         if (item.variacion.includes("+")) {
           varColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-          varIcon = "<i class='fa-solid fa-arrow-up text-xs mr-1'></i>";
+          varIcon = "<i class="fa-solid fa-arrow-up text-xs mr-1"></i>";
         } else if (item.variacion.includes("-") || item.variacion.includes("−")) {
           varColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
-          varIcon = "<i class='fa-solid fa-arrow-down text-xs mr-1'></i>";
+          varIcon = "<i class="fa-solid fa-arrow-down text-xs mr-1"></i>";
         }
       }
 
-      // Detalle de Brecha vs A3500
       let badgeBrecha = "";
-      if (categoria === "dolar_y_cambiario") {
+      if (item.categoria === "dolar_y_cambiario" || categoria === "dolar_y_cambiario") {
         if (item.variable === "DOLAR_OFICIAL") {
           badgeBrecha = `<span class="text-[10px] uppercase font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">TC Referencia</span>`;
-        } else if (item.variable !== "BRECHA_CAMBIARIA" && valorA3500 && item.valor > 0) {
-          const spread = ((item.valor / valorA3500) - 1) * 100;
+        } else if (valorOficial && item.valor > 0) {
+          const spread = ((item.valor / valorOficial) - 1) * 100;
           const signo = spread >= 0 ? "+" : "";
           const colorSpread = spread >= 0 ? "text-amber-400 bg-amber-500/10 border-amber-500/20" : "text-sky-400 bg-sky-500/10 border-sky-500/20";
           badgeBrecha = `<span class="text-[11px] font-mono font-medium px-2 py-0.5 rounded border ${colorSpread}">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
@@ -177,12 +212,14 @@
       `;
     }
 
-    function filtrarCategoria(cat) {
+    function filtrarCategoria(cat, e) {
       categoriaActiva = cat;
       document.querySelectorAll(".nav-tab").forEach(b => {
-        b.className = "nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition";
+        b.className = "nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2";
       });
-      event.target.className = "nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition";
+      if (e && e.currentTarget) {
+        e.currentTarget.className = "nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition flex items-center gap-2";
+      }
       renderizar();
     }
 
