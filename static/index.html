@@ -62,9 +62,8 @@
       <button onclick="filtrarCategoria('commodities_agro_energia')" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Agro & Energía</button>
     </div>
 
-    <!-- Contenedor General de Secciones -->
+    <!-- Contenedor General -->
     <div id="dashboard-content" class="space-y-10">
-      <!-- Se inyecta con Javascript -->
       <div class="flex justify-center items-center py-20 text-slate-500">
         <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
       </div>
@@ -101,6 +100,14 @@
       const contenedor = document.getElementById("dashboard-content");
       contenedor.innerHTML = "";
 
+      // Obtener el valor del A3500 para el calculo de brechas
+      let valorA3500 = null;
+      const dolares = datosGlobales.dolar_y_cambiario || [];
+      const itemA3500 = dolares.find(d => d.variable === "DOLAR_A3500");
+      if (itemA3500 && itemA3500.valor > 0) {
+        valorA3500 = itemA3500.valor;
+      }
+
       for (const [clave, items] of Object.entries(datosGlobales)) {
         if (!items || items.length === 0) continue;
         if (categoriaActiva !== "todos" && categoriaActiva !== clave) continue;
@@ -115,14 +122,14 @@
             <h2>${info.titulo}</h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            ${items.map(crearTarjeta).join("")}
+            ${items.map(item => crearTarjeta(item, clave, valorA3500)).join("")}
           </div>
         `;
         contenedor.appendChild(seccion);
       }
     }
 
-    function crearTarjeta(item) {
+    function crearTarjeta(item, categoria, valorA3500) {
       let varColor = "text-slate-400 bg-slate-800/40 border-slate-700/50";
       let varIcon = "";
       if (item.variacion) {
@@ -135,10 +142,26 @@
         }
       }
 
+      // Detalle de Brecha vs A3500
+      let badgeBrecha = "";
+      if (categoria === "dolar_y_cambiario") {
+        if (item.variable === "DOLAR_A3500") {
+          badgeBrecha = `<span class="text-[10px] uppercase font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">TC Referencia</span>`;
+        } else if (item.variable !== "BRECHA_CAMBIARIA" && valorA3500 && item.valor > 0) {
+          const spread = ((item.valor / valorA3500) - 1) * 100;
+          const signo = spread >= 0 ? "+" : "";
+          const colorSpread = spread >= 0 ? "text-amber-400 bg-amber-500/10 border-amber-500/20" : "text-sky-400 bg-sky-500/10 border-sky-500/20";
+          badgeBrecha = `<span class="text-[11px] font-mono font-medium px-2 py-0.5 rounded border ${colorSpread}">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
+        }
+      }
+
       return `
         <div class="bg-brand-card border border-slate-800 rounded-xl p-4 card-glow flex flex-col justify-between hover:border-slate-700 transition">
           <div>
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block truncate" title="${item.descripcion}">${item.descripcion}</span>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider truncate" title="${item.descripcion}">${item.descripcion}</span>
+              ${badgeBrecha}
+            </div>
             <div class="mt-2 flex items-baseline justify-between gap-2">
               <span class="text-2xl font-bold tracking-tight text-white font-mono">${item.valor_formateado || item.valor}</span>
             </div>
