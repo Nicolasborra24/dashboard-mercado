@@ -53,6 +53,7 @@ if DATABASE_URL:
         engine = create_engine(DATABASE_URL, pool_pre_ping=True)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         Base.metadata.create_all(bind=engine)
+        print("[DB] Conexión establecida con éxito.")
     except Exception as e:
         print(f"[DB Aviso] Modo en memoria activo ({e})")
         engine = None
@@ -170,6 +171,7 @@ US_TICKERS_DEF = [
     ("^VIX", "^vix", "INDICE_VIX", "Índice de Volatilidad (VIX)", "estados_unidos", "pts"),
     ("^DJI", "^dji", "INDICE_DJI", "Dow Jones Industrial (DJI)", "estados_unidos", "pts"),
     ("^RUT", "^rut", "INDICE_RUSSELL", "Russell 2000 (RUT)", "estados_unidos", "pts"),
+    ("DX-Y.NYB", "dxy", "MONEDA_DXY", "Índice Dólar (DXY)", "estados_unidos", "pts"),
     ("XLK", "xlk.us", "SPDR_XLK", "Tecnología (XLK)", "sectores", "usd"),
     ("XLF", "xlf.us", "SPDR_XLF", "Financiero (XLF)", "sectores", "usd"),
     ("XLE", "xle.us", "SPDR_XLE", "Energía (XLE)", "sectores", "usd"),
@@ -192,6 +194,7 @@ INDICES_BASE_MEMORIA = [
     {"variable": "INDICE_VIX", "descripcion": "Índice de Volatilidad (VIX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "14,94 pts", "variacion": "-1,71%", "valor": 14.94, "fecha": "Cierre"},
     {"variable": "INDICE_DJI", "descripcion": "Dow Jones Industrial (DJI)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "43.988,99 pts", "variacion": "+0,59%", "valor": 43988.99, "fecha": "Cierre"},
     {"variable": "INDICE_RUSSELL", "descripcion": "Russell 2000 (RUT)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "2.399,61 pts", "variacion": "+0,71%", "valor": 2399.61, "fecha": "Cierre"},
+    {"variable": "MONEDA_DXY", "descripcion": "Índice Dólar (DXY)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "104,35 pts", "variacion": "+0,15%", "valor": 104.35, "fecha": "Cierre"},
     {"variable": "SPDR_XLK", "descripcion": "Tecnología (XLK)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 228,45", "variacion": "+0,52%", "valor": 228.45, "fecha": "Cierre"},
     {"variable": "SPDR_XLF", "descripcion": "Financiero (XLF)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 49,32", "variacion": "+1,15%", "valor": 49.32, "fecha": "Cierre"},
     {"variable": "SPDR_XLE", "descripcion": "Energía (XLE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 91,80", "variacion": "+0,84%", "valor": 91.80, "fecha": "Cierre"},
@@ -224,7 +227,6 @@ ULTIMA_ACTUALIZACION = ""
 
 def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    # 1. Intento primario con API v8
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
         r = requests.get(url, headers=h, timeout=3.5)
@@ -240,7 +242,6 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     except Exception:
         pass
 
-    # 2. Respaldo secundario con CSV
     try:
         url_s = f"https://stooq.com/q/l/?s={sym_s}&f=sd2t2ohlcv&h&e=csv"
         r_s = requests.get(url_s, headers=h, timeout=3.0)
@@ -259,7 +260,6 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
 
 def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    items = []
     
     def worker_ticker(info):
         sym_y, sym_s, cod, desc, subcat, tipo = info
@@ -402,12 +402,10 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     val_clp = round(float(rates.get("CLP", 958.40)), 2)
     eur_rate = float(rates.get("EUR", 0.921))
     val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
-    val_dxy = 104.35
     usd_ars_val = round(float(rates.get("ARS", usd_oficial)), 2)
     val_eurars = round(val_eurusd * usd_ars_val, 2)
 
     MONEDAS = [
-        ("MONEDA_DXY", "Índice Dólar (DXY)", f"{val_dxy:.2f} pts".replace(".", ","), "+0,15%", val_dxy),
         ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,05%", usd_ars_val),
         ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.2f}".replace(".", ","), "+0,32%", val_brl),
         ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), "+0,18%", val_eurusd),
@@ -493,14 +491,11 @@ def worker_refresco_continuo():
                 res_bonos = f_bonos.result()
                 res_usa = f_usa.result()
 
-            # Base de índices con valores en memoria
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
-            # 1. Incorporar datos frescos de EE. UU. y Sectores
             for item in res_usa:
                 indices_map[item["variable"]] = item
 
-            # 2. Incorporar datos frescos de Argentina (Merval y Riesgo País)
             for item in res_ind:
                 if item.get("categoria") == "indices":
                     indices_map[item["variable"]] = item

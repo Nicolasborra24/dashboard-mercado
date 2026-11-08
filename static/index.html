@@ -54,7 +54,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">3.7</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">3.8</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados en Tiempo Real</p>
       </div>
@@ -109,7 +109,7 @@
           <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
-              <span class="truncate">Índices</span>
+              <span class="truncate">Índices y Sectores</span>
             </button>
             <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
@@ -152,7 +152,7 @@
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
       cripto: { titulo: "Cotizaciones Criptomonedas", icono: "fa-brands fa-bitcoin text-amber-400" },
       cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", icono: "fa-file-invoice-dollar" },
-      indices: { titulo: "Índices Bursátiles y Sectores", icono: "fa-chart-line" },
+      indices: { titulo: "Índices y Sectores", icono: "fa-chart-line" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
       metales: { titulo: "Metales Preciosos e Industriales", icono: "fa-coins" },
       petroleo: { titulo: "Mercado Internacional de Petróleo y Crudo", icono: "fa-oil-well" },
@@ -210,10 +210,10 @@
       },
       estados_unidos: {
         titulo: "Índices Principales Estados Unidos",
-        desc: "Wall Street: S&P 500, Nasdaq 100, Dow Jones, VIX y Russell 2000",
+        desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY",
         icono: "fa-flag-usa",
         color: "text-blue-400",
-        count: 5
+        count: 6
       },
       sectores: {
         titulo: "Sectores de Wall Street (SPDR ETFs)",
@@ -223,6 +223,29 @@
         count: 11
       }
     };
+
+    const INDICES_ESTATICOS_BASE = [
+      { variable: "MERVAL_ARS", descripcion: "S&P Merval en Pesos", subcategoria: "argentina", valor_formateado: "$ 2.085.420", variacion: "+1,25%", valor: 2085420.0, fecha: "Cierre" },
+      { variable: "MERVAL_USD", descripcion: "S&P Merval en Dólares (CCL)", subcategoria: "argentina", valor_formateado: "US$ 1.812,50", variacion: "+0,85%", valor: 1812.50, fecha: "Cierre" },
+      { variable: "RIESGO_PAIS", descripcion: "Riesgo País EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+1,51%", valor: 939.0, fecha: "Cierre" },
+      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "5.995,54 pts", variacion: "+0,38%", valor: 5995.54, fecha: "Cierre" },
+      { variable: "INDICE_NASDAQ", descripcion: "Nasdaq 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "21.117,20 pts", variacion: "+0,09%", valor: 21117.20, fecha: "Cierre" },
+      { variable: "INDICE_VIX", descripcion: "Índice de Volatilidad (VIX)", subcategoria: "estados_unidos", valor_formateado: "14,94 pts", variacion: "-1,71%", valor: 14.94, fecha: "Cierre" },
+      { variable: "INDICE_DJI", descripcion: "Dow Jones Industrial (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0,59%", valor: 43988.99, fecha: "Cierre" },
+      { variable: "INDICE_RUSSELL", descripcion: "Russell 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0,71%", valor: 2399.61, fecha: "Cierre" },
+      { variable: "MONEDA_DXY", descripcion: "Índice Dólar (DXY)", subcategoria: "estados_unidos", valor_formateado: "104,35 pts", variacion: "+0,15%", valor: 104.35, fecha: "Cierre" },
+      { variable: "SPDR_XLK", descripcion: "Tecnología (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0,52%", valor: 228.45, fecha: "Cierre" },
+      { variable: "SPDR_XLF", descripcion: "Financiero (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1,15%", valor: 49.32, fecha: "Cierre" },
+      { variable: "SPDR_XLE", descripcion: "Energía (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0,84%", valor: 91.80, fecha: "Cierre" },
+      { variable: "SPDR_XLV", descripcion: "Salud (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0,28%", valor: 146.22, fecha: "Cierre" },
+      { variable: "SPDR_XLI", descripcion: "Industrial (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0,65%", valor: 139.15, fecha: "Cierre" },
+      { variable: "SPDR_XLY", descripcion: "Consumo Discrecional (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1,40%", valor: 206.88, fecha: "Cierre" },
+      { variable: "SPDR_XLP", descripcion: "Consumo Básico (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0,15%", valor: 78.90, fecha: "Cierre" },
+      { variable: "SPDR_XLU", descripcion: "Servicios Públicos (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0,45%", valor: 81.42, fecha: "Cierre" },
+      { variable: "SPDR_XLB", descripcion: "Materiales (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0,35%", valor: 93.65, fecha: "Cierre" },
+      { variable: "SPDR_XLRE", descripcion: "Bienes Raíces (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0,62%", valor: 43.10, fecha: "Cierre" },
+      { variable: "SPDR_XLC", descripcion: "Comunicaciones (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0,48%", valor: 92.74, fecha: "Cierre"}
+    ];
 
     const CURVAS_INFO = {
       lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
@@ -561,12 +584,12 @@
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
-      // ----------------- VISTA DE ÍNDICES: MENÚ LATERAL + TARJETAS -----------------
+      // ----------------- VISTA DE ÍNDICES Y SECTORES: MENÚ LATERAL + TARJETAS -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
           ? datosGlobales.indices 
-          : INDICES_BASE_MEMORIA;
+          : INDICES_ESTATICOS_BASE;
 
         const itemsSub = fuenteIndices.filter(item => {
           if (!item) return false;
@@ -575,7 +598,7 @@
           if (subIndiceActivo === "argentina") {
             return item.subcategoria === "argentina" || ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS"].includes(item.variable);
           } else if (subIndiceActivo === "estados_unidos") {
-            return item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL"].includes(item.variable);
+            return item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL", "MONEDA_DXY"].includes(item.variable);
           } else if (subIndiceActivo === "sectores") {
             return item.subcategoria === "sectores" || (item.variable && item.variable.startsWith("SPDR_"));
           }
@@ -586,7 +609,7 @@
           <div class="flex flex-col lg:flex-row gap-5 items-start">
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Índices</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
               </div>
               
               <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
@@ -602,7 +625,7 @@
                   <i class="fa-solid fa-flag-usa text-blue-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Estados Unidos</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'estados_unidos' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">5</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${subIndiceActivo === 'estados_unidos' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">6</span>
               </button>
 
               <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
