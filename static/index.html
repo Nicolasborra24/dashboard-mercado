@@ -30,6 +30,10 @@
     body { background-color: #080c14; }
     .card-glow { box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.45); }
     .table-dark-row:hover { background-color: rgba(30, 41, 59, 0.45); }
+    @keyframes flash-up { 0% { color: #34d399; } 100% { color: #ffffff; } }
+    @keyframes flash-down { 0% { color: #f43f5e; } 100% { color: #ffffff; } }
+    .flash-green { animation: flash-up 1.2s ease; }
+    .flash-red { animation: flash-down 1.2s ease; }
   </style>
 </head>
 <body class="text-slate-100 font-sans antialiased min-h-screen">
@@ -43,9 +47,9 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.4 - Curvas Completas</span>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Feed Activo</span>
         </div>
-        <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
+        <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados en Tiempo Real</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
@@ -82,7 +86,7 @@
             </button>
             <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-brands fa-bitcoin text-amber-400 text-[11px]"></i>
-              <span class="truncate">Cripto</span>
+              <span class="truncate">Cripto (Vivo)</span>
             </button>
             <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
@@ -139,7 +143,7 @@
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", icono: "fa-landmark" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
-      cripto: { titulo: "Cotizaciones Criptomonedas en Vivo (Top 10)", icono: "fa-brands fa-bitcoin text-amber-400" },
+      cripto: { titulo: "Cotizaciones Criptomonedas en Vivo (Binance 24/7)", icono: "fa-brands fa-bitcoin text-amber-400" },
       cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", icono: "fa-file-invoice-dollar" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
       mercado_y_deuda: { titulo: "Mercado Bursátil y Deuda Soberana", icono: "fa-chart-line" },
@@ -172,148 +176,121 @@
       "PETROLEO_BRENT"
     ];
 
+    const CRIPTO_DIRECTAS = [
+      { cod: "CRIPTO_BTC", desc: "Bitcoin (BTC)", sym: "BTCUSDT", defP: 76420.0 },
+      { cod: "CRIPTO_ETH", desc: "Ethereum (ETH)", sym: "ETHUSDT", defP: 2485.0 },
+      { cod: "CRIPTO_SOL", desc: "Solana (SOL)", sym: "SOLUSDT", defP: 198.50 },
+      { cod: "CRIPTO_PAXG", desc: "PAX Gold (PAXG)", sym: "PAXGUSDT", defP: 2745.0 },
+      { cod: "CRIPTO_BNB", desc: "BNB Chain (BNB)", sym: "BNBUSDT", defP: 588.0 },
+      { cod: "CRIPTO_XRP", desc: "Ripple (XRP)", sym: "XRPUSDT", defP: 0.582 },
+      { cod: "CRIPTO_DOGE", desc: "Dogecoin (DOGE)", sym: "DOGEUSDT", defP: 0.198 },
+      { cod: "CRIPTO_ADA", desc: "Cardano (ADA)", sym: "ADAUSDT", defP: 0.438 },
+      { cod: "CRIPTO_USDC", desc: "USD Coin (USDC)", sym: "USDCUSDT", defP: 1.00 },
+      { cod: "CRIPTO_USDT", desc: "Tether (USDT)", sym: null, defP: 1.00 }
+    ];
+
+    const PRECIOS_ANTERIORES = {};
+
     const CURVAS_INFO = {
-      lecaps: {
-        titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)",
-        desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS",
-        icono: "fa-money-bill-trend-up",
-        color: "text-amber-400",
-        count: 9
-      },
-      cer: {
-        titulo: "Curva Bonos CER (Ajustables por Inflación)",
-        desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par",
-        icono: "fa-arrow-trend-up",
-        color: "text-purple-400",
-        count: 22
-      },
-      soberanos: {
-        titulo: "Curva Soberana en Dólares (Globales y Bonares)",
-        desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY",
-        icono: "fa-file-invoice-dollar",
-        color: "text-cyan-400",
-        count: 15
-      },
-      bopreales: {
-        titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)",
-        desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA",
-        icono: "fa-shield-halved",
-        color: "text-emerald-400",
-        count: 7
-      },
-      dollar_linked: {
-        titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)",
-        desc: "Precios en ARS • Cobertura cambiaria oficial",
-        icono: "fa-link",
-        color: "text-emerald-400",
-        count: 6
-      },
-      tamar: {
-        titulo: "Curva Tasa Flotante TAMAR y Badlar",
-        desc: "Precios en ARS • Bonos Soberanos a Tasa Variable TAMAR / Badlar",
-        icono: "fa-chart-simple",
-        color: "text-sky-400",
-        count: 10
-      },
-      duales: {
-        titulo: "Curva Bonos Duales y Cupón Creciente",
-        desc: "Precios en ARS • Títulos indexados y cupón creciente",
-        icono: "fa-arrows-split-up-and-left",
-        color: "text-rose-400",
-        count: 7
-      }
+      lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
+      cer: { titulo: "Curva Bonos CER (Ajustables por Inflación)", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
+      soberanos: { titulo: "Curva Soberana en Dólares (Globales y Bonares)", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
+      bopreales: { titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)", desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA", icono: "fa-shield-halved", color: "text-emerald-400" },
+      dollar_linked: { titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)", desc: "Precios en ARS • Cobertura cambiaria oficial", icono: "fa-link", color: "text-emerald-400" },
+      tamar: { titulo: "Curva Tasa Flotante TAMAR y Badlar", desc: "Precios en ARS • Bonos Soberanos a Tasa Variable TAMAR / Badlar", icono: "fa-chart-simple", color: "text-sky-400" },
+      duales: { titulo: "Curva Bonos Duales y Cupón Creciente", desc: "Precios en ARS • Títulos indexados y cupón creciente", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
     };
 
     const TABLAS_BONOS = {
       lecaps: [
-        { ticker: "S13N6", precio: 109.50, var: "0.05%", t_directa: "0.14%", tir: "13.24%", tem: "1.04%", tna: "12.50%", tea: "13.44%", duration: 0.02, paridad: "109.50", vto: "2026-11-13", dias: 5,   vto_val: "109.651" },
-        { ticker: "S30N6", precio: 128.41, var: "0.10%", t_directa: "1.15%", tir: "21.60%", tem: "1.64%", tna: "19.72%", tea: "21.93%", duration: 0.05, paridad: "128.41", vto: "2026-11-30", dias: 22,  vto_val: "129.889" },
-        { ticker: "T15E7", precio: 154.40, var: "0.06%", t_directa: "4.34%", tir: "25.65%", tem: "1.92%", tna: "23.06%", tea: "26.05%", duration: 0.15, paridad: "154.40", vto: "2027-01-15", dias: 68,  vto_val: "161.100" },
-        { ticker: "S29E7", precio: 106.15, var: "0.08%", t_directa: "5.21%", tir: "25.35%", tem: "1.90%", tna: "22.80%", tea: "25.74%", duration: 0.19, paridad: "106.15", vto: "2027-01-29", dias: 82,  vto_val: "111.685" },
+        { ticker: "S13N6", precio: 109.50, var: "0.05%", t_directa: "0.14%", tir: "13.24%", tem: "1.04%", tna: "12.50%", tea: "13.44%", duration: 0.02, paridad: "109.50", vto: "2026-11-13", dias: 5, vto_val: "109.651" },
+        { ticker: "S30N6", precio: 128.41, var: "0.10%", t_directa: "1.15%", tir: "21.60%", tem: "1.64%", tna: "19.72%", tea: "21.93%", duration: 0.05, paridad: "128.41", vto: "2026-11-30", dias: 22, vto_val: "129.889" },
+        { ticker: "T15E7", precio: 154.40, var: "0.06%", t_directa: "4.34%", tir: "25.65%", tem: "1.92%", tna: "23.06%", tea: "26.05%", duration: 0.15, paridad: "154.40", vto: "2027-01-15", dias: 68, vto_val: "161.100" },
+        { ticker: "S29E7", precio: 106.15, var: "0.08%", t_directa: "5.21%", tir: "25.35%", tem: "1.90%", tna: "22.80%", tea: "25.74%", duration: 0.19, paridad: "106.15", vto: "2027-01-29", dias: 82, vto_val: "111.685" },
         { ticker: "S26F7", precio: 101.05, var: "0.30%", t_directa: "7.24%", tir: "25.97%", tem: "1.94%", tna: "23.31%", tea: "26.38%", duration: 0.25, paridad: "101.05", vto: "2027-02-26", dias: 110, vto_val: "108.368" },
         { ticker: "T30A7", precio: 139.29, var: "0.06%", t_directa: "12.96%", tir: "30.42%", tem: "2.24%", tna: "26.86%", tea: "30.90%", duration: 0.37, paridad: "139.29", vto: "2027-04-30", dias: 173, vto_val: "157.340" },
         { ticker: "T31Y7", precio: 130.91, var: "-0.03%", t_directa: "16.11%", tir: "29.66%", tem: "2.19%", tna: "26.26%", tea: "30.13%", duration: 0.44, paridad: "130.91", vto: "2027-05-31", dias: 204, vto_val: "152.000" },
         { ticker: "T30J7", precio: 132.15, var: "-0.11%", t_directa: "18.08%", tir: "29.27%", tem: "2.16%", tna: "25.95%", tea: "29.73%", duration: 0.51, paridad: "132.15", vto: "2027-06-30", dias: 234, vto_val: "156.040" },
-        { ticker: "TY30P", precio: 113.70, var: "0.22%", t_directa: "0.92%",  tir: "30.80%", tem: "2.26%", tna: "27.15%", tea: "31.28%", duration: 1.68, paridad: "113.55", vto: "2027-09-30", dias: 326, vto_val: "114.750" }
+        { ticker: "TY30P", precio: 113.70, var: "0.22%", t_directa: "0.92%", tir: "30.80%", tem: "2.26%", tna: "27.15%", tea: "31.28%", duration: 1.68, paridad: "113.55", vto: "2027-09-30", dias: 326, vto_val: "114.750" }
       ],
       cer: [
-        { ticker: "TX26",  precio: 766.70, var: "-",      tir: "583.77%", tem: "17.38%", tna: "208.50%", duration: 0.01, paridad: "100.72", vto: "2026-11-09", dias: 1 },
-        { ticker: "X30N6", precio: 130.10, var: "-0.07%", tir: "-0.09%",  tem: "-0.01%", tna: "-0.09%",  duration: 0.07, paridad: "99.96",  vto: "2026-11-30", dias: 22 },
-        { ticker: "TZXD6", precio: 316.30, var: "-0.06%", tir: "3.34%",   tem: "0.27%",  tna: "3.29%",   duration: 0.11, paridad: "99.85",  vto: "2026-12-15", dias: 37 },
-        { ticker: "X29E7", precio: 105.30, var: "0.19%",  tir: "0.80%",   tem: "0.07%",  tna: "0.80%",   duration: 0.23, paridad: "100.00", vto: "2027-01-29", dias: 82 },
-        { ticker: "TZXM7", precio: 235.00, var: "-0.40%", tir: "3.37%",   tem: "0.28%",  tna: "3.32%",   duration: 0.39, paridad: "98.89",  vto: "2027-03-31", dias: 143 },
-        { ticker: "TZXA7", precio: 130.50, var: "0.42%",  tir: "2.07%",   tem: "0.17%",  tna: "2.05%",   duration: 0.48, paridad: "99.21",  vto: "2027-04-30", dias: 173 },
-        { ticker: "TZXY7", precio: 127.40, var: "-0.62%", tir: "3.82%",   tem: "0.31%",  tna: "3.75%",   duration: 0.55, paridad: "97.88",  vto: "2027-05-31", dias: 204 },
-        { ticker: "TZX27", precio: 418.50, var: "-0.12%", tir: "4.04%",   tem: "0.33%",  tna: "3.97%",   duration: 0.63, paridad: "97.67",  vto: "2027-06-30", dias: 234 },
-        { ticker: "TZXS7", precio: 113.95, var: "0.49%",  tir: "4.48%",   tem: "0.37%",  tna: "4.39%",   duration: 0.87, paridad: "96.24",  vto: "2027-09-30", dias: 326 },
-        { ticker: "TZXD7", precio: 291.60, var: "0.03%",  tir: "7.99%",   tem: "0.64%",  tna: "7.71%",   duration: 1.04, paridad: "92.05",  vto: "2027-12-15", dias: 402 },
-        { ticker: "TZXM8", precio: 105.70, var: "0.48%",  tir: "8.54%",   tem: "0.69%",  tna: "8.22%",   duration: 1.31, paridad: "89.28",  vto: "2028-03-31", dias: 509 },
-        { ticker: "TZX28", precio: 362.00, var: "-1.03%", tir: "10.92%",  tem: "0.87%",  tna: "10.41%",  duration: 1.51, paridad: "84.49",  vto: "2028-06-30", dias: 600 },
-        { ticker: "TZXS8", precio: 98.70,  var: "-0.03%", tir: "10.13%",  tem: "0.81%",  tna: "9.69%",   duration: 1.75, paridad: "83.36",  vto: "2028-09-29", dias: 691 },
-        { ticker: "TX28",  precio: 1428.0, var: "0.28%",  tir: "42.98%",  tem: "3.02%",  tna: "36.29%",  duration: 0.59, paridad: "74.99",  vto: "2028-11-09", dias: 732 },
-        { ticker: "TZXD8", precio: 88.75,  var: "-0.03%", tir: "10.11%",  tem: "0.81%",  tna: "9.67%",   duration: 1.95, paridad: "81.81",  vto: "2028-12-15", dias: 768 },
-        { ticker: "TZXM9", precio: 93.20,  var: "-0.38%", tir: "10.59%",  tem: "0.84%",  tna: "10.11%",  duration: 2.20, paridad: "78.72",  vto: "2029-03-28", dias: 871 },
-        { ticker: "TX31",  precio: 1473.0, var: "-0.20%", tir: "11.69%",  tem: "0.93%",  tna: "11.11%",  duration: 2.28, paridad: "81.13",  vto: "2031-11-30", dias: 1848 },
-        { ticker: "DIP0",  precio: 48650,  var: "-0.71%", tir: "11.87%",  tem: "0.94%",  tna: "11.27%",  duration: 3.21, paridad: "109.90", vto: "2033-12-31", dias: 2610 },
-        { ticker: "DICP",  precio: 48700,  var: "-1.39%", tir: "11.83%",  tem: "0.94%",  tna: "11.23%",  duration: 2.66, paridad: "86.63",  vto: "2033-12-31", dias: 2610 },
-        { ticker: "PAP0",  precio: 33000,  var: "0.00%",  tir: "11.85%",  tem: "0.94%",  tna: "11.25%",  duration: 5.63, paridad: "55.92",  vto: "2038-12-31", dias: 4436 },
-        { ticker: "PARP",  precio: 33020,  var: "-0.68%", tir: "11.82%",  tem: "0.94%",  tna: "11.22%",  duration: 5.63, paridad: "55.96",  vto: "2038-12-31", dias: 4436 },
-        { ticker: "CUAP",  precio: 39000,  var: "-1.64%", tir: "11.09%",  tem: "0.88%",  tna: "10.56%",  duration: 9.73, paridad: "66.08",  vto: "2045-12-31", dias: 6993 }
+        { ticker: "TX26", precio: 766.70, var: "-", tir: "583.77%", tem: "17.38%", tna: "208.50%", duration: 0.01, paridad: "100.72", vto: "2026-11-09", dias: 1 },
+        { ticker: "X30N6", precio: 130.10, var: "-0.07%", tir: "-0.09%", tem: "-0.01%", tna: "-0.09%", duration: 0.07, paridad: "99.96", vto: "2026-11-30", dias: 22 },
+        { ticker: "TZXD6", precio: 316.30, var: "-0.06%", tir: "3.34%", tem: "0.27%", tna: "3.29%", duration: 0.11, paridad: "99.85", vto: "2026-12-15", dias: 37 },
+        { ticker: "X29E7", precio: 105.30, var: "0.19%", tir: "0.80%", tem: "0.07%", tna: "0.80%", duration: 0.23, paridad: "100.00", vto: "2027-01-29", dias: 82 },
+        { ticker: "TZXM7", precio: 235.00, var: "-0.40%", tir: "3.37%", tem: "0.28%", tna: "3.32%", duration: 0.39, paridad: "98.89", vto: "2027-03-31", dias: 143 },
+        { ticker: "TZXA7", precio: 130.50, var: "0.42%", tir: "2.07%", tem: "0.17%", tna: "2.05%", duration: 0.48, paridad: "99.21", vto: "2027-04-30", dias: 173 },
+        { ticker: "TZXY7", precio: 127.40, var: "-0.62%", tir: "3.82%", tem: "0.31%", tna: "3.75%", duration: 0.55, paridad: "97.88", vto: "2027-05-31", dias: 204 },
+        { ticker: "TZX27", precio: 418.50, var: "-0.12%", tir: "4.04%", tem: "0.33%", tna: "3.97%", duration: 0.63, paridad: "97.67", vto: "2027-06-30", dias: 234 },
+        { ticker: "TZXS7", precio: 113.95, var: "0.49%", tir: "4.48%", tem: "0.37%", tna: "4.39%", duration: 0.87, paridad: "96.24", vto: "2027-09-30", dias: 326 },
+        { ticker: "TZXD7", precio: 291.60, var: "0.03%", tir: "7.99%", tem: "0.64%", tna: "7.71%", duration: 1.04, paridad: "92.05", vto: "2027-12-15", dias: 402 },
+        { ticker: "TZXM8", precio: 105.70, var: "0.48%", tir: "8.54%", tem: "0.69%", tna: "8.22%", duration: 1.31, paridad: "89.28", vto: "2028-03-31", dias: 509 },
+        { ticker: "TZX28", precio: 362.00, var: "-1.03%", tir: "10.92%", tem: "0.87%", tna: "10.41%", duration: 1.51, paridad: "84.49", vto: "2028-06-30", dias: 600 },
+        { ticker: "TZXS8", precio: 98.70, var: "-0.03%", tir: "10.13%", tem: "0.81%", tna: "9.69%", duration: 1.75, paridad: "83.36", vto: "2028-09-29", dias: 691 },
+        { ticker: "TX28", precio: 1428.0, var: "0.28%", tir: "42.98%", tem: "3.02%", tna: "36.29%", duration: 0.59, paridad: "74.99", vto: "2028-11-09", dias: 732 },
+        { ticker: "TZXD8", precio: 88.75, var: "-0.03%", tir: "10.11%", tem: "0.81%", tna: "9.67%", duration: 1.95, paridad: "81.81", vto: "2028-12-15", dias: 768 },
+        { ticker: "TZXM9", precio: 93.20, var: "-0.38%", tir: "10.59%", tem: "0.84%", tna: "10.11%", duration: 2.20, paridad: "78.72", vto: "2029-03-28", dias: 871 },
+        { ticker: "TX31", precio: 1473.0, var: "-0.20%", tir: "11.69%", tem: "0.93%", tna: "11.11%", duration: 2.28, paridad: "81.13", vto: "2031-11-30", dias: 1848 },
+        { ticker: "DIP0", precio: 48650, var: "-0.71%", tir: "11.87%", tem: "0.94%", tna: "11.27%", duration: 3.21, paridad: "109.90", vto: "2033-12-31", dias: 2610 },
+        { ticker: "DICP", precio: 48700, var: "-1.39%", tir: "11.83%", tem: "0.94%", tna: "11.23%", duration: 2.66, paridad: "86.63", vto: "2033-12-31", dias: 2610 },
+        { ticker: "PAP0", precio: 33000, var: "0.00%", tir: "11.85%", tem: "0.94%", tna: "11.25%", duration: 5.63, paridad: "55.92", vto: "2038-12-31", dias: 4436 },
+        { ticker: "PARP", precio: 33020, var: "-0.68%", tir: "11.82%", tem: "0.94%", tna: "11.22%", duration: 5.63, paridad: "55.96", vto: "2038-12-31", dias: 4436 },
+        { ticker: "CUAP", precio: 39000, var: "-1.64%", tir: "11.09%", tem: "0.88%", tna: "10.56%", duration: 9.73, paridad: "66.08", vto: "2045-12-31", dias: 6993 }
       ],
       soberanos: [
         { ticker: "AO27", precio: 161480, var: "0.23%", tir: "3.82%", duration: 0.93, paridad: "102.26", cupon: "0.50%", vto: "2027-10-29" },
         { ticker: "AO28", precio: 133240, var: "-0.19%", tir: "16.18%", duration: 1.63, paridad: "84.38", cupon: "0.50%", vto: "2028-10-31" },
-        { ticker: "AL29", precio: 80970,  var: "-0.41%", tir: "13.46%", duration: 1.18, paridad: "85.46", cupon: "0.30%", vto: "2029-07-09" },
-        { ticker: "GD29", precio: 85170,  var: "3.36%",  tir: "9.28%",  duration: 1.25, paridad: "89.89", cupon: "0.30%", vto: "2029-07-09" },
-        { ticker: "AO29", precio: 121490, var: "0.74%",  tir: "16.79%", duration: 2.34, paridad: "76.94", cupon: "0.50%", vto: "2029-10-31" },
-        { ticker: "AN29", precio: 126400, var: "0.52%",  tir: "16.66%", duration: 2.34, paridad: "80.02", cupon: "3.25%", vto: "2029-11-30" },
-        { ticker: "AL30", precio: 81250,  var: "0.18%",  tir: "14.37%", duration: 1.54, paridad: "80.39", cupon: "0.24%", vto: "2030-07-09" },
-        { ticker: "GD30", precio: 83380,  var: "-0.71%", tir: "12.71%", duration: 1.58, paridad: "82.50", cupon: "0.24%", vto: "2030-07-09" },
-        { ticker: "AL35", precio: 99830,  var: "-0.37%", tir: "14.48%", duration: 4.50, paridad: "63.21", cupon: "2.06%", vto: "2035-07-09" },
+        { ticker: "AL29", precio: 80970, var: "-0.41%", tir: "13.46%", duration: 1.18, paridad: "85.46", cupon: "0.30%", vto: "2029-07-09" },
+        { ticker: "GD29", precio: 85170, var: "3.36%", tir: "9.28%", duration: 1.25, paridad: "89.89", cupon: "0.30%", vto: "2029-07-09" },
+        { ticker: "AO29", precio: 121490, var: "0.74%", tir: "16.79%", duration: 2.34, paridad: "76.94", cupon: "0.50%", vto: "2029-10-31" },
+        { ticker: "AN29", precio: 126400, var: "0.52%", tir: "16.66%", duration: 2.34, paridad: "80.02", cupon: "3.25%", vto: "2029-11-30" },
+        { ticker: "AL30", precio: 81250, var: "0.18%", tir: "14.37%", duration: 1.54, paridad: "80.39", cupon: "0.24%", vto: "2030-07-09" },
+        { ticker: "GD30", precio: 83380, var: "-0.71%", tir: "12.71%", duration: 1.58, paridad: "82.50", cupon: "0.24%", vto: "2030-07-09" },
+        { ticker: "AL35", precio: 99830, var: "-0.37%", tir: "14.48%", duration: 4.50, paridad: "63.21", cupon: "2.06%", vto: "2035-07-09" },
         { ticker: "GD35", precio: 107400, var: "-0.56%", tir: "12.88%", duration: 4.63, paridad: "68.00", cupon: "2.06%", vto: "2035-07-09" },
         { ticker: "AE38", precio: 104560, var: "-0.94%", tir: "15.42%", duration: 3.55, paridad: "66.20", cupon: "2.50%", vto: "2038-01-09" },
-        { ticker: "GD38", precio: 114800, var: "0.17%",  tir: "12.88%", duration: 3.81, paridad: "72.69", cupon: "2.50%", vto: "2038-01-09" },
-        { ticker: "AL41", precio: 93360,  var: "-0.89%", tir: "14.19%", duration: 4.64, paridad: "59.14", cupon: "1.75%", vto: "2041-07-09" },
+        { ticker: "GD38", precio: 114800, var: "0.17%", tir: "12.88%", duration: 3.81, paridad: "72.69", cupon: "2.50%", vto: "2038-01-09" },
+        { ticker: "AL41", precio: 93360, var: "-0.89%", tir: "14.19%", duration: 4.64, paridad: "59.14", cupon: "1.75%", vto: "2041-07-09" },
         { ticker: "GD41", precio: 100520, var: "-0.53%", tir: "12.64%", duration: 4.88, paridad: "63.67", cupon: "1.75%", vto: "2041-07-09" },
-        { ticker: "GD46", precio: 93590,  var: "1.20%",  tir: "12.05%", duration: 5.17, paridad: "65.26", cupon: "1.88%", vto: "2046-07-09" }
+        { ticker: "GD46", precio: 93590, var: "1.20%", tir: "12.05%", duration: 5.17, paridad: "65.26", cupon: "1.88%", vto: "2046-07-09" }
       ],
       bopreales: [
-        { ticker: "BPOA7", precio: 95.40, var: "0.10%", tir: "8.40%",  duration: 0.85, paridad: "95.40", cupon: "5.00%", vto: "2027-10-31" },
-        { ticker: "BPOB7", precio: 89.20, var: "0.15%", tir: "9.15%",  duration: 1.45, paridad: "89.20", cupon: "5.00%", vto: "2027-10-31" },
+        { ticker: "BPOA7", precio: 95.40, var: "0.10%", tir: "8.40%", duration: 0.85, paridad: "95.40", cupon: "5.00%", vto: "2027-10-31" },
+        { ticker: "BPOB7", precio: 89.20, var: "0.15%", tir: "9.15%", duration: 1.45, paridad: "89.20", cupon: "5.00%", vto: "2027-10-31" },
         { ticker: "BPOC7", precio: 83.50, var: "0.00%", tir: "10.30%", duration: 2.10, paridad: "83.50", cupon: "5.00%", vto: "2027-10-31" },
         { ticker: "BPOD7", precio: 81.10, var: "-0.20%", tir: "11.20%", duration: 2.75, paridad: "81.10", cupon: "5.00%", vto: "2027-10-31" },
-        { ticker: "BPC7D", precio: 96.80, var: "0.05%", tir: "7.80%",  duration: 0.60, paridad: "96.80", cupon: "0.00%", vto: "2025-06-30" },
-        { ticker: "BPD7D", precio: 92.50, var: "0.20%", tir: "9.40%",  duration: 1.30, paridad: "92.50", cupon: "3.00%", vto: "2026-05-31" },
+        { ticker: "BPC7D", precio: 96.80, var: "0.05%", tir: "7.80%", duration: 0.60, paridad: "96.80", cupon: "0.00%", vto: "2025-06-30" },
+        { ticker: "BPD7D", precio: 92.50, var: "0.20%", tir: "9.40%", duration: 1.30, paridad: "92.50", cupon: "3.00%", vto: "2026-05-31" },
         { ticker: "BPD8D", precio: 88.70, var: "0.10%", tir: "10.10%", duration: 1.80, paridad: "88.70", cupon: "3.00%", vto: "2026-11-30" }
       ],
       dollar_linked: [
         { ticker: "D30N6", precio: 154750, var: "-0.03%", tir: "-2.23%", duration: 0.07, paridad: "99.86", cupon: "0.00%", vto: "2026-11-30", dias: 22 },
-        { ticker: "D15E7", precio: 154000, var: "-0.13%", tir: "1.90%",  duration: 0.19, paridad: "99.37", cupon: "0.00%", vto: "2027-01-15", dias: 68 },
-        { ticker: "D31M7", precio: 154990, var: "0.81%",  tir: "-0.74%", duration: 0.40, paridad: "100.01", cupon: "0.00%", vto: "2027-03-31", dias: 143 },
-        { ticker: "TZV27", precio: 152675, var: "-0.54%", tir: "1.91%",  duration: 0.64, paridad: "98.52", cupon: "0.00%", vto: "2027-06-30", dias: 234 },
-        { ticker: "TZV28", precio: 126850, var: "0.21%",  tir: "12.76%", duration: 1.48, paridad: "81.85", cupon: "0.00%", vto: "2028-06-30", dias: 600 },
+        { ticker: "D15E7", precio: 154000, var: "-0.13%", tir: "1.90%", duration: 0.19, paridad: "99.37", cupon: "0.00%", vto: "2027-01-15", dias: 68 },
+        { ticker: "D31M7", precio: 154990, var: "0.81%", tir: "-0.74%", duration: 0.40, paridad: "100.01", cupon: "0.00%", vto: "2027-03-31", dias: 143 },
+        { ticker: "TZV27", precio: 152675, var: "-0.54%", tir: "1.91%", duration: 0.64, paridad: "98.52", cupon: "0.00%", vto: "2027-06-30", dias: 234 },
+        { ticker: "TZV28", precio: 126850, var: "0.21%", tir: "12.76%", duration: 1.48, paridad: "81.85", cupon: "0.00%", vto: "2028-06-30", dias: 600 },
         { ticker: "TZVD8", precio: 117000, var: "-1.35%", tir: "14.14%", duration: 1.87, paridad: "75.50", cupon: "0.00%", vto: "2028-12-15", dias: 768 }
       ],
       tamar: [
         { ticker: "TMF27", precio: 127.80, var: "-0.08%", tir: "27.08%", duration: 0.25, paridad: "127.80", cupon: "35.86%", vto: "2027-02-26" },
         { ticker: "TML27", precio: 113.15, var: "-0.04%", tir: "29.38%", duration: 0.58, paridad: "113.15", cupon: "34.73%", vto: "2027-07-30" },
-        { ticker: "TMG27", precio: 122.60, var: "0.41%",  tir: "29.39%", duration: 0.72, paridad: "122.60", cupon: "37.94%", vto: "2027-08-31" },
-        { ticker: "TMF28", precio: 112.20, var: "0.00%",  tir: "39.43%", duration: 0.96, paridad: "112.20", cupon: "69.75%", vto: "2028-02-25" },
-        { ticker: "TXMJ8", precio: 103.90, var: "0.48%",  tir: "39.10%", duration: 1.24, paridad: "103.90", cupon: "70.36%", vto: "2028-06-30" },
+        { ticker: "TMG27", precio: 122.60, var: "0.41%", tir: "29.39%", duration: 0.72, paridad: "122.60", cupon: "37.94%", vto: "2027-08-31" },
+        { ticker: "TMF28", precio: 112.20, var: "0.00%", tir: "39.43%", duration: 0.96, paridad: "112.20", cupon: "69.75%", vto: "2028-02-25" },
+        { ticker: "TXMJ8", precio: 103.90, var: "0.48%", tir: "39.10%", duration: 1.24, paridad: "103.90", cupon: "70.36%", vto: "2028-06-30" },
         { ticker: "TMG28", precio: 108.75, var: "-0.41%", tir: "40.45%", duration: 1.34, paridad: "108.75", cupon: "94.97%", vto: "2028-08-31" },
-        { ticker: "TXMD8", precio: 94.25,  var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25",  cupon: "87.89%", vto: "2028-12-15" },
-        { ticker: "TXMJ9", precio: 95.00,  var: "0.96%",  tir: "41.62%", duration: 1.96, paridad: "95.00",  cupon: "120.74%", vto: "2029-06-29" },
-        { ticker: "TXMD9", precio: 87.61,  var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61",  cupon: "141.43%", vto: "2029-12-14" },
-        { ticker: "TXMJ0", precio: 84.80,  var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80",  cupon: "176.46%", vto: "2030-06-28" }
+        { ticker: "TXMD8", precio: 94.25, var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25", cupon: "87.89%", vto: "2028-12-15" },
+        { ticker: "TXMJ9", precio: 95.00, var: "0.96%", tir: "41.62%", duration: 1.96, paridad: "95.00", cupon: "120.74%", vto: "2029-06-29" },
+        { ticker: "TXMD9", precio: 87.61, var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61", cupon: "141.43%", vto: "2029-12-14" },
+        { ticker: "TXMJ0", precio: 84.80, var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80", cupon: "176.46%", vto: "2030-06-28" }
       ],
       duales: [
-        { ticker: "TTD26", precio: 176.62,   var: "-0.10%", tir: "23.94%", duration: 0.10, paridad: "176.62",    cupon: "78.12%",  vto: "2026-12-15" },
-        { ticker: "TMVE8", precio: 147000.0, var: "0.34%",  tir: "34.36%", duration: 0.92, paridad: "147000.00", cupon: "40.91%",  vto: "2028-01-31" },
-        { ticker: "TXMJ8", precio: 103.90,   var: "0.48%",  tir: "39.10%", duration: 1.24, paridad: "103.90",    cupon: "70.36%",  vto: "2028-06-30" },
-        { ticker: "TXMD8", precio: 94.25,    var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25",     cupon: "87.89%",  vto: "2028-12-15" },
-        { ticker: "TXMJ9", precio: 95.00,    var: "0.96%",  tir: "41.62%", duration: 1.96, paridad: "95.00",     cupon: "120.74%", vto: "2029-06-29" },
-        { ticker: "TXMD9", precio: 87.61,    var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61",     cupon: "141.43%", vto: "2029-12-14" },
-        { ticker: "TXMJ0", precio: 84.80,    var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80",     cupon: "176.46%", vto: "2030-06-28" }
+        { ticker: "TTD26", precio: 176.62, var: "-0.10%", tir: "23.94%", duration: 0.10, paridad: "176.62", cupon: "78.12%", vto: "2026-12-15" },
+        { ticker: "TMVE8", precio: 147000.0, var: "0.34%", tir: "34.36%", duration: 0.92, paridad: "147000.00", cupon: "40.91%", vto: "2028-01-31" },
+        { ticker: "TXMJ8", precio: 103.90, var: "0.48%", tir: "39.10%", duration: 1.24, paridad: "103.90", cupon: "70.36%", vto: "2028-06-30" },
+        { ticker: "TXMD8", precio: 94.25, var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25", cupon: "87.89%", vto: "2028-12-15" },
+        { ticker: "TXMJ9", precio: 95.00, var: "0.96%", tir: "41.62%", duration: 1.96, paridad: "95.00", cupon: "120.74%", vto: "2029-06-29" },
+        { ticker: "TXMD9", precio: 87.61, var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61", cupon: "141.43%", vto: "2029-12-14" },
+        { ticker: "TXMJ0", precio: 84.80, var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80", cupon: "176.46%", vto: "2030-06-28" }
       ]
     };
 
@@ -331,20 +308,84 @@
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
 
+    // CARGA DE CRIPTO EN VIVO DIRECTO DE BINANCE (SIN BLOQUEO DE RAILWAY)
+    async function actualizarCriptosEnVivo() {
+      try {
+        const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${syms}`);
+        if (!res.ok) return;
+        const tickers = await res.json();
+        const mapBin = {};
+        tickers.forEach(t => { mapBin[t.symbol] = t; });
+
+        const fec = new Date().toLocaleTimeString();
+        if (!datosGlobales.cripto) datosGlobales.cripto = [];
+
+        CRIPTO_DIRECTAS.forEach(c => {
+          let p = c.defP;
+          let varStr = "+0.00%";
+          if (c.sym && mapBin[c.sym]) {
+            p = parseFloat(mapBin[c.sym].lastPrice);
+            const chg = parseFloat(mapBin[c.sym].priceChangePercent);
+            varStr = chg >= 0 ? `+${chg.toFixed(2)}%` : `${chg.toFixed(2)}%`;
+          }
+
+          let fmt = "";
+          if (p >= 1000) {
+            fmt = "US$ " + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          } else if (p >= 1) {
+            fmt = "US$ " + p.toFixed(2);
+          } else {
+            fmt = "US$ " + p.toFixed(4);
+          }
+
+          // Detección de cambio para animación visual
+          let flashClass = "";
+          if (PRECIOS_ANTERIORES[c.cod] !== undefined) {
+            if (p > PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-green";
+            else if (p < PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-red";
+          }
+          PRECIOS_ANTERIORES[c.cod] = p;
+
+          const idx = datosGlobales.cripto.findIndex(it => it.variable === c.cod);
+          const itemObj = {
+            variable: c.cod,
+            descripcion: c.desc,
+            categoria: "cripto",
+            valor_formateado: fmt,
+            variacion: varStr,
+            valor: p,
+            fecha: fec,
+            flash: flashClass
+          };
+
+          if (idx >= 0) {
+            datosGlobales.cripto[idx] = itemObj;
+          } else {
+            datosGlobales.cripto.push(itemObj);
+          }
+        });
+
+        // Refrescar tarjetas activas si estamos en Cripto o Home
+        if (categoriaActiva === "cripto" || categoriaActiva === "home") {
+          renderizar();
+        }
+      } catch (err) {
+        console.warn("Binance fetch diferido:", err);
+      }
+    }
+
     async function cargarDatos() {
       try {
         const res = await fetch("/bcra/variables?formato=agrupado&t=" + Date.now());
         if (!res.ok) throw new Error("Error HTTP " + res.status);
-        datosGlobales = await res.json();
+        const data = await res.json();
         
-        if (datosGlobales.cotizacion_bonos && Array.isArray(datosGlobales.cotizacion_bonos)) {
-          datosGlobales.cotizacion_bonos.forEach(b => {
-            const tk = b.variable.replace("BONO_", "");
-            for (const key in TABLAS_BONOS) {
-              const it = TABLAS_BONOS[key].find(s => s.ticker === tk);
-              if (it && b.valor > 0) it.precio = b.valor;
-            }
-          });
+        // Conservar cripto en vivo
+        const criptoBackup = datosGlobales.cripto;
+        datosGlobales = data;
+        if (criptoBackup && criptoBackup.length > 0) {
+          datosGlobales.cripto = criptoBackup;
         }
 
         renderizar();
@@ -356,12 +397,7 @@
           status.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
         }
       } catch (err) {
-        console.error("Error al cargar:", err);
-        const status = document.getElementById("sync-status");
-        if (status) {
-          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
-          status.innerHTML = "Error de sincronización";
-        }
+        console.error("Error al cargar backend:", err);
       }
     }
 
@@ -370,24 +406,16 @@
       if (val === undefined || val === null || val === "-") return -999999;
       if (typeof val === "number") return val;
       const s = String(val).trim();
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        return new Date(s).getTime();
-      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s).getTime();
       const numMatch = s.replace(",", ".").match(/-?\d+(\.\d+)?/);
-      if (numMatch) {
-        return parseFloat(numMatch[0]);
-      }
+      if (numMatch) return parseFloat(numMatch[0]);
       return s.toLowerCase();
     }
 
     function ordenarTabla(tablaKey, colKey) {
       const st = SORT_STATE[tablaKey];
-      if (st.col === colKey) {
-        st.asc = !st.asc;
-      } else {
-        st.col = colKey;
-        st.asc = true;
-      }
+      if (st.col === colKey) st.asc = !st.asc;
+      else { st.col = colKey; st.asc = true; }
       TABLAS_BONOS[tablaKey].sort((a, b) => {
         const va = valorParaOrdenar(a, colKey);
         const vb = valorParaOrdenar(b, colKey);
@@ -417,11 +445,8 @@
       `;
     }
 
-    // SEMÁFORO EXCLUSIVO: VERDE SI POSITIVO, ROJO SI NEGATIVO. RESTO EN MARRÓN NEUTRO
     function renderFilaTerminal(valStr, type) {
-      if (!valStr || valStr === "-") {
-        return `<span class="text-slate-500 font-mono">-</span>`;
-      }
+      if (!valStr || valStr === "-") return `<span class="text-slate-500 font-mono">-</span>`;
       let bgStyle = "";
       let textStyle = "";
       let borderStyle = "";
@@ -448,11 +473,7 @@
         borderStyle = "border: 1px solid rgba(180, 83, 9, 0.3);";
       }
 
-      return `
-        <span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${bgStyle} ${textStyle} ${borderStyle}">
-          ${valStr}
-        </span>
-      `;
+      return `<span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${bgStyle} ${textStyle} ${borderStyle}">${valStr}</span>`;
     }
 
     function cambiarCurva(curvaKey) {
@@ -467,15 +488,12 @@
       let valorOficial = null;
       const listaDolar = datosGlobales.dolar_y_cambiario || [];
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
-      if (itemOficial && itemOficial.valor > 0) {
-        valorOficial = itemOficial.valor;
-      }
+      if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
-      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL CON 7 CURVAS COMPLETAS
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva];
-        
         let tablaHtml = "";
+
         if (curvaActiva === "lecaps") {
           tablaHtml = `
             <table class="w-full text-left text-xs font-mono">
@@ -713,7 +731,6 @@
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <!-- Menú Lateral Completo (7 Curvas) -->
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
@@ -776,7 +793,6 @@
               </button>
             </aside>
 
-            <!-- Cuadro Activo -->
             <section class="flex-1 w-full space-y-3 overflow-hidden">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div class="flex items-center gap-2">
@@ -833,7 +849,7 @@
         return;
       }
 
-      // RESTO DE CATEGORÍAS
+      // RESTO DE CATEGORÍAS (Cripto, Monedas, etc.)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
@@ -884,35 +900,7 @@
       let desc = String(item.descripcion || "").replace(/Â/g, "").trim();
       let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
-
-      if (item.variable === "INFLACION_MENSUAL" && fecha) {
-        desc = `Inflación Mensual (${fecha})`;
-        if (!valFmt.includes("(")) {
-          valFmt = `${valFmt} (${fecha})`;
-        }
-      }
-
-      if (item.variable && item.variable.startsWith("TASA_")) {
-        if (!valFmt.toUpperCase().includes("TNA")) {
-          valFmt = `${valFmt} TNA`;
-        }
-      }
-
-      const variablesPesos = [
-        "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
-        "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
-      ];
-      if (variablesPesos.includes(item.variable)) {
-        if (!valFmt.startsWith("$")) {
-          valFmt = `$${valFmt}`;
-        }
-      }
-
-      if (item.variable === "RIESGO_PAIS") {
-        if (!valFmt.toLowerCase().includes("puntos")) {
-          valFmt = `${valFmt} pb`;
-        }
-      }
+      const animFlash = item.flash || "";
 
       return `
         <div class="bg-brand-card border border-slate-800 rounded-lg p-3 card-glow flex flex-col justify-between hover:border-slate-700 transition">
@@ -922,7 +910,7 @@
               ${badgeBrecha}
             </div>
             <div class="mt-1.5 flex items-baseline justify-between gap-2">
-              <span class="text-xl font-bold tracking-tight text-white font-mono truncate">${valFmt}</span>
+              <span class="text-xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span>
             </div>
           </div>
           <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
@@ -955,7 +943,14 @@
       renderizar();
     }
 
+    // Inicialización y ciclos independientes
     cargarDatos();
+    actualizarCriptosEnVivo();
+
+    // Cripto en vivo cada 5 segundos (Binance Spot)
+    setInterval(actualizarCriptosEnVivo, 5000);
+
+    // Variables generales del servidor cada 15 segundos
     setInterval(cargarDatos, 15000);
   </script>
 </body>
