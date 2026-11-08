@@ -31,50 +31,75 @@
 <body class="text-slate-100 font-sans antialiased min-h-screen">
 
   <!-- Header -->
-  <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+  <header class="border-b border-slate-800 bg-brand-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xl">
+      <div class="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-lg">
         <i class="fa-solid fa-chart-line"></i>
       </div>
       <div>
-        <h1 class="text-lg font-bold tracking-tight text-white">Dashboard Mercado & Macro</h1>
-        <p class="text-xs text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
+        <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
+        <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
       </div>
     </div>
-    <div class="flex items-center gap-4">
-      <span id="sync-status" class="flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado
+    <div class="flex items-center gap-3">
+      <span id="sync-status" class="flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado
       </span>
-      <span id="last-update" class="text-xs text-slate-400 font-mono">--:--:--</span>
+      <span id="last-update" class="text-[11px] text-slate-400 font-mono">--:--:--</span>
     </div>
   </header>
 
-  <!-- Navigation / Filtros -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
-    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-800/80 text-sm font-medium">
-      <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition flex items-center gap-2">
-        <i class="fa-solid fa-house text-xs"></i> HOME
-      </button>
-      <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Tasas y BCRA</button>
-      <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Dólar y Brechas</button>
-      <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
-        <i class="fa-solid fa-money-bill-1-wave text-xs text-emerald-400"></i> Monedas
-      </button>
-      <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Inflación, CER y UVA</button>
-      <button onclick="filtrarCategoria('mercado_y_deuda', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Mercado y Renta</button>
-      <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
-        <i class="fa-solid fa-coins text-xs text-amber-400"></i> Metales
-      </button>
-      <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
-        <i class="fa-solid fa-oil-well text-xs text-amber-500"></i> Petróleo
-      </button>
-      <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Macro & Fiscal</button>
-      <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Micro & Actividad</button>
-      <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Agro & Energía</button>
+  <!-- Navigation / Filtros (HOME a la izquierda y 2 hileras compactas a la derecha) -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
+    <div class="border-b border-slate-800/80 pb-4">
+      <div class="flex items-stretch gap-3">
+        <!-- Botón HOME destacado a la izquierda -->
+        <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0">
+          <i class="fa-solid fa-house text-sm"></i>
+          <span>HOME</span>
+        </button>
+
+        <!-- Grilla de 2 hileras compactas con tipografía reducida -->
+        <div class="grid grid-cols-5 gap-1.5 flex-1 w-full text-[11px]">
+          <!-- Fila 1 -->
+          <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Tasas y BCRA
+          </button>
+          <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Dólar y Brechas
+          </button>
+          <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-money-bill-1-wave text-emerald-400 text-[10px]"></i> Monedas
+          </button>
+          <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Inflación / UVA
+          </button>
+          <button onclick="filtrarCategoria('mercado_y_deuda', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Mercado y Renta
+          </button>
+
+          <!-- Fila 2 -->
+          <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i> Metales
+          </button>
+          <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i> Petróleo
+          </button>
+          <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Macro & Fiscal
+          </button>
+          <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Micro / Real
+          </button>
+          <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center">
+            Agro & Energía
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Contenedor General -->
-    <div id="dashboard-content" class="space-y-10">
+    <div id="dashboard-content" class="space-y-8">
       <div class="flex justify-center items-center py-20 text-slate-500">
         <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
       </div>
@@ -129,14 +154,14 @@
         if (reloj) reloj.innerText = new Date().toLocaleTimeString();
         const status = document.getElementById("sync-status");
         if (status) {
-          status.className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-          status.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
+          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+          status.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
         }
       } catch (err) {
         console.error("Error al cargar:", err);
         const status = document.getElementById("sync-status");
         if (status) {
-          status.className = "flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
           status.innerHTML = "Error de sincronización";
         }
       }
@@ -179,7 +204,7 @@
         const info = NOMBRES_SECCIONES.home;
         contenedor.innerHTML = `
           <section class="space-y-4">
-            <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+            <div class="flex items-center gap-2 text-slate-300 font-semibold text-sm border-b border-slate-800/60 pb-2">
               <i class="fa-solid ${info.icono} text-blue-400"></i>
               <h2>${info.titulo}</h2>
             </div>
@@ -201,7 +226,7 @@
 
       contenedor.innerHTML = `
         <section class="space-y-4">
-          <div class="flex items-center gap-2 text-slate-300 font-semibold text-base border-b border-slate-800/60 pb-2">
+          <div class="flex items-center gap-2 text-slate-300 font-semibold text-sm border-b border-slate-800/60 pb-2">
             <i class="fa-solid ${info.icono} text-blue-400"></i>
             <h2>${info.titulo}</h2>
           </div>
@@ -295,10 +320,19 @@
     function filtrarCategoria(cat, ev) {
       categoriaActiva = cat;
       document.querySelectorAll(".nav-tab").forEach(b => {
-        b.className = "nav-tab px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2";
+        if (b.innerText.trim().toUpperCase() === "HOME") {
+          b.className = "nav-tab px-5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shrink-0 border border-slate-700/50";
+        } else {
+          b.className = "nav-tab px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate text-center flex items-center justify-center gap-1.5";
+        }
       });
+
       if (ev && ev.currentTarget) {
-        ev.currentTarget.className = "nav-tab active px-4 py-2 rounded-lg bg-blue-600 text-white transition flex items-center gap-2";
+        if (cat === "home") {
+          ev.currentTarget.className = "nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0";
+        } else {
+          ev.currentTarget.className = "nav-tab active px-2.5 py-1.5 rounded-lg bg-blue-600 text-white border border-blue-500 font-medium transition truncate text-center flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20";
+        }
       }
       renderizar();
     }
