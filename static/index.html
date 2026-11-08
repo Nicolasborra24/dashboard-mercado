@@ -43,7 +43,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.1 - Semáforo</span>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">v3.2 - Cripto</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
       </div>
@@ -56,7 +56,7 @@
     </div>
   </header>
 
-  <!-- Navigation -->
+  <!-- Navigation (Simétrica: 6 botones arriba y 6 abajo) -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
@@ -66,8 +66,8 @@
         </button>
 
         <div class="flex flex-col gap-1.5 flex-1 w-full text-[11px]">
-          <!-- Fila 1 (5 secciones) -->
-          <div class="grid grid-cols-5 gap-1.5">
+          <!-- Fila 1 (6 secciones) -->
+          <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
               <span class="truncate">Tasas y BCRA</span>
@@ -79,6 +79,10 @@
             <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
               <span class="truncate">Monedas</span>
+            </button>
+            <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-brands fa-bitcoin text-amber-400 text-[11px]"></i>
+              <span class="truncate">Cripto</span>
             </button>
             <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
@@ -135,6 +139,7 @@
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", icono: "fa-landmark" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
+      cripto: { titulo: "Cotizaciones Criptomonedas en Vivo (Top 10)", icono: "fa-brands fa-bitcoin text-amber-400" },
       cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", icono: "fa-file-invoice-dollar" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
       mercado_y_deuda: { titulo: "Mercado Bursátil y Deuda Soberana", icono: "fa-chart-line" },
@@ -147,6 +152,7 @@
 
     const VARIABLES_HOME = [
       "MONEDA_DXY",
+      "CRIPTO_BTC",
       "DOLAR_OFICIAL",
       "DOLAR_MEP",
       "DOLAR_CCL",
@@ -354,7 +360,6 @@
       `;
     }
 
-    // SEMÁFORO EXCLUSIVO: VERDE SI POSITIVO, ROJO SI NEGATIVO. RESTO EN MARRÓN NEUTRO
     function renderFilaTerminal(valStr, type) {
       if (!valStr || valStr === "-") {
         return `<span class="text-slate-500 font-mono">-</span>`;
@@ -408,6 +413,7 @@
         valorOficial = itemOficial.valor;
       }
 
+      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL + TABLA DEDICADA
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva];
         
@@ -554,7 +560,6 @@
 
         contenedor.innerHTML = `
           <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <!-- Menú Lateral -->
             <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-brand-card border border-slate-800 rounded-xl p-3 card-glow">
               <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
@@ -593,7 +598,6 @@
               </button>
             </aside>
 
-            <!-- Cuadro Activo -->
             <section class="flex-1 w-full space-y-3 overflow-hidden">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div class="flex items-center gap-2">
@@ -611,6 +615,7 @@
         return;
       }
 
+      // VISTA HOME
       if (categoriaActiva === "home") {
         let todos = [];
         for (const cat in datosGlobales) {
@@ -649,8 +654,9 @@
         return;
       }
 
+      // VISTA GENERAL (Cripto, Monedas, Metales, etc. organizadas en 4 por fila)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
-      const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-circle-dot" };
+      const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
       if (items.length === 0) {
         contenedor.innerHTML = '<div class="py-16 text-center text-slate-500 text-xs">No hay datos disponibles en esta sección.</div>';
@@ -660,7 +666,7 @@
       contenedor.innerHTML = `
         <section class="space-y-3">
           <div class="flex items-center gap-2 text-slate-300 font-semibold text-xs border-b border-slate-800/60 pb-1.5">
-            <i class="fa-solid ${info.icono} text-blue-400"></i>
+            <i class="${info.icono.includes('fa-') ? info.icono : 'fa-solid ' + info.icono} text-sm"></i>
             <h2>${info.titulo}</h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

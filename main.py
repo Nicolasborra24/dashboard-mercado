@@ -395,7 +395,83 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
             "fecha": fec_hoy
         })
 
-    # 7. Cotización Bonos (con precios en vivo de SJB)
+    # 7. Sección Cripto: Top 10 Cotizaciones (Binance Live + Fallback)
+    CRIPTO_CONFIG = [
+        ("CRIPTO_BTC", "Bitcoin (BTC)", "BTCUSDT", 76420.0, "+1.85%"),
+        ("CRIPTO_ETH", "Ethereum (ETH)", "ETHUSDT", 2485.0, "-0.45%"),
+        ("CRIPTO_USDT", "Tether (USDT)", None, 1.00, "+0.01%"),
+        ("CRIPTO_SOL", "Solana (SOL)", "SOLUSDT", 198.50, "+3.40%"),
+        ("CRIPTO_PAXG", "PAX Gold (PAXG)", "PAXGUSDT", 2745.0, "+0.40%"),
+        ("CRIPTO_BNB", "BNB Chain (BNB)", "BNBUSDT", 588.0, "+0.75%"),
+        ("CRIPTO_XRP", "Ripple (XRP)", "XRPUSDT", 0.582, "-0.30%"),
+        ("CRIPTO_DOGE", "Dogecoin (DOGE)", "DOGEUSDT", 0.198, "+2.15%"),
+        ("CRIPTO_ADA", "Cardano (ADA)", "ADAUSDT", 0.438, "+1.10%"),
+        ("CRIPTO_USDC", "USD Coin (USDC)", "USDCUSDT", 1.00, "0.00%")
+    ]
+
+    cripto_cargadas = set()
+    try:
+        symbols_param = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]'
+        r_bin = requests.get(f"https://api.binance.com/api/v3/ticker/24hr?symbols={symbols_param}", headers=h_sjb, timeout=5)
+        if r_bin.status_code == 200:
+            b_data = {item["symbol"]: item for item in r_bin.json() if "symbol" in item}
+            for cod, desc, sym, def_val, def_var in CRIPTO_CONFIG:
+                if sym and sym in b_data:
+                    raw_p = float(b_data[sym].get("lastPrice", def_val))
+                    raw_chg = float(b_data[sym].get("priceChangePercent", 0))
+                    var_str = f"+{raw_chg:.2f}%" if raw_chg > 0 else f"{raw_chg:.2f}%"
+                    
+                    if raw_p >= 1000:
+                        fmt_val = f"US$ {raw_p:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    elif raw_p >= 1:
+                        fmt_val = f"US$ {raw_p:.2f}".replace(".", ",")
+                    else:
+                        fmt_val = f"US$ {raw_p:.4f}".replace(".", ",")
+
+                    elementos.append({
+                        "variable": cod,
+                        "descripcion": desc,
+                        "categoria": "cripto",
+                        "valor_formateado": fmt_val,
+                        "variacion": var_str,
+                        "valor": round(raw_p, 4),
+                        "fecha": fec_hoy
+                    })
+                    cripto_cargadas.add(cod)
+                elif cod == "CRIPTO_USDT":
+                    elementos.append({
+                        "variable": cod,
+                        "descripcion": desc,
+                        "categoria": "cripto",
+                        "valor_formateado": "US$ 1,00",
+                        "variacion": "+0,01%",
+                        "valor": 1.00,
+                        "fecha": fec_hoy
+                    })
+                    cripto_cargadas.add(cod)
+    except Exception:
+        pass
+
+    for cod, desc, sym, def_val, def_var in CRIPTO_CONFIG:
+        if cod not in cripto_cargadas:
+            if def_val >= 1000:
+                fmt_val = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            elif def_val >= 1:
+                fmt_val = f"US$ {def_val:.2f}".replace(".", ",")
+            else:
+                fmt_val = f"US$ {def_val:.4f}".replace(".", ",")
+
+            elementos.append({
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "cripto",
+                "valor_formateado": fmt_val,
+                "variacion": def_var,
+                "valor": def_val,
+                "fecha": fec_hoy
+            })
+
+    # 8. Cotización Bonos (precios en vivo)
     try:
         r_b = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers=h_sjb, timeout=5)
         if r_b.status_code == 200:
@@ -443,6 +519,7 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
         "tasas_y_monetario": [],
         "dolar_y_cambiario": [],
         "monedas": [],
+        "cripto": [],
         "cotizacion_bonos": [],
         "inflacion_y_ajuste": [],
         "mercado_y_deuda": [],
