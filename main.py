@@ -107,9 +107,10 @@ def consultar_serie_simple(serie_id: str):
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
     series = [
-        {"clave": "RESERVAS_USD", "id": "174.1_RO_2016_0_21", "desc": "Reservas Internacionales (Millones USD)"},
-        {"clave": "BASE_MONETARIA", "id": "174.1_BMA_2016_0_15", "desc": "Base Monetaria (Millones ARS)"},
-        {"clave": "DOLAR_A3500", "id": "168.1_T_CAMBIOR_D_0_0_26", "desc": "Tipo de Cambio Mayorista Comunicación A3500"}
+        {"clave": "DOLAR_A3500", "id": "168.1_T_CAMBIOR_D_0_0_26", "desc": "Tipo de Cambio Mayorista Comunicación A3500"},
+        {"clave": "RESERVAS_USD", "id": "174.1_RO_D_0_0_21", "desc": "Reservas Internacionales (Millones USD)"},
+        {"clave": "BASE_MONETARIA", "id": "174.1_BMA_M_0_0_15", "desc": "Base Monetaria (Millones ARS)"},
+        {"clave": "BADLAR", "id": "174.1_TB_D_0_0_19", "desc": "Tasa Badlar Bancos Privados (% TNA)"}
     ]
     
     resultado = []
@@ -143,10 +144,36 @@ def ver_bcra(db: Session = Depends(get_db)):
         except Exception:
             db.rollback()
         
-    if not resultado:
-        return {"mensaje": "No se pudieron recuperar las series del BCRA en este momento"}
-        
     return resultado
+
+@app.get("/mercado/resumen")
+def ver_resumen_mercado(db: Session = Depends(get_db)):
+    # Endpoint consolidado con cotizaciones, mayorista y brechas calculadas
+    try:
+        r_dolar = requests.get("https://dolarapi.com/v1/dolares", timeout=10)
+        dolares = r_dolar.json() if r_dolar.status_code == 200 else []
+        
+        # Mapear precios de venta
+        precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
+        
+        # Buscar mayorista (preferencia A3500 oficial o de dolarapi)
+        mayorista = precios.get("mayorista") or precios.get("oficial", 1)
+        
+        brechas = {}
+        if mayorista > 0:
+            for casa in ["blue", "bolsa", "contadoconliqui", "tarjeta", "cripto"]:
+                if casa in precios and precios[casa] > 0:
+                    spread = round(((precios[casa] / mayorista) - 1) * 100, 2)
+                    brechas[casa] = spread
+                    
+        return {
+            "fecha": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "mayorista_referencia": mayorista,
+            "cotizaciones": precios,
+            "brechas_porcentaje": brechas
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/indec/ipc")
 def ver_indec_ipc(db: Session = Depends(get_db)):
