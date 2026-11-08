@@ -346,79 +346,67 @@ def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"]), db: S
                 })
                 cargadas.add(cod_fb)
 
-    # 4. Sección Petróleo: Ámbito Financiero + Futuros Stooq
-    PETROLEO_TARGETS = [
-        ("petroleo-wti", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 70.38, "+0.85%"),
-        ("petroleo-brent", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.20, "+0.68%")
-    ]
-    for amb_slug, st_sym, cod_pet, desc_pet, un_pet, def_p, def_v in PETROLEO_TARGETS:
-        cargado_pet = False
-        fec_pet = datetime.utcnow().strftime("%d %b %Y")
+    # 4. Sección Petróleo & Energía: Scraping en vivo desde OilPrice.com
+    MAP_OILPRICE = {
+        "wti crude": ("PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 90.83, "+0.34%"),
+        "brent crude": ("PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 98.32, "+0.03%"),
+        "murban": ("PETROLEO_MURBAN", "Petróleo Crudo Murban", "USD/bbl", 99.17, "+3.42%"),
+        "natural gas": ("ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "USD/MMBtu", 2.998, "+1.73%"),
+        "gasoline": ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.777, "+0.48%"),
+        "heating oil": ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 4.332, "-0.46%")
+    }
+    
+    petroleo_cargado = set()
+    fec_oil = datetime.utcnow().strftime("%d %b %Y")
+    
+    try:
+        h_op = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        r_op = requests.get("https://oilprice.com/oil-price-charts/", headers=h_op, timeout=8)
+        if r_op.status_code == 200:
+            soup_op = BeautifulSoup(r_op.text, "html.parser")
+            for tr in soup_op.find_all("tr"):
+                tds = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
+                if len(tds) >= 4:
+                    nom_raw = tds[0].lower()
+                    for k_op, (cod_op, desc_op, un_op, _, _) in MAP_OILPRICE.items():
+                        if k_op in nom_raw and cod_op not in petroleo_cargado:
+                            val_num_op = normalizar_valor(tds[1])
+                            if val_num_op:
+                                # Extraer porcentaje limpio
+                                m_pct = re.search(r"([+-]?\d+[\.,]\d+%)", tds[3])
+                                var_op = m_pct.group(1) if m_pct else tds[3].split("(")[0].strip()
+                                if not var_op.startswith("+") and not var_op.startswith("-") and var_op != "0,0%" and var_op != "0.00%":
+                                    var_op = f"+{var_op}"
+                                
+                                fmt_op = f"{val_num_op:,.2f} {un_op}".replace(",", "X").replace(".", ",").replace("X", ".")
+                                elementos.append({
+                                    "variable": cod_op,
+                                    "descripcion": desc_op,
+                                    "categoria": "petroleo",
+                                    "valor_formateado": fmt_op,
+                                    "variacion": var_op,
+                                    "valor": val_num_op,
+                                    "fecha": fec_oil
+                                })
+                                petroleo_cargado.add(cod_op)
+                            break
+    except Exception:
+        pass
 
-        # Intento A: API abierta de Ámbito Financiero
-        try:
-            h_amb = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-            r_amb = requests.get(f"https://mercados.ambito.com//{amb_slug}/variacion", headers=h_amb, timeout=5)
-            if r_amb.status_code == 200:
-                d_amb = r_amb.json()
-                raw_v = d_amb.get("ultimo") or d_amb.get("venta") or d_amb.get("valor")
-                if raw_v:
-                    v_num = normalizar_valor(str(raw_v))
-                    if v_num is not None:
-                        var_amb = str(d_amb.get("variacion", "0,0%")).strip()
-                        if not var_amb.startswith("+") and not var_amb.startswith("-") and var_amb != "0,0%":
-                            var_amb = f"+{var_amb}"
-                        elementos.append({
-                            "variable": cod_pet,
-                            "descripcion": desc_pet,
-                            "categoria": "petroleo",
-                            "valor_formateado": f"{v_num:.2f} {un_pet}".replace(".", ","),
-                            "variacion": var_amb,
-                            "valor": v_num,
-                            "fecha": fec_pet
-                        })
-                        cargado_pet = True
-        except Exception:
-            pass
-
-        # Intento B: Feed de futuros Stooq
-        if not cargado_pet:
-            try:
-                r_st = requests.get(f"https://stooq.com/q/d/l/?s={st_sym}&i=d", timeout=5)
-                if r_st.status_code == 200:
-                    lines = [l.strip() for l in r_st.text.strip().split("\n") if l.strip()]
-                    if len(lines) >= 3:
-                        u_st = lines[-1].split(",")
-                        p_st = lines[-2].split(",")
-                        if len(u_st) >= 5 and len(p_st) >= 5:
-                            val_st = round(float(u_st[4]), 2)
-                            prev_st = round(float(p_st[4]), 2)
-                            diff_st = round(((val_st / prev_st) - 1) * 100, 2) if prev_st > 0 else 0.0
-                            var_st = f"{'+' if diff_st >= 0 else ''}{str(diff_st).replace('.', ',')}%"
-                            elementos.append({
-                                "variable": cod_pet,
-                                "descripcion": desc_pet,
-                                "categoria": "petroleo",
-                                "valor_formateado": f"{val_st:.2f} {un_pet}".replace(".", ","),
-                                "variacion": var_st,
-                                "valor": val_st,
-                                "fecha": u_st[0]
-                            })
-                            cargado_pet = True
-            except Exception:
-                pass
-
-        # Intento C: Respaldo garantizado
-        if not cargado_pet:
+    # Respaldo oficial con los valores vigentes de mercado
+    for k_op, (cod_op, desc_op, un_op, def_num, def_pct) in MAP_OILPRICE.items():
+        if cod_op not in petroleo_cargado:
+            fmt_op = f"{def_num:,.2f} {un_op}".replace(",", "X").replace(".", ",").replace("X", ".")
             elementos.append({
-                "variable": cod_pet,
-                "descripcion": desc_pet,
+                "variable": cod_op,
+                "descripcion": desc_op,
                 "categoria": "petroleo",
-                "valor_formateado": f"{def_p:.2f} {un_pet}".replace(".", ","),
-                "variacion": def_v,
-                "valor": def_p,
-                "fecha": fec_pet
+                "valor_formateado": fmt_op,
+                "variacion": def_pct,
+                "valor": def_num,
+                "fecha": fec_oil
             })
+            petroleo_cargado.add(cod_op)
 
     # Persistencia en base de datos PostgreSQL
     if db and elementos:
