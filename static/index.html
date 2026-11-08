@@ -43,7 +43,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Dashboard Mercado & Macro</h1>
-          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.3 - Renta Fija Completa</span>
+          <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">v3.4 - Curvas Completas</span>
         </div>
         <p class="text-[11px] text-slate-400">Datos oficiales BCRA, INDEC y Mercados</p>
       </div>
@@ -177,43 +177,50 @@
         titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)",
         desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS",
         icono: "fa-money-bill-trend-up",
-        color: "text-amber-400"
+        color: "text-amber-400",
+        count: 9
       },
       cer: {
         titulo: "Curva Bonos CER (Ajustables por Inflación)",
         desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par",
         icono: "fa-arrow-trend-up",
-        color: "text-purple-400"
+        color: "text-purple-400",
+        count: 22
       },
       soberanos: {
         titulo: "Curva Soberana en Dólares (Globales y Bonares)",
         desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY",
         icono: "fa-file-invoice-dollar",
-        color: "text-cyan-400"
+        color: "text-cyan-400",
+        count: 15
       },
       bopreales: {
         titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)",
         desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA",
         icono: "fa-shield-halved",
-        color: "text-emerald-400"
+        color: "text-emerald-400",
+        count: 7
       },
       dollar_linked: {
         titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)",
-        desc: "Precios en ARS por 100 VN • Cobertura cambiaria oficial",
+        desc: "Precios en ARS • Cobertura cambiaria oficial",
         icono: "fa-link",
-        color: "text-emerald-400"
+        color: "text-emerald-400",
+        count: 6
       },
       tamar: {
         titulo: "Curva Tasa Flotante TAMAR y Badlar",
-        desc: "Precios en ARS • Bonos Soberanos y Provinciales a Tasa Variable",
+        desc: "Precios en ARS • Bonos Soberanos a Tasa Variable TAMAR / Badlar",
         icono: "fa-chart-simple",
-        color: "text-sky-400"
+        color: "text-sky-400",
+        count: 10
       },
       duales: {
-        titulo: "Curva Bonos Duales (Mayor entre Inflación CER y Devaluación USD)",
-        desc: "Precios en ARS • Títulos con doble cobertura de capital",
+        titulo: "Curva Bonos Duales y Cupón Creciente",
+        desc: "Precios en ARS • Títulos indexados y cupón creciente",
         icono: "fa-arrows-split-up-and-left",
-        color: "text-rose-400"
+        color: "text-rose-400",
+        count: 7
       }
     };
 
@@ -280,22 +287,33 @@
         { ticker: "BPD8D", precio: 88.70, var: "0.10%", tir: "10.10%", duration: 1.80, paridad: "88.70", cupon: "3.00%", vto: "2026-11-30" }
       ],
       dollar_linked: [
-        { ticker: "TZV25", precio: 104250, var: "0.15%", tir: "DLR - 2.80%", duration: 0.35, paridad: "100.80", cupon: "0.00%", vto: "2025-06-30" },
-        { ticker: "TZV26", precio: 101800, var: "-0.20%", tir: "DLR + 1.25%", duration: 1.15, paridad: "98.90",  cupon: "0.00%", vto: "2026-06-30" },
-        { ticker: "TZV27", precio: 99400,  var: "0.30%",  tir: "DLR + 4.80%", duration: 1.85, paridad: "96.50",  cupon: "0.00%", vto: "2027-06-30" },
-        { ticker: "TZV28", precio: 96200,  var: "-0.10%", tir: "DLR + 6.10%", duration: 2.45, paridad: "94.20",  cupon: "0.00%", vto: "2028-06-30" }
+        { ticker: "D30N6", precio: 154750, var: "-0.03%", tir: "-2.23%", duration: 0.07, paridad: "99.86", cupon: "0.00%", vto: "2026-11-30", dias: 22 },
+        { ticker: "D15E7", precio: 154000, var: "-0.13%", tir: "1.90%",  duration: 0.19, paridad: "99.37", cupon: "0.00%", vto: "2027-01-15", dias: 68 },
+        { ticker: "D31M7", precio: 154990, var: "0.81%",  tir: "-0.74%", duration: 0.40, paridad: "100.01", cupon: "0.00%", vto: "2027-03-31", dias: 143 },
+        { ticker: "TZV27", precio: 152675, var: "-0.54%", tir: "1.91%",  duration: 0.64, paridad: "98.52", cupon: "0.00%", vto: "2027-06-30", dias: 234 },
+        { ticker: "TZV28", precio: 126850, var: "0.21%",  tir: "12.76%", duration: 1.48, paridad: "81.85", cupon: "0.00%", vto: "2028-06-30", dias: 600 },
+        { ticker: "TZVD8", precio: 117000, var: "-1.35%", tir: "14.14%", duration: 1.87, paridad: "75.50", cupon: "0.00%", vto: "2028-12-15", dias: 768 }
       ],
       tamar: [
-        { ticker: "TB27",  precio: 102.50, var: "0.10%", tir: "TAMAR + 2.50%", duration: 0.85, paridad: "99.80", cupon: "Flotante", vto: "2027-11-20" },
-        { ticker: "TMF27", precio: 101.20, var: "-0.05%", tir: "BADLAR + 3.20%", duration: 1.10, paridad: "99.10", cupon: "Flotante", vto: "2027-12-15" },
-        { ticker: "TMF28", precio: 99.80,  var: "0.15%", tir: "BADLAR + 4.10%", duration: 1.65, paridad: "98.40", cupon: "Flotante", vto: "2028-05-30" },
-        { ticker: "TMG28", precio: 98.40,  var: "0.00%", tir: "TAMAR + 4.50%", duration: 2.15, paridad: "97.60", cupon: "Flotante", vto: "2028-10-15" }
+        { ticker: "TMF27", precio: 127.80, var: "-0.08%", tir: "27.08%", duration: 0.25, paridad: "127.80", cupon: "35.86%", vto: "2027-02-26" },
+        { ticker: "TML27", precio: 113.15, var: "-0.04%", tir: "29.38%", duration: 0.58, paridad: "113.15", cupon: "34.73%", vto: "2027-07-30" },
+        { ticker: "TMG27", precio: 122.60, var: "0.41%",  tir: "29.39%", duration: 0.72, paridad: "122.60", cupon: "37.94%", vto: "2027-08-31" },
+        { ticker: "TMF28", precio: 112.20, var: "0.00%",  tir: "39.43%", duration: 0.96, paridad: "112.20", cupon: "69.75%", vto: "2028-02-25" },
+        { ticker: "TXMJ8", precio: 103.90, var: "0.48%",  tir: "39.10%", duration: 1.24, paridad: "103.90", cupon: "70.36%", vto: "2028-06-30" },
+        { ticker: "TMG28", precio: 108.75, var: "-0.41%", tir: "40.45%", duration: 1.34, paridad: "108.75", cupon: "94.97%", vto: "2028-08-31" },
+        { ticker: "TXMD8", precio: 94.25,  var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25",  cupon: "87.89%", vto: "2028-12-15" },
+        { ticker: "TXMJ9", precio: 95.00,  var: "0.96%",  tir: "41.62%", duration: 1.96, paridad: "95.00",  cupon: "120.74%", vto: "2029-06-29" },
+        { ticker: "TXMD9", precio: 87.61,  var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61",  cupon: "141.43%", vto: "2029-12-14" },
+        { ticker: "TXMJ0", precio: 84.80,  var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80",  cupon: "176.46%", vto: "2030-06-28" }
       ],
       duales: [
-        { ticker: "TDJ25", precio: 142500, var: "0.12%", tir: "Max(CER, DLR)", duration: 0.40, paridad: "100.20", cupon: "Dual", vto: "2025-06-30" },
-        { ticker: "TDG25", precio: 138900, var: "-0.18%", tir: "Max(CER, DLR)", duration: 0.65, paridad: "99.70",  cupon: "Dual", vto: "2025-08-29" },
-        { ticker: "TDE25", precio: 135400, var: "0.25%", tir: "Max(CER, DLR)", duration: 0.95, paridad: "99.10",  cupon: "Dual", vto: "2025-12-15" },
-        { ticker: "TDM26", precio: 129800, var: "-0.08%", tir: "Max(CER, DLR)", duration: 1.35, paridad: "98.50",  cupon: "Dual", vto: "2026-03-31" }
+        { ticker: "TTD26", precio: 176.62,   var: "-0.10%", tir: "23.94%", duration: 0.10, paridad: "176.62",    cupon: "78.12%",  vto: "2026-12-15" },
+        { ticker: "TMVE8", precio: 147000.0, var: "0.34%",  tir: "34.36%", duration: 0.92, paridad: "147000.00", cupon: "40.91%",  vto: "2028-01-31" },
+        { ticker: "TXMJ8", precio: 103.90,   var: "0.48%",  tir: "39.10%", duration: 1.24, paridad: "103.90",    cupon: "70.36%",  vto: "2028-06-30" },
+        { ticker: "TXMD8", precio: 94.25,    var: "-1.22%", tir: "42.68%", duration: 1.55, paridad: "94.25",     cupon: "87.89%",  vto: "2028-12-15" },
+        { ticker: "TXMJ9", precio: 95.00,    var: "0.96%",  tir: "41.62%", duration: 1.96, paridad: "95.00",     cupon: "120.74%", vto: "2029-06-29" },
+        { ticker: "TXMD9", precio: 87.61,    var: "-0.44%", tir: "42.45%", duration: 2.28, paridad: "87.61",     cupon: "141.43%", vto: "2029-12-14" },
+        { ticker: "TXMJ0", precio: 84.80,    var: "-0.59%", tir: "42.14%", duration: 2.68, paridad: "84.80",     cupon: "176.46%", vto: "2030-06-28" }
       ]
     };
 
@@ -399,6 +417,7 @@
       `;
     }
 
+    // SEMÁFORO EXCLUSIVO: VERDE SI POSITIVO, ROJO SI NEGATIVO. RESTO EN MARRÓN NEUTRO
     function renderFilaTerminal(valStr, type) {
       if (!valStr || valStr === "-") {
         return `<span class="text-slate-500 font-mono">-</span>`;
@@ -452,7 +471,7 @@
         valorOficial = itemOficial.valor;
       }
 
-      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL CON 7 CURVAS + TABLA DEDICADA
+      // VISTA DE COTIZACIÓN BONOS: MENÚ LATERAL CON 7 CURVAS COMPLETAS
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva];
         
@@ -603,24 +622,26 @@
                   ${renderTh("dollar_linked", "ticker", "TICKER", "text-left")}
                   ${renderTh("dollar_linked", "precio", "ÚLTIMO PRECIO", "text-right")}
                   ${renderTh("dollar_linked", "var", "VAR. DIARIA", "text-center")}
-                  ${renderTh("dollar_linked", "tir", "TIR REAL TC", "text-center")}
+                  ${renderTh("dollar_linked", "tir", "TIR", "text-center")}
                   ${renderTh("dollar_linked", "duration", "MOD. DURATION", "text-center")}
                   ${renderTh("dollar_linked", "paridad", "PARIDAD", "text-center")}
                   ${renderTh("dollar_linked", "cupon", "CUPÓN", "text-center")}
                   ${renderTh("dollar_linked", "vto", "VENCIMIENTO", "text-center")}
+                  ${renderTh("dollar_linked", "dias", "DÍAS", "text-center")}
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
                 ${TABLAS_BONOS.dollar_linked.map(b => `
                   <tr class="table-dark-row transition">
-                    <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
-                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
-                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
-                    <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
-                    <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
-                    <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
-                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                    <td class="py-2.5 px-3 font-bold text-white tracking-wide">${b.ticker}</td>
+                    <td class="py-2.5 px-3 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.var, "var")}</td>
+                    <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
+                    <td class="py-2.5 px-3 text-center text-slate-300">${b.duration}</td>
+                    <td class="py-2.5 px-3 text-center text-slate-300">${b.paridad}</td>
+                    <td class="py-2.5 px-3 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
+                    <td class="py-2.5 px-3 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
+                    <td class="py-2.5 px-3 text-center text-slate-300 font-semibold">${b.dias}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -634,7 +655,7 @@
                   ${renderTh("tamar", "ticker", "TICKER", "text-left")}
                   ${renderTh("tamar", "precio", "ÚLTIMO PRECIO", "text-right")}
                   ${renderTh("tamar", "var", "VAR. DIARIA", "text-center")}
-                  ${renderTh("tamar", "tir", "MARGEN SOBRE TASA", "text-center")}
+                  ${renderTh("tamar", "tir", "TIR", "text-center")}
                   ${renderTh("tamar", "duration", "MOD. DURATION", "text-center")}
                   ${renderTh("tamar", "paridad", "PARIDAD", "text-center")}
                   ${renderTh("tamar", "cupon", "CUPÓN", "text-center")}
@@ -645,13 +666,13 @@
                 ${TABLAS_BONOS.tamar.map(b => `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">${Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
-                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -665,7 +686,7 @@
                   ${renderTh("duales", "ticker", "TICKER", "text-left")}
                   ${renderTh("duales", "precio", "ÚLTIMO PRECIO", "text-right")}
                   ${renderTh("duales", "var", "VAR. DIARIA", "text-center")}
-                  ${renderTh("duales", "tir", "COBERTURA", "text-center")}
+                  ${renderTh("duales", "tir", "TIR", "text-center")}
                   ${renderTh("duales", "duration", "MOD. DURATION", "text-center")}
                   ${renderTh("duales", "paridad", "PARIDAD", "text-center")}
                   ${renderTh("duales", "cupon", "CUPÓN", "text-center")}
@@ -676,13 +697,13 @@
                 ${TABLAS_BONOS.duales.map(b => `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200">${b.precio >= 1000 ? '$ ' + Number(b.precio).toLocaleString('es-AR') : Number(b.precio).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.cupon, "neutro")}</td>
-                    <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+                    <td class="py-2.5 px-4 text-center text-slate-400 whitespace-nowrap">${b.vto}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -735,7 +756,7 @@
                   <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Dollar Linked</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'dollar_linked' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'dollar_linked' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">6</span>
               </button>
 
               <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
@@ -743,15 +764,15 @@
                   <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'tamar' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'tamar' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">10</span>
               </button>
 
               <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-900/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                 <div class="flex items-center gap-2 truncate">
                   <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Bonos Duales (TD)</span>
+                  <span class="text-xs font-semibold truncate">Bonos Duales</span>
                 </div>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'duales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">4</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${curvaActiva === 'duales' ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">7</span>
               </button>
             </aside>
 
