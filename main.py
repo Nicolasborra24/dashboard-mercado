@@ -96,11 +96,74 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
+def parsear_monto(texto: str) -> Optional[float]:
+    t = texto.strip().upper()
+    multiplicador = 1.0
+    if "B" in t:
+        multiplicador = 1000.0  # Miles de millones
+    elif "M" in t:
+        multiplicador = 1.0
+    numeros = re.findall(r"\d+(?:[.,]\d+)?", t)
+    if numeros:
+        try:
+            return round(float(numeros[0].replace(",", ".")) * multiplicador, 2)
+        except Exception:
+            pass
+    return None
+
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
     resultado = []
 
-    # 1. Dólar A3500 Mayorista (datos.gob.ar)
+    # 1. Scraping ultra-rápido por Regex sobre indicadores.ar
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)"
+        }
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=headers, timeout=8)
+        if r.status_code == 200:
+            html = r.text
+            
+            # Reservas BCRA (ej: USD 50.3B)
+            match_res = re.search(r"Reservas\s+BCRA.*?([0-9]+[.,]?[0-9]*[BMKbmk]?)", html, re.DOTALL | re.IGNORECASE)
+            # Buscar fecha cercana
+            match_fecha_res = re.search(r"Reservas\s+BCRA.*?(\d{1,2}\s+[a-zA-Z]{3}\s+\d{4})", html, re.DOTALL)
+            
+            # Base Monetaria (ej: $47.0B)
+            match_bm = re.search(r"Base\s+Monetaria.*?([0-9]+[.,]?[0-9]*[BMKbmk]?)", html, re.DOTALL | re.IGNORECASE)
+            match_fecha_bm = re.search(r"Base\s+Monetaria.*?(\d{1,2}\s+[a-zA-Z]{3}\s+\d{4})", html, re.DOTALL)
+
+            fecha_actual = datetime.utcnow().strftime("%Y-%m-%d")
+
+            # Armar Reservas
+            if match_res:
+                raw_val = match_res.group(1)
+                num = parsear_monto(raw_val)
+                if num:
+                    resultado.append({
+                        "variable": "RESERVAS_USD",
+                        "descripcion": "Reservas Internacionales BCRA",
+                        "valor_formateado": f"USD {raw_val}",
+                        "valor": num,
+                        "fecha": match_fecha_res.group(1) if match_fecha_res else fecha_actual
+                    })
+
+            # Armar Base Monetaria
+            if match_bm:
+                raw_val = match_bm.group(1)
+                num = parsear_monto(raw_val)
+                if num:
+                    resultado.append({
+                        "variable": "BASE_MONETARIA",
+                        "descripcion": "Base Monetaria BCRA",
+                        "valor_formateado": f"${raw_val}",
+                        "valor": num,
+                        "fecha": match_fecha_bm.group(1) if match_fecha_bm else fecha_actual
+                    })
+    except Exception:
+        pass
+
+    # 2. Dólar Oficial Mayorista A3500 (datos.gob.ar)
     try:
         r_a3500 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=6)
         if r_a3500.status_code == 200:
@@ -117,45 +180,7 @@ def ver_bcra(db: Session = Depends(get_db)):
     except Exception:
         pass
 
-    # 2. Reservas Internacionales
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/reservas", headers=headers, timeout=6)
-        if r_res.status_code == 200:
-            data = r_res.json()
-            if isinstance(data, list) and len(data) > 0:
-                ultimo = data[-1]
-                val = float(ultimo.get("valor", 0))
-                resultado.append({
-                    "variable": "RESERVAS_USD",
-                    "descripcion": "Reservas Internacionales BCRA (Millones USD)",
-                    "valor_formateado": f"USD {val:,.0f} M",
-                    "valor": val,
-                    "fecha": str(ultimo.get("fecha"))
-                })
-    except Exception:
-        pass
-
-    # 3. Base Monetaria
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r_bm = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/baseMonetaria", headers=headers, timeout=6)
-        if r_bm.status_code == 200:
-            data = r_bm.json()
-            if isinstance(data, list) and len(data) > 0:
-                ultimo = data[-1]
-                val = float(ultimo.get("valor", 0))
-                resultado.append({
-                    "variable": "BASE_MONETARIA",
-                    "descripcion": "Base Monetaria BCRA (Millones ARS)",
-                    "valor_formateado": f"${val:,.0f} M",
-                    "valor": val,
-                    "fecha": str(ultimo.get("fecha"))
-                })
-    except Exception:
-        pass
-
-    # Persistencia en PostgreSQL protegida
+    # Persistencia en base de datos
     if db and resultado:
         for item in resultado:
             try:
