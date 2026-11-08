@@ -26,6 +26,7 @@
   <style>
     body { background-color: #080c14; }
     .card-glow { box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.45); }
+    .table-dark-row:hover { background-color: rgba(30, 41, 59, 0.4); }
   </style>
 </head>
 <body class="text-slate-100 font-sans antialiased min-h-screen">
@@ -49,71 +50,68 @@
     </div>
   </header>
 
-  <!-- Navigation: HOME destacado a la izquierda + Matriz exacta de 4 pestañas por fila (3 filas) -->
+  <!-- Navigation: HOME destacado a la izquierda + 2 filas limpias (Fila 1: 5 pestañas, Fila 2: 6 pestañas) -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
-        <!-- Botón HOME a la izquierda cubriendo las 3 filas -->
+        <!-- Botón HOME a la izquierda -->
         <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0">
           <i class="fa-solid fa-house text-base"></i>
           <span>HOME</span>
         </button>
 
-        <!-- Grilla de exactamente 4 secciones por fila (3 filas) -->
-        <div class="grid grid-cols-4 gap-1.5 flex-1 w-full text-[11px]">
-          <!-- Fila 1 (4 secciones) -->
-          <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
-            <span class="truncate">Tasas y BCRA</span>
-          </button>
-          <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i>
-            <span class="truncate">Dólar y Brechas</span>
-          </button>
-          <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
-            <span class="truncate">Monedas</span>
-          </button>
-          <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
-            <span class="truncate">Cotización Bonos</span>
-          </button>
+        <!-- Bloque de 2 filas -->
+        <div class="flex flex-col gap-1.5 flex-1 w-full text-[11px]">
+          <!-- Fila 1 (5 secciones principales) -->
+          <div class="grid grid-cols-5 gap-1.5">
+            <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
+              <span class="truncate">Tasas y BCRA</span>
+            </button>
+            <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i>
+              <span class="truncate">Dólar y Brechas</span>
+            </button>
+            <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
+              <span class="truncate">Monedas</span>
+            </button>
+            <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
+              <span class="truncate">Cotización Bonos</span>
+            </button>
+            <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i>
+              <span class="truncate">Inflación / UVA</span>
+            </button>
+          </div>
 
-          <!-- Fila 2 (4 secciones) -->
-          <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i>
-            <span class="truncate">Inflación / UVA</span>
-          </button>
-          <button onclick="filtrarCategoria('mercado_y_deuda', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
-            <span class="truncate">Mercado y Renta</span>
-          </button>
-          <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
-            <span class="truncate">Metales</span>
-          </button>
-          <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i>
-            <span class="truncate">Petróleo</span>
-          </button>
-
-          <!-- Fila 3 (4 secciones) -->
-          <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i>
-            <span class="truncate">Macro & Fiscal</span>
-          </button>
-          <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-industry text-orange-400 text-[10px]"></i>
-            <span class="truncate">Micro / Real</span>
-          </button>
-          <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i>
-            <span class="truncate">Agro & Energía</span>
-          </button>
-          <!-- Boton de acceso rapido o balance visual -->
-          <div class="px-2 py-1.5 rounded-lg border border-slate-800/30 bg-slate-900/20 text-slate-600 text-center flex items-center justify-center gap-1.5 text-[10px] select-none">
-            <i class="fa-solid fa-shield-halved text-slate-600"></i>
-            <span>SJB Terminal v2</span>
+          <!-- Fila 2 (6 secciones de mercado y actividad) -->
+          <div class="grid grid-cols-6 gap-1.5">
+            <button onclick="filtrarCategoria('mercado_y_deuda', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
+              <span class="truncate">Mercado y Renta</span>
+            </button>
+            <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
+              <span class="truncate">Metales</span>
+            </button>
+            <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i>
+              <span class="truncate">Petróleo</span>
+            </button>
+            <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i>
+              <span class="truncate">Macro & Fiscal</span>
+            </button>
+            <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-industry text-orange-400 text-[10px]"></i>
+              <span class="truncate">Micro / Real</span>
+            </button>
+            <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i>
+              <span class="truncate">Agro & Energía</span>
+            </button>
           </div>
         </div>
       </div>
@@ -133,7 +131,7 @@
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", icono: "fa-landmark" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
-      cotizacion_bonos: { titulo: "Cotizaciones de Bonos Soberanos, Bopreales, CER y Corporativos", icono: "fa-file-invoice-dollar" },
+      cotizacion_bonos: { titulo: "Curvas de Deuda Soberana y Bopreales BCRA", icono: "fa-file-invoice-dollar" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
       mercado_y_deuda: { titulo: "Mercado Bursátil y Deuda Soberana", icono: "fa-chart-line" },
       metales: { titulo: "Metales Preciosos e Industriales", icono: "fa-coins" },
@@ -164,6 +162,35 @@
       "PETROLEO_BRENT"
     ];
 
+    // Datos maestros con la estructura exacta de la imagen
+    const TABLA_SOBERANOS = [
+      { ticker: "AO27", precio: 161480, var: "+0.23%", tir: "3.82%", duration: 0.93, paridad: "102.26", cupon: "0.50%", vto: "2027-10-29" },
+      { ticker: "AO28", precio: 133240, var: "-0.19%", tir: "16.18%", duration: 1.63, paridad: "84.38", cupon: "0.50%", vto: "2028-10-31" },
+      { ticker: "AL29", precio: 80970,  var: "-0.41%", tir: "13.46%", duration: 1.18, paridad: "85.46", cupon: "0.30%", vto: "2029-07-09" },
+      { ticker: "GD29", precio: 85170,  var: "+3.36%", tir: "9.28%",  duration: 1.25, paridad: "89.89", cupon: "0.30%", vto: "2029-07-09" },
+      { ticker: "AO29", precio: 121490, var: "+0.74%", tir: "16.79%", duration: 2.34, paridad: "76.94", cupon: "0.50%", vto: "2029-10-31" },
+      { ticker: "AN29", precio: 126400, var: "+0.52%", tir: "16.66%", duration: 2.34, paridad: "80.02", cupon: "3.25%", vto: "2029-11-30" },
+      { ticker: "AL30", precio: 81250,  var: "+0.18%", tir: "14.37%", duration: 1.54, paridad: "80.39", cupon: "0.24%", vto: "2030-07-09" },
+      { ticker: "GD30", precio: 83380,  var: "-0.71%", tir: "12.71%", duration: 1.58, paridad: "82.50", cupon: "0.24%", vto: "2030-07-09" },
+      { ticker: "AL35", precio: 99830,  var: "-0.37%", tir: "14.48%", duration: 4.50, paridad: "63.21", cupon: "2.06%", vto: "2035-07-09" },
+      { ticker: "GD35", precio: 107400, var: "-0.56%", tir: "12.88%", duration: 4.63, paridad: "68.00", cupon: "2.06%", vto: "2035-07-09" },
+      { ticker: "AE38", precio: 104560, var: "-0.94%", tir: "15.42%", duration: 3.55, paridad: "66.20", cupon: "2.50%", vto: "2038-01-09" },
+      { ticker: "GD38", precio: 114800, var: "+0.17%", tir: "12.88%", duration: 3.81, paridad: "72.69", cupon: "2.50%", vto: "2038-01-09" },
+      { ticker: "AL41", precio: 93360,  var: "-0.89%", tir: "14.19%", duration: 4.64, paridad: "59.14", cupon: "1.75%", vto: "2041-07-09" },
+      { ticker: "GD41", precio: 100520, var: "-0.53%", tir: "12.64%", duration: 4.88, paridad: "63.67", cupon: "1.75%", vto: "2041-07-09" },
+      { ticker: "GD46", precio: 93590,  var: "+1.20%", tir: "12.05%", duration: 5.17, paridad: "65.26", cupon: "1.88%", vto: "2046-07-09" }
+    ];
+
+    const TABLA_BOPREALES = [
+      { ticker: "BPOA7", precio: 95.40, var: "+0.10%", tir: "8.40%",  duration: 0.85, paridad: "95.40", cupon: "5.00%", vto: "2027-10-31" },
+      { ticker: "BPOB7", precio: 89.20, var: "+0.15%", tir: "9.15%",  duration: 1.45, paridad: "89.20", cupon: "5.00%", vto: "2027-10-31" },
+      { ticker: "BPOC7", precio: 83.50, var: "0.00%",  tir: "10.30%", duration: 2.10, paridad: "83.50", cupon: "5.00%", vto: "2027-10-31" },
+      { ticker: "BPOD7", precio: 81.10, var: "-0.20%", tir: "11.20%", duration: 2.75, paridad: "81.10", cupon: "5.00%", vto: "2027-10-31" },
+      { ticker: "BPC7D", precio: 96.80, var: "+0.05%", tir: "7.80%",  duration: 0.60, paridad: "96.80", cupon: "0.00%", vto: "2025-06-30" },
+      { ticker: "BPD7D", precio: 92.50, var: "+0.20%", tir: "9.40%",  duration: 1.30, paridad: "92.50", cupon: "3.00%", vto: "2026-05-31" },
+      { ticker: "BPD8D", precio: 88.70, var: "+0.10%", tir: "10.10%", duration: 1.80, paridad: "88.70", cupon: "3.00%", vto: "2026-11-30" }
+    ];
+
     let datosGlobales = {};
     let categoriaActiva = "home";
 
@@ -172,6 +199,18 @@
         const res = await fetch("/bcra/variables?formato=agrupado");
         if (!res.ok) throw new Error("Error HTTP " + res.status);
         datosGlobales = await res.json();
+        
+        // Actualizar precios en vivo de la tabla si el backend tiene datos
+        if (datosGlobales.cotizacion_bonos && Array.isArray(datosGlobales.cotizacion_bonos)) {
+          datosGlobales.cotizacion_bonos.forEach(b => {
+            const tk = b.variable.replace("BONO_", "");
+            const itemSob = TABLA_SOBERANOS.find(s => s.ticker === tk);
+            if (itemSob && b.valor > 0) itemSob.precio = b.valor;
+            const itemBop = TABLA_BOPREALES.find(s => s.ticker === tk);
+            if (itemBop && b.valor > 0) itemBop.precio = b.valor;
+          });
+        }
+
         renderizar();
         const reloj = document.getElementById("last-update");
         if (reloj) reloj.innerText = new Date().toLocaleTimeString();
@@ -201,6 +240,75 @@
         valorOficial = itemOficial.valor;
       }
 
+      // VISTA ESPECIAL: COTIZACIÓN BONOS EN CUADROS TIPO TERMINAL
+      if (categoriaActiva === "cotizacion_bonos") {
+        contenedor.innerHTML = `
+          <div class="space-y-8">
+            <!-- Cuadro 1: Bonos Soberanos en Dólares -->
+            <section class="space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-sm"></i>
+                  <h2 class="text-sm font-bold text-white uppercase tracking-wider">Curva Soberana en Dólares (Globales y Bonares)</h2>
+                </div>
+                <span class="text-[11px] font-mono text-slate-400">Precios en ARS / Rendimientos TIR Anual</span>
+              </div>
+              <div class="overflow-x-auto rounded-xl border border-slate-800 bg-brand-card shadow-2xl">
+                <table class="w-full text-left text-xs font-mono">
+                  <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th class="py-3 px-4">TICKER</th>
+                      <th class="py-3 px-4 text-right">ÚLTIMO PRECIO</th>
+                      <th class="py-3 px-4 text-center">VAR. DIARIA</th>
+                      <th class="py-3 px-4 text-center">TIR</th>
+                      <th class="py-3 px-4 text-center">MOD. DURATION</th>
+                      <th class="py-3 px-4 text-center">PARIDAD</th>
+                      <th class="py-3 px-4 text-center">CUPÓN</th>
+                      <th class="py-3 px-4 text-center">VENCIMIENTO</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                    ${TABLA_SOBERANOS.map(b => renderFilaBono(b, true)).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Cuadro 2: Bopreales BCRA -->
+            <section class="space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-shield-halved text-emerald-400 text-sm"></i>
+                  <h2 class="text-sm font-bold text-white uppercase tracking-wider">Curva Bopreales BCRA (Series 1, 2 y 3)</h2>
+                </div>
+                <span class="text-[11px] font-mono text-slate-400">Precios en USD Cable / Rendimientos TIR Anual</span>
+              </div>
+              <div class="overflow-x-auto rounded-xl border border-slate-800 bg-brand-card shadow-2xl">
+                <table class="w-full text-left text-xs font-mono">
+                  <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th class="py-3 px-4">TICKER</th>
+                      <th class="py-3 px-4 text-right">ÚLTIMO PRECIO</th>
+                      <th class="py-3 px-4 text-center">VAR. DIARIA</th>
+                      <th class="py-3 px-4 text-center">TIR</th>
+                      <th class="py-3 px-4 text-center">MOD. DURATION</th>
+                      <th class="py-3 px-4 text-center">PARIDAD</th>
+                      <th class="py-3 px-4 text-center">CUPÓN</th>
+                      <th class="py-3 px-4 text-center">VENCIMIENTO</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                    ${TABLA_BOPREALES.map(b => renderFilaBono(b, false)).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        `;
+        return;
+      }
+
+      // VISTA HOME: Resumen de mercado
       if (categoriaActiva === "home") {
         let todos = [];
         for (const cat in datosGlobales) {
@@ -231,7 +339,6 @@
               <i class="fa-solid ${info.icono} text-blue-400"></i>
               <h2>${info.titulo}</h2>
             </div>
-            <!-- Grilla de 4 tarjetas exactas por fila -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
             </div>
@@ -240,6 +347,7 @@
         return;
       }
 
+      // RESTO DE LAS CATEGORÍAS (Tarjetas estándar)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-circle-dot" };
 
@@ -254,11 +362,41 @@
             <i class="fa-solid ${info.icono} text-blue-400"></i>
             <h2>${info.titulo}</h2>
           </div>
-          <!-- Grilla de 4 tarjetas exactas por fila -->
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             ${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}
           </div>
         </section>
+      `;
+    }
+
+    function renderFilaBono(b, esPesos) {
+      const isPos = b.var.startsWith("+");
+      const varBg = isPos ? "bg-amber-950/40 text-amber-300 border-amber-800/40" : "bg-amber-950/30 text-amber-400 border-amber-900/30";
+      const precioFmt = esPesos ? `$ ${Number(b.precio).toLocaleString("es-AR")}` : `US$ ${Number(b.precio).toFixed(2)}`;
+
+      return `
+        <tr class="table-dark-row transition">
+          <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
+          <td class="py-2.5 px-4 text-right font-medium text-slate-200">${precioFmt}</td>
+          <td class="py-2.5 px-4 text-center">
+            <span class="inline-block w-20 py-1 rounded border font-semibold ${varBg}">
+              ${b.var}
+            </span>
+          </td>
+          <td class="py-2.5 px-4 text-center">
+            <span class="inline-block w-20 py-1 rounded border border-emerald-700/50 bg-emerald-950/60 font-bold text-emerald-300">
+              ${b.tir}
+            </span>
+          </td>
+          <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
+          <td class="py-2.5 px-4 text-center text-slate-300">${b.paridad}</td>
+          <td class="py-2.5 px-4 text-center">
+            <span class="inline-block w-16 py-0.5 rounded border border-amber-800/40 bg-amber-950/30 text-amber-300 font-medium">
+              ${b.cupon}
+            </span>
+          </td>
+          <td class="py-2.5 px-4 text-center text-slate-400">${b.vto}</td>
+        </tr>
       `;
     }
 
