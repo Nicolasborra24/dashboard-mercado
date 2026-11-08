@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
@@ -22,8 +22,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL) if DATABASE_URL else None
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) if engine else None
+engine = None
+SessionLocal = None
 Base = declarative_base()
 
 class CotizacionDolar(Base):
@@ -46,8 +46,16 @@ class VariableMacro(Base):
     fecha_dato = Column(String)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
 
-if engine:
-    Base.metadata.create_all(bind=engine)
+# Conexión tolerante a fallos: si la DB no responde, el servidor arranca igual sin caerse
+if DATABASE_URL:
+    try:
+        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"[Aviso DB] No se pudo conectar a la base de datos: {e}")
+        engine = None
+        SessionLocal = None
 
 app = FastAPI(title="API Mercado Argentino")
 
@@ -162,7 +170,7 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
-# ==================== SISTEMA DE CACHÉ EN MEMORIA Y TRABAJADOR PARALELO ====================
+# ==================== CACHÉ EN MEMORIA Y TRABAJADOR ====================
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
     "dolar_y_cambiario": [],
@@ -183,8 +191,7 @@ ULTIMA_ACTUALIZACION = ""
 def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     items = []
     try:
-        h = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers=h, timeout=6)
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
             cargadas = set()
@@ -214,8 +221,7 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        h = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers=h, timeout=4)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
         if r.status_code == 200:
             d = r.json()
             for row in d.get("principales", []):
@@ -255,43 +261,6 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                     })
     except Exception:
         pass
-    return items
-
-def obtener_datos_cripto_binance() -> List[Dict[str, Any]]:
-    items = []
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    CRIPTO_DEFS = [
-        ("CRIPTO_BTC", "Bitcoin (BTC)", "BTCUSDT", 76420.0, "+1.85%"),
-        ("CRIPTO_ETH", "Ethereum (ETH)", "ETHUSDT", 2485.0, "-0.45%"),
-        ("CRIPTO_USDT", "Tether (USDT)", None, 1.00, "+0.01%"),
-        ("CRIPTO_SOL", "Solana (SOL)", "SOLUSDT", 198.50, "+3.40%"),
-        ("CRIPTO_PAXG", "PAX Gold (PAXG)", "PAXGUSDT", 2745.0, "+0.40%"),
-        ("CRIPTO_BNB", "BNB Chain (BNB)", "BNBUSDT", 588.0, "+0.75%"),
-        ("CRIPTO_XRP", "Ripple (XRP)", "XRPUSDT", 0.582, "-0.30%"),
-        ("CRIPTO_DOGE", "Dogecoin (DOGE)", "DOGEUSDT", 0.198, "+2.15%"),
-        ("CRIPTO_ADA", "Cardano (ADA)", "ADAUSDT", 0.438, "+1.10%"),
-        ("CRIPTO_USDC", "USD Coin (USDC)", "USDCUSDT", 1.00, "0.00%")
-    ]
-    try:
-        syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]'
-        r = requests.get(f"https://api.binance.com/api/v3/ticker/24hr?symbols={syms}", timeout=4)
-        b_data = {it["symbol"]: it for it in r.json()} if r.status_code == 200 else {}
-        for cod, desc, sym, def_val, def_var in CRIPTO_DEFS:
-            if sym and sym in b_data:
-                p = float(b_data[sym].get("lastPrice", def_val))
-                chg = float(b_data[sym].get("priceChangePercent", 0))
-                var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
-                fmt = f"US$ {p:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"US$ {p:.2f}".replace(".", ",") if p >= 1 else f"US$ {p:.4f}".replace(".", ",")
-                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": var_str, "valor": round(p, 4), "fecha": fec_hoy})
-            elif cod == "CRIPTO_USDT":
-                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": "US$ 1,00", "variacion": "+0,01%", "valor": 1.00, "fecha": fec_hoy})
-            else:
-                fmt = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if def_val >= 1000 else f"US$ {def_val:.2f}".replace(".", ",")
-                items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": def_var, "valor": def_val, "fecha": fec_hoy})
-    except Exception:
-        for cod, desc, sym, def_val, def_var in CRIPTO_DEFS:
-            fmt = f"US$ {def_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if def_val >= 1000 else f"US$ {def_val:.2f}".replace(".", ",")
-            items.append({"variable": cod, "descripcion": desc, "categoria": "cripto", "valor_formateado": fmt, "variacion": def_var, "valor": def_val, "fecha": fec_hoy})
     return items
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
@@ -375,7 +344,6 @@ def worker_refresco_continuo():
     global CACHE_VARIABLES, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    # Datos estables base
     METALES_BASE = [
         ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
         ("METALES_XAG", "Plata (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
@@ -407,17 +375,14 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            # Ejecución concurrente en paralelo de las consultas externas
-            with ThreadPoolExecutor(max_workers=5) as executor:
+            with ThreadPoolExecutor(max_workers=4) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
-                f_cripto = executor.submit(obtener_datos_cripto_binance)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
 
                 res_ind = f_ind.result()
                 res_tasas = f_tasas.result()
-                res_cripto = f_cripto.result()
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
 
@@ -425,7 +390,7 @@ def worker_refresco_continuo():
                 "tasas_y_monetario": [],
                 "dolar_y_cambiario": [],
                 "monedas": res_monedas,
-                "cripto": res_cripto,
+                "cripto": [],
                 "cotizacion_bonos": res_bonos,
                 "inflacion_y_ajuste": [],
                 "mercado_y_deuda": [],
@@ -444,7 +409,6 @@ def worker_refresco_continuo():
             for item in res_tasas:
                 nuevo_agrupado["tasas_y_monetario"].append(item)
 
-            # Actualización atómica en memoria
             with CACHE_LOCK:
                 for k, v in nuevo_agrupado.items():
                     if len(v) > 0:
@@ -454,14 +418,12 @@ def worker_refresco_continuo():
         except Exception as e:
             pass
 
-        # Frecuencia de actualización en background: cada 20 segundos
         time.sleep(20)
 
-# Iniciar trabajador en segundo plano al arrancar el servidor
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
 hilo_worker.start()
 
-# ==================== ENDPOINTS DE LA API ====================
+# ==================== ENDPOINTS ====================
 
 @app.get("/")
 def inicio():
@@ -474,7 +436,7 @@ def inicio():
                 "Expires": "0"
             }
         )
-    return {"mensaje": "Servidor funcionando", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
+    return {"mensaje": "Servidor funcionando correctamente", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
 
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado", enum=["agrupado", "lista"])):
@@ -494,7 +456,7 @@ def ver_dolar():
             return r.json()
     except Exception:
         pass
-    return {"error": "Servicio de divisas temporalmente ocupado"}
+    return {"error": "Servicio de divisas ocupado"}
 
 @app.get("/mercado/resumen")
 def ver_resumen_mercado():
@@ -527,3 +489,10 @@ def ver_indec_ipc():
     except Exception:
         pass
     return []
+
+# ENLACE DIRECTO DEL PUERTO ASIGNADO POR RAILWAY
+if __name__ == "__main__":
+    import uvicorn
+    puerto = int(os.environ.get("PORT", 8080))
+    print(f"Iniciando Uvicorn en el puerto asignado: {puerto}")
+    uvicorn.run("main:app", host="0.0.0.0", port=puerto)
