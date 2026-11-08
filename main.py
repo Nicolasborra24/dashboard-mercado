@@ -53,9 +53,8 @@ if DATABASE_URL:
         engine = create_engine(DATABASE_URL, pool_pre_ping=True)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         Base.metadata.create_all(bind=engine)
-        print("[DB] Conexión establecida con éxito.")
     except Exception as e:
-        print(f"[DB Aviso] Modo en memoria activo (DB no disponible: {e})")
+        print(f"[DB Aviso] Modo en memoria activo ({e})")
         engine = None
         SessionLocal = None
 
@@ -165,26 +164,45 @@ MAPEO = {
     "biodiésel": ("ENERGIA_BIODIESEL", "Biodiésel", "commodities_agro_energia")
 }
 
-INDICES_DEFAULT = [
+US_TICKERS_DEF = [
+    ("^GSPC", "^spx", "INDICE_SP500", "S&P 500 (SPX)", "estados_unidos", "pts"),
+    ("^NDX", "^ndx", "INDICE_NASDAQ", "Nasdaq 100 (NDX)", "estados_unidos", "pts"),
+    ("^VIX", "^vix", "INDICE_VIX", "Índice de Volatilidad (VIX)", "estados_unidos", "pts"),
+    ("^DJI", "^dji", "INDICE_DJI", "Dow Jones Industrial (DJI)", "estados_unidos", "pts"),
+    ("^RUT", "^rut", "INDICE_RUSSELL", "Russell 2000 (RUT)", "estados_unidos", "pts"),
+    ("XLK", "xlk.us", "SPDR_XLK", "Tecnología (XLK)", "sectores", "usd"),
+    ("XLF", "xlf.us", "SPDR_XLF", "Financiero (XLF)", "sectores", "usd"),
+    ("XLE", "xle.us", "SPDR_XLE", "Energía (XLE)", "sectores", "usd"),
+    ("XLV", "xlv.us", "SPDR_XLV", "Salud (XLV)", "sectores", "usd"),
+    ("XLI", "xli.us", "SPDR_XLI", "Industrial (XLI)", "sectores", "usd"),
+    ("XLY", "xly.us", "SPDR_XLY", "Consumo Discrecional (XLY)", "sectores", "usd"),
+    ("XLP", "xlp.us", "SPDR_XLP", "Consumo Básico (XLP)", "sectores", "usd"),
+    ("XLU", "xlu.us", "SPDR_XLU", "Servicios Públicos (XLU)", "sectores", "usd"),
+    ("XLB", "xlb.us", "SPDR_XLB", "Materiales (XLB)", "sectores", "usd"),
+    ("XLRE", "xlre.us", "SPDR_XLRE", "Bienes Raíces (XLRE)", "sectores", "usd"),
+    ("XLC", "xlc.us", "SPDR_XLC", "Comunicaciones (XLC)", "sectores", "usd")
+]
+
+INDICES_BASE_MEMORIA = [
     {"variable": "MERVAL_ARS", "descripcion": "S&P Merval en Pesos", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "$ 2.085.420", "variacion": "+1,25%", "valor": 2085420.0, "fecha": "Cierre"},
     {"variable": "MERVAL_USD", "descripcion": "S&P Merval en Dólares (CCL)", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "US$ 1.812,50", "variacion": "+0,85%", "valor": 1812.50, "fecha": "Cierre"},
     {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "939 pb", "variacion": "+1,51%", "valor": 939.0, "fecha": "Cierre"},
-    {"variable": "INDICE_SP500", "descripcion": "S&P 500 Index (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
-    {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 Index (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
+    {"variable": "INDICE_SP500", "descripcion": "S&P 500 (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
+    {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
     {"variable": "INDICE_VIX", "descripcion": "Índice de Volatilidad (VIX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "14,94 pts", "variacion": "-1,71%", "valor": 14.94, "fecha": "Cierre"},
     {"variable": "INDICE_DJI", "descripcion": "Dow Jones Industrial (DJI)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "43.988,99 pts", "variacion": "+0,59%", "valor": 43988.99, "fecha": "Cierre"},
     {"variable": "INDICE_RUSSELL", "descripcion": "Russell 2000 (RUT)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "2.399,61 pts", "variacion": "+0,71%", "valor": 2399.61, "fecha": "Cierre"},
-    {"variable": "SPDR_XLK", "descripcion": "Technology SPDR (XLK)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 228,45", "variacion": "+0,52%", "valor": 228.45, "fecha": "Cierre"},
-    {"variable": "SPDR_XLF", "descripcion": "Financial SPDR (XLF)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 49,32", "variacion": "+1,15%", "valor": 49.32, "fecha": "Cierre"},
-    {"variable": "SPDR_XLE", "descripcion": "Energy SPDR (XLE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 91,80", "variacion": "+0,84%", "valor": 91.80, "fecha": "Cierre"},
-    {"variable": "SPDR_XLV", "descripcion": "Health Care SPDR (XLV)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 146,22", "variacion": "-0,28%", "valor": 146.22, "fecha": "Cierre"},
-    {"variable": "SPDR_XLI", "descripcion": "Industrial SPDR (XLI)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 139,15", "variacion": "+0,65%", "valor": 139.15, "fecha": "Cierre"},
-    {"variable": "SPDR_XLY", "descripcion": "Consumer Discretionary (XLY)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 206,88", "variacion": "+1,40%", "valor": 206.88, "fecha": "Cierre"},
-    {"variable": "SPDR_XLP", "descripcion": "Consumer Staples (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
-    {"variable": "SPDR_XLU", "descripcion": "Utilities SPDR (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
-    {"variable": "SPDR_XLB", "descripcion": "Materials SPDR (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
-    {"variable": "SPDR_XLRE", "descripcion": "Real Estate SPDR (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
-    {"variable": "SPDR_XLC", "descripcion": "Communication Services (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
+    {"variable": "SPDR_XLK", "descripcion": "Tecnología (XLK)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 228,45", "variacion": "+0,52%", "valor": 228.45, "fecha": "Cierre"},
+    {"variable": "SPDR_XLF", "descripcion": "Financiero (XLF)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 49,32", "variacion": "+1,15%", "valor": 49.32, "fecha": "Cierre"},
+    {"variable": "SPDR_XLE", "descripcion": "Energía (XLE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 91,80", "variacion": "+0,84%", "valor": 91.80, "fecha": "Cierre"},
+    {"variable": "SPDR_XLV", "descripcion": "Salud (XLV)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 146,22", "variacion": "-0,28%", "valor": 146.22, "fecha": "Cierre"},
+    {"variable": "SPDR_XLI", "descripcion": "Industrial (XLI)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 139,15", "variacion": "+0,65%", "valor": 139.15, "fecha": "Cierre"},
+    {"variable": "SPDR_XLY", "descripcion": "Consumo Discrecional (XLY)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 206,88", "variacion": "+1,40%", "valor": 206.88, "fecha": "Cierre"},
+    {"variable": "SPDR_XLP", "descripcion": "Consumo Básico (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
+    {"variable": "SPDR_XLU", "descripcion": "Servicios Públicos (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
+    {"variable": "SPDR_XLB", "descripcion": "Materiales (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
+    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
+    {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
 ]
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
@@ -193,7 +211,7 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "monedas": [],
     "cripto": [],
     "cotizacion_bonos": [],
-    "indices": [dict(x) for x in INDICES_DEFAULT],
+    "indices": [dict(x) for x in INDICES_BASE_MEMORIA],
     "inflacion_y_ajuste": [],
     "metales": [],
     "petroleo": [],
@@ -203,6 +221,72 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
 }
 CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
+
+def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
+    h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    # 1. Intento primario con API v8
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
+        r = requests.get(url, headers=h, timeout=3.5)
+        if r.status_code == 200:
+            res = r.json().get("chart", {}).get("result", [])
+            if res:
+                meta = res[0].get("meta", {})
+                price = meta.get("regularMarketPrice")
+                prev = meta.get("chartPreviousClose") or meta.get("previousClose")
+                if price is not None:
+                    chg_pct = ((price - prev) / prev * 100) if prev else 0.0
+                    return {"price": round(float(price), 2), "change_pct": round(float(chg_pct), 2)}
+    except Exception:
+        pass
+
+    # 2. Respaldo secundario con CSV
+    try:
+        url_s = f"https://stooq.com/q/l/?s={sym_s}&f=sd2t2ohlcv&h&e=csv"
+        r_s = requests.get(url_s, headers=h, timeout=3.0)
+        if r_s.status_code == 200 and "Close" in r_s.text:
+            lines = r_s.text.strip().split("\n")
+            if len(lines) >= 2:
+                parts = lines[1].split(",")
+                if len(parts) >= 6:
+                    close_p = float(parts[5])
+                    open_p = float(parts[2]) if parts[2] != "N/D" else close_p
+                    chg_pct = ((close_p - open_p) / open_p * 100) if open_p else 0.0
+                    return {"price": round(close_p, 2), "change_pct": round(chg_pct, 2)}
+    except Exception:
+        pass
+    return None
+
+def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    items = []
+    
+    def worker_ticker(info):
+        sym_y, sym_s, cod, desc, subcat, tipo = info
+        q = fetch_quote_externa(sym_y, sym_s)
+        if q:
+            p = q["price"]
+            chg = q["change_pct"]
+            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+            if tipo == "usd":
+                fmt = f"US$ {p:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"US$ {p:.2f}".replace(".", ",")
+            else:
+                fmt = f"{p:,.2f} pts".replace(",", "X").replace(".", ",").replace("X", ".")
+            return {
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "indices",
+                "subcategoria": subcat,
+                "valor_formateado": fmt,
+                "variacion": var_str,
+                "valor": p,
+                "fecha": fec_hoy
+            }
+        return None
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        res = list(ex.map(worker_ticker, US_TICKERS_DEF))
+    return [r for r in res if r is not None]
 
 def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     items = []
@@ -221,7 +305,7 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                             cod, desc, cat = v_map
                             v_num = normalizar_valor(c[1].get_text(strip=True))
                             if v_num is not None:
-                                items.append({
+                                item_dict = {
                                     "variable": cod,
                                     "descripcion": desc,
                                     "categoria": cat,
@@ -229,7 +313,10 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                                     "variacion": c[2].get_text(strip=True),
                                     "valor": v_num,
                                     "fecha": c[3].get_text(strip=True)
-                                })
+                                }
+                                if cat == "indices":
+                                    item_dict["subcategoria"] = "argentina"
+                                items.append(item_dict)
                                 cargadas.add(v_map[0])
     except Exception:
         pass
@@ -393,18 +480,30 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=4) as executor:
+            with ThreadPoolExecutor(max_workers=5) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
+                f_usa = executor.submit(obtener_datos_mercado_usa)
 
                 res_ind = f_ind.result()
                 res_tasas = f_tasas.result()
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
+                res_usa = f_usa.result()
 
-            indices_actualizados = [dict(it) for it in INDICES_DEFAULT]
+            # Base de índices con valores en memoria
+            indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
+
+            # 1. Incorporar datos frescos de EE. UU. y Sectores
+            for item in res_usa:
+                indices_map[item["variable"]] = item
+
+            # 2. Incorporar datos frescos de Argentina (Merval y Riesgo País)
+            for item in res_ind:
+                if item.get("categoria") == "indices":
+                    indices_map[item["variable"]] = item
 
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
@@ -412,7 +511,7 @@ def worker_refresco_continuo():
                 "monedas": res_monedas,
                 "cripto": [],
                 "cotizacion_bonos": res_bonos,
-                "indices": indices_actualizados,
+                "indices": list(indices_map.values()),
                 "inflacion_y_ajuste": [],
                 "metales": [{"variable": c, "descripcion": d, "categoria": "metales", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in METALES_BASE],
                 "petroleo": [{"variable": c, "descripcion": d, "categoria": "petroleo", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in PETROLEO_BASE],
@@ -423,14 +522,7 @@ def worker_refresco_continuo():
 
             for item in res_ind:
                 cat = item.get("categoria", "macro_y_fiscal")
-                if cat == "indices":
-                    for idx_item in nuevo_agrupado["indices"]:
-                        if idx_item["variable"] == item["variable"]:
-                            idx_item["valor_formateado"] = item["valor_formateado"]
-                            idx_item["variacion"] = item["variacion"]
-                            idx_item["valor"] = item["valor"]
-                            idx_item["fecha"] = item["fecha"]
-                elif cat in nuevo_agrupado:
+                if cat != "indices" and cat in nuevo_agrupado:
                     nuevo_agrupado[cat].append(item)
 
             for item in res_tasas:
@@ -518,5 +610,5 @@ def ver_indec_ipc():
 if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8080))
-    print(f"Iniciando Uvicorn en el puerto asignado: {puerto}")
+    print(f"Iniciando Uvicorn en el puerto: {puerto}")
     uvicorn.run(app, host="0.0.0.0", port=puerto)
