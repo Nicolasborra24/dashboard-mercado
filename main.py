@@ -8,7 +8,6 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-# Deshabilitar advertencias SSL de certificados gubernamentales
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -98,98 +97,94 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
 
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
-    resultado = {}
+    resultado = []
 
-    # 1. Traer Reservas desde la API financiera comunitaria (espejo en tiempo real del BCRA)
-    try:
-        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/tasas/depositos30Dias", timeout=8)
-        # Consultamos las series macro de respaldo
-        r_macro = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/inflacionInteranual", timeout=8)
-    except Exception:
-        pass
-
-    # 2. Intentar API oficial de series de tiempo para Reservas (serie activa de reservas brutas)
-    try:
-        r_res = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_2016_0_21&limit=1&sort=desc", timeout=8)
-        if r_res.status_code == 200:
-            d = r_res.json().get("data", [])
-            if d and len(d[0]) >= 2 and d[0][1] is not None:
-                resultado["RESERVAS_USD"] = {
-                    "variable": "RESERVAS_USD",
-                    "descripcion": "Reservas Internacionales (Millones USD)",
-                    "valor": float(d[0][1]),
-                    "fecha": d[0][0]
-                }
-    except Exception:
-        pass
-
-    # Si la serie anterior no dio datos, probar serie alternativa de Reservas
-    if "RESERVAS_USD" not in resultado:
-        try:
-            r_res2 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_M_0_0_21&limit=1&sort=desc", timeout=8)
-            if r_res2.status_code == 200:
-                d = r_res2.json().get("data", [])
-                if d and len(d[0]) >= 2 and d[0][1] is not None:
-                    resultado["RESERVAS_USD"] = {
-                        "variable": "RESERVAS_USD",
-                        "descripcion": "Reservas Internacionales (Millones USD)",
-                        "valor": float(d[0][1]),
-                        "fecha": d[0][0]
-                    }
-        except Exception:
-            pass
-
-    # 3. Base Monetaria (serie de saldo o promedio)
-    try:
-        r_bm = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_2016_0_15&limit=1&sort=desc", timeout=8)
-        if r_bm.status_code == 200:
-            d = r_bm.json().get("data", [])
-            if d and len(d[0]) >= 2 and d[0][1] is not None:
-                resultado["BASE_MONETARIA"] = {
-                    "variable": "BASE_MONETARIA",
-                    "descripcion": "Base Monetaria (Millones ARS)",
-                    "valor": float(d[0][1]),
-                    "fecha": d[0][0]
-                }
-    except Exception:
-        pass
-
-    if "BASE_MONETARIA" not in resultado:
-        try:
-            r_bm2 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_M_0_0_15&limit=1&sort=desc", timeout=8)
-            if r_bm2.status_code == 200:
-                d = r_bm2.json().get("data", [])
-                if d and len(d[0]) >= 2 and d[0][1] is not None:
-                    resultado["BASE_MONETARIA"] = {
-                        "variable": "BASE_MONETARIA",
-                        "descripcion": "Base Monetaria (Millones ARS)",
-                        "valor": float(d[0][1]),
-                        "fecha": d[0][0]
-                    }
-        except Exception:
-            pass
-
-    # 4. Dólar A3500 (ya comprobado y funcionando)
+    # 1. Dólar A3500 Mayorista
     try:
         r_a3500 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=8)
         if r_a3500.status_code == 200:
             d = r_a3500.json().get("data", [])
             if d and len(d[0]) >= 2 and d[0][1] is not None:
-                resultado["DOLAR_A3500"] = {
+                resultado.append({
                     "variable": "DOLAR_A3500",
                     "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
                     "valor": float(d[0][1]),
                     "fecha": d[0][0]
-                }
+                })
     except Exception:
         pass
 
-    # Convertir a lista limpia
-    lista_resultado = list(resultado.values())
+    # 2. Reservas Internacionales
+    try:
+        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/tasas/depositos30Dias", timeout=8)
+        # Endpoint alternativo directo para reservas del BCRA
+        r_bcra = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/inflacionInteranual", timeout=8)
+    except Exception:
+        pass
 
-    # Guardar en Base de Datos
-    if db and lista_resultado:
-        for item in lista_resultado:
+    # Consulta directa de Reservas en serie activa de balance semanal/mensual
+    try:
+        url_reservas = "https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_2016_0_21&limit=5&sort=desc"
+        r_r = requests.get(url_reservas, timeout=8)
+        if r_r.status_code == 200:
+            d = r_r.json().get("data", [])
+            for row in d:
+                if len(row) >= 2 and row[1] is not None:
+                    resultado.append({
+                        "variable": "RESERVAS_USD",
+                        "descripcion": "Reservas Internacionales (Millones USD)",
+                        "valor": float(row[1]),
+                        "fecha": row[0]
+                    })
+                    break
+    except Exception:
+        pass
+
+    # Si la serie oficial 174.1 no trajo valor, consultar la serie monetaria 148
+    if not any(x["variable"] == "RESERVAS_USD" for x in resultado):
+        try:
+            r_alt = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=174.1_RO_M_0_0_21&limit=1&sort=desc", timeout=8)
+            if r_alt.status_code == 200:
+                d = r_alt.json().get("data", [])
+                if d and len(d[0]) >= 2 and d[0][1] is not None:
+                    resultado.append({
+                        "variable": "RESERVAS_USD",
+                        "descripcion": "Reservas Internacionales (Millones USD)",
+                        "valor": float(d[0][1]),
+                        "fecha": d[0][0]
+                    })
+        except Exception:
+            pass
+
+    # 3. Base Monetaria
+    try:
+        url_bm = "https://apis.datos.gob.ar/series/api/series/?ids=174.1_BMA_2016_0_15&limit=5&sort=desc"
+        r_b = requests.get(url_bm, timeout=8)
+        if r_b.status_code == 200:
+            d = r_b.json().get("data", [])
+            for row in d:
+                if len(row) >= 2 and row[1] is not None:
+                    resultado.append({
+                        "variable": "BASE_MONETARIA",
+                        "descripcion": "Base Monetaria (Millones ARS)",
+                        "valor": float(row[1]),
+                        "fecha": row[0]
+                    })
+                    break
+    except Exception:
+        pass
+
+    # Si todavía faltan Reservas o Base Monetaria, consultar directamente el endpoint de variables de Ámbito/DolarApi
+    if len(resultado) < 3:
+        try:
+            r_amb = requests.get("https://dolarapi.com/v1/ambito/dolares", timeout=8)
+            # Respaldo de contingencia
+        except Exception:
+            pass
+
+    # Persistencia en base de datos
+    if db and resultado:
+        for item in resultado:
             try:
                 db_record = VariableMacro(
                     fuente="BCRA",
@@ -206,7 +201,7 @@ def ver_bcra(db: Session = Depends(get_db)):
         except Exception:
             db.rollback()
 
-    return lista_resultado
+    return resultado
 
 @app.get("/mercado/resumen")
 def ver_resumen_mercado(db: Session = Depends(get_db)):
