@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = ["python -m venv --copies /app/.venv", ". /app/.venv/bin/activate && pip install --no-cache-dir -r requirements.txt"]
+
+[start]
+cmd = "python main.py"
