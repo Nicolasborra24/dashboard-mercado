@@ -4,7 +4,6 @@ import urllib3
 from datetime import datetime
 from typing import List, Optional
 import requests
-from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -66,7 +65,7 @@ def inicio():
 def ver_dolar(db: Session = Depends(get_db)):
     url = "https://dolarapi.com/v1/dolares"
     try:
-        respuesta = requests.get(url, timeout=10)
+        respuesta = requests.get(url, timeout=8)
         if respuesta.status_code == 200:
             datos = respuesta.json()
             if db:
@@ -97,57 +96,143 @@ def ver_historial(limite: int = 20, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-def parsear_monto_celda(texto: str) -> Optional[float]:
-    # Extrae el valor numérico puro respetando multiplicadores B (billones/billions) y M (millones)
-    t = texto.strip().upper()
-    multiplicador = 1.0
-    if "B" in t:
-        multiplicador = 1000.0 # Expresado en Miles de Millones
-    elif "M" in t:
-        multiplicador = 1.0
-
-    numeros = re.findall(r"[\d]+(?:[.,]\d+)?", t)
-    if numeros:
-        num_str = numeros[0].replace(",", ".")
-        try:
-            return round(float(num_str) * multiplicador, 2)
-        except Exception:
-            pass
-    return None
-
 @app.get("/bcra/variables")
 def ver_bcra(db: Session = Depends(get_db)):
     resultado = []
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
 
-    # 1. Extracción precisa por posición de celda desde indicadores.ar
+    # 1. Dólar A3500 Mayorista (datos.gob.ar)
     try:
-        r_ind = requests.get("https://indicadores.ar/indicadores-economicos", headers=headers, timeout=10)
-        if r_ind.status_code == 200:
-            soup = BeautifulSoup(r_ind.text, "html.parser")
+        r_a3500 = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=6)
+        if r_a3500.status_code == 200:
+            d = r_a3500.json().get("data", [])
+            if d and len(d[0]) >= 2 and d[0][1] is not None:
+                val = float(d[0][1])
+                resultado.append({
+                    "variable": "DOLAR_A3500",
+                    "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
+                    "valor_formateado": f"${val:.2f}",
+                    "valor": val,
+                    "fecha": d[0][0]
+                })
+    except Exception:
+        pass
+
+    # 2. Reservas Internacionales
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r_res = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/reservas", headers=headers, timeout=6)
+        if r_res.status_code == 200:
+            data = r_res.json()
+            if isinstance(data, list) and len(data) > 0:
+                ultimo = data[-1]
+                val = float(ultimo.get("valor", 0))
+                resultado.append({
+                    "variable": "RESERVAS_USD",
+                    "descripcion": "Reservas Internacionales BCRA (Millones USD)",
+                    "valor_formateado": f"USD {val:,.0f} M",
+                    "valor": val,
+                    "fecha": str(ultimo.get("fecha"))
+                })
+    except Exception:
+        pass
+
+    # 3. Base Monetaria
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r_bm = requests.get("https://api.argentinadatos.com/v1/finanzas/indices/baseMonetaria", headers=headers, timeout=6)
+        if r_bm.status_code == 200:
+            data = r_bm.json()
+            if isinstance(data, list) and len(data) > 0:
+                ultimo = data[-1]
+                val = float(ultimo.get("valor", 0))
+                resultado.append({
+                    "variable": "BASE_MONETARIA",
+                    "descripcion": "Base Monetaria BCRA (Millones ARS)",
+                    "valor_formateado": f"${val:,.0f} M",
+                    "valor": val,
+                    "fecha": str(ultimo.get("fecha"))
+                })
+    except Exception:
+        pass
+
+    # Persistencia en PostgreSQL protegida
+    if db and resultado:
+        for item in resultado:
+            try:
+                db_record = VariableMacro(
+                    fuente="BCRA",
+                    id_variable=item["variable"],
+                    descripcion=item["descripcion"],
+                    valor=item["valor"],
+                    fecha_dato=str(item["fecha"])
+                )
+                db.add(db_record)
+            except Exception:
+                db.rollback()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    return resultado
+
+@app.get("/mercado/resumen")
+def ver_resumen_mercado(db: Session = Depends(get_db)):
+    try:
+        r_dolar = requests.get("https://dolarapi.com/v1/dolares", timeout=8)
+        dolares = r_dolar.json() if r_dolar.status_code == 200 else []
+        
+        precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
+        mayorista = precios.get("mayorista") or precios.get("oficial", 1)
+        
+        brechas = {}
+        if mayorista > 0:
+            for casa in ["blue", "bolsa", "contadoconliqui", "tarjeta", "cripto"]:
+                if casa in precios and precios[casa] > 0:
+                    spread = round(((precios[casa] / mayorista) - 1) * 100, 2)
+                    brechas[casa] = spread
+                    
+        return {
+            "fecha": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "mayorista_referencia": mayorista,
+            "cotizaciones": precios,
+            "brechas_porcentaje": brechas
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/indec/ipc")
+def ver_indec_ipc(db: Session = Depends(get_db)):
+    url = "https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc"
+    try:
+        respuesta = requests.get(url, timeout=8)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            data_points = datos.get("data", [])
             
-            for fila in soup.find_all("tr"):
-                celdas = fila.find_all(["td", "th"])
-                if len(celdas) >= 4:
-                    nombre = celdas[0].get_text(strip=True)
-                    val_str = celdas[1].get_text(strip=True)
-                    fecha_str = celdas[3].get_text(strip=True)
-
-                    if "Reservas" in nombre and not any(x["variable"] == "RESERVAS_USD" for x in resultado):
-                        val = parsear_monto_celda(val_str)
-                        if val is not None:
-                            resultado.append({
-                                "variable": "RESERVAS_USD",
-                                "descripcion": "Reservas Internacionales BCRA (Millones USD)",
-                                "valor_formateado": val_str,
-                                "valor": val,
-                                "fecha": fecha_str
-                            })
-
-                    elif "Base" in nombre and "Monetaria" in nombre and
-git add .
-git commit -m "Extraccion fija por posicion de celdas para Reservas y Base Monetaria"
-git push origin main
-git status
+            resultado = []
+            for punto in data_points:
+                fecha, valor = punto[0], punto[1]
+                if valor is not None:
+                    resultado.append({"fecha": fecha, "indice_ipc": float(valor)})
+                    if db:
+                        try:
+                            registro = VariableMacro(
+                                fuente="INDEC",
+                                id_variable="IPC_NACIONAL",
+                                descripcion="Índice de Precios al Consumidor (Nivel General)",
+                                valor=float(valor),
+                                fecha_dato=str(fecha)
+                            )
+                            db.add(registro)
+                        except Exception:
+                            db.rollback()
+            if db:
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            return resultado
+        return {"error": f"INDEC API devolvió código {respuesta.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
