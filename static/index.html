@@ -49,69 +49,72 @@
     </div>
   </header>
 
-  <!-- Navigation / Filtros con Iconos en cada pestaña y 2 filas fijas -->
+  <!-- Navigation: HOME destacado a la izquierda + Matriz exacta de 4 pestañas por fila (3 filas) -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
-        <!-- HOME destacado a la izquierda -->
-        <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-4 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0">
-          <i class="fa-solid fa-house text-sm"></i>
+        <!-- Botón HOME a la izquierda cubriendo las 3 filas -->
+        <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0">
+          <i class="fa-solid fa-house text-base"></i>
           <span>HOME</span>
         </button>
 
-        <!-- Grilla de 5 columnas x 2 filas con iconos dedicados -->
-        <div class="grid grid-cols-5 gap-1.5 flex-1 w-full text-[11px]">
-          <!-- Fila 1 -->
+        <!-- Grilla de exactamente 4 secciones por fila (3 filas) -->
+        <div class="grid grid-cols-4 gap-1.5 flex-1 w-full text-[11px]">
+          <!-- Fila 1 (4 secciones) -->
           <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
             <span class="truncate">Tasas y BCRA</span>
           </button>
-
           <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i>
             <span class="truncate">Dólar y Brechas</span>
           </button>
-
           <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
             <span class="truncate">Monedas</span>
           </button>
+          <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
+            <span class="truncate">Cotización Bonos</span>
+          </button>
 
+          <!-- Fila 2 (4 secciones) -->
           <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i>
             <span class="truncate">Inflación / UVA</span>
           </button>
-
           <button onclick="filtrarCategoria('mercado_y_deuda', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
             <span class="truncate">Mercado y Renta</span>
           </button>
-
-          <!-- Fila 2 -->
           <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
             <span class="truncate">Metales</span>
           </button>
-
           <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i>
             <span class="truncate">Petróleo</span>
           </button>
 
+          <!-- Fila 3 (4 secciones) -->
           <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i>
             <span class="truncate">Macro & Fiscal</span>
           </button>
-
           <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-industry text-orange-400 text-[10px]"></i>
             <span class="truncate">Micro / Real</span>
           </button>
-
           <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i>
             <span class="truncate">Agro & Energía</span>
           </button>
+          <!-- Boton de acceso rapido o balance visual -->
+          <div class="px-2 py-1.5 rounded-lg border border-slate-800/30 bg-slate-900/20 text-slate-600 text-center flex items-center justify-center gap-1.5 text-[10px] select-none">
+            <i class="fa-solid fa-shield-halved text-slate-600"></i>
+            <span>SJB Terminal v2</span>
+          </div>
         </div>
       </div>
     </div>
@@ -127,9 +130,10 @@
   <script>
     const NOMBRES_SECCIONES = {
       home: { titulo: "Resumen Ejecutivo de Mercado", icono: "fa-gauge-high" },
-      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario", icono: "fa-landmark" },
+      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", icono: "fa-landmark" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
+      cotizacion_bonos: { titulo: "Cotizaciones de Bonos Soberanos, Bopreales, CER y Corporativos", icono: "fa-file-invoice-dollar" },
       inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
       mercado_y_deuda: { titulo: "Mercado Bursátil y Deuda Soberana", icono: "fa-chart-line" },
       metales: { titulo: "Metales Preciosos e Industriales", icono: "fa-coins" },
@@ -150,6 +154,7 @@
       "MERVAL_USD",
       "TASA_TAMAR",
       "TASA_BADLAR",
+      "TASA_CALL",
       "AGRO_SOJA",
       "AGRO_MAIZ",
       "METALES_XAU",
@@ -226,7 +231,7 @@
               <i class="fa-solid ${info.icono} text-blue-400"></i>
               <h2>${info.titulo}</h2>
             </div>
-            <!-- Grilla fija de 4 tarjetas por fila -->
+            <!-- Grilla de 4 tarjetas exactas por fila -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               ${itemsHome.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
             </div>
@@ -249,7 +254,7 @@
             <i class="fa-solid ${info.icono} text-blue-400"></i>
             <h2>${info.titulo}</h2>
           </div>
-          <!-- Grilla fija de 4 tarjetas por fila -->
+          <!-- Grilla de 4 tarjetas exactas por fila -->
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             ${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}
           </div>
@@ -341,7 +346,7 @@
       categoriaActiva = cat;
       document.querySelectorAll(".nav-tab").forEach(b => {
         if (b.innerText.trim().toUpperCase() === "HOME") {
-          b.className = "nav-tab px-4 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shrink-0 border border-slate-700/50";
+          b.className = "nav-tab px-5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shrink-0 border border-slate-700/50";
         } else {
           b.className = "nav-tab px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-800/60 transition truncate flex items-center justify-center gap-1.5";
         }
@@ -349,7 +354,7 @@
 
       if (ev && ev.currentTarget) {
         if (cat === "home") {
-          ev.currentTarget.className = "nav-tab active px-4 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0";
+          ev.currentTarget.className = "nav-tab active px-5 rounded-xl bg-blue-600 text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shadow-blue-900/30 shrink-0";
         } else {
           ev.currentTarget.className = "nav-tab active px-2 py-1.5 rounded-lg bg-blue-600 text-white border border-blue-500 font-medium transition truncate flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20";
         }
