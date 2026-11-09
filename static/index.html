@@ -78,27 +78,13 @@
       box-shadow: 0 0 18px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
-    .glow-flare-cyan {
-      background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%);
-    }
-    .glow-flare-purple {
-      background: linear-gradient(90deg, rgba(192, 132, 252, 0.8) 0%, rgba(168, 85, 247, 0.3) 60%, transparent 100%);
-    }
-    .glow-flare-amber {
-      background: linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(245, 158, 11, 0.3) 60%, transparent 100%);
-    }
-    .glow-flare-rose {
-      background: linear-gradient(90deg, rgba(251, 113, 133, 0.8) 0%, rgba(244, 63, 94, 0.3) 60%, transparent 100%);
-    }
+    .glow-flare-cyan { background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%); }
+    .glow-flare-purple { background: linear-gradient(90deg, rgba(192, 132, 252, 0.8) 0%, rgba(168, 85, 247, 0.3) 60%, transparent 100%); }
+    .glow-flare-amber { background: linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(245, 158, 11, 0.3) 60%, transparent 100%); }
+    .glow-flare-rose { background: linear-gradient(90deg, rgba(251, 113, 133, 0.8) 0%, rgba(244, 63, 94, 0.3) 60%, transparent 100%); }
 
-    @keyframes flash-up {
-      0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); }
-      100% { color: #ffffff; text-shadow: none; }
-    }
-    @keyframes flash-down {
-      0% { color: #f43f5e; text-shadow: 0 0 14px rgba(244, 63, 94, 0.9); }
-      100% { color: #ffffff; text-shadow: none; }
-    }
+    @keyframes flash-up { 0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
+    @keyframes flash-down { 0% { color: #f43f5e; text-shadow: 0 0 14px rgba(244, 63, 94, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
     .flash-green { animation: flash-up 1.3s ease; }
     .flash-red { animation: flash-down 1.3s ease; }
   </style>
@@ -268,27 +254,9 @@
     let subIndiceActivo = "argentina";
 
     const SUB_INDICES_INFO = {
-      argentina: {
-        titulo: "Índices Argentina",
-        desc: "Bolsa de Buenos Aires (S&P Merval en ARS y USD) y Riesgo País EMBI+",
-        icono: "fa-landmark-flag",
-        color: "text-sky-400",
-        count: 3
-      },
-      estados_unidos: {
-        titulo: "Índices Principales Estados Unidos",
-        desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY",
-        icono: "fa-flag-usa",
-        color: "text-blue-400",
-        count: 6
-      },
-      sectores: {
-        titulo: "Sectores de Wall Street (SPDR ETFs)",
-        desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500",
-        icono: "fa-chart-pie",
-        color: "text-amber-400",
-        count: 11
-      }
+      argentina: { titulo: "Índices Argentina", desc: "Bolsa de Buenos Aires (S&P Merval en ARS y USD) y Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
+      estados_unidos: { titulo: "Índices Principales Estados Unidos", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
+      sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
     };
 
     const INDICES_ESTATICOS_BASE = [
@@ -316,7 +284,7 @@
 
     const CURVAS_INFO = {
       lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • Títulos indexados por inflación", icono: "fa-arrow-trend-up", color: "text-purple-400" },
+      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
       soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
       bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
       dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
@@ -324,52 +292,115 @@
       duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
     };
 
-    // Datos base de respaldo inmediato para evitar bloqueos
-    const TABLAS_BONOS_BACKUP = {
+    // TODAS LAS TABLAS COMPLETAS SIN OMISIONES
+    const TABLAS_BONOS_INTEGRAS = {
       lecaps: [
-        { "Ticker": "S13N6", "Último Precio": 109.50, "Var. Diaria": "0.05%", "TIR": "13.24%", "TEM": "1.04%", "TNA": "12.50%", "TEA": "13.44%", "Mod. Duration": 0.02, "Paridad": "109.50", "Vencimiento": "2026-11-13" },
-        { "Ticker": "S30N6", "Último Precio": 128.41, "Var. Diaria": "0.10%", "TIR": "21.60%", "TEM": "1.64%", "TNA": "19.72%", "TEA": "21.93%", "Mod. Duration": 0.05, "Paridad": "128.41", "Vencimiento": "2026-11-30" },
-        { "Ticker": "T15E7", "Último Precio": 154.40, "Var. Diaria": "0.06%", "TIR": "25.65%", "TEM": "1.92%", "TNA": "23.06%", "TEA": "26.05%", "Mod. Duration": 0.15, "Paridad": "154.40", "Vencimiento": "2027-01-15" },
-        { "Ticker": "S29E7", "Último Precio": 106.15, "Var. Diaria": "0.08%", "TIR": "25.35%", "TEM": "1.90%", "TNA": "22.80%", "TEA": "25.74%", "Mod. Duration": 0.19, "Paridad": "106.15", "Vencimiento": "2027-01-29" },
-        { "Ticker": "S26F7", "Último Precio": 101.05, "Var. Diaria": "0.30%", "TIR": "25.97%", "TEM": "1.94%", "TNA": "23.31%", "TEA": "26.38%", "Mod. Duration": 0.25, "Paridad": "101.05", "Vencimiento": "2027-02-26" },
-        { "Ticker": "T30A7", "Último Precio": 139.29, "Var. Diaria": "0.06%", "TIR": "30.42%", "TEM": "2.24%", "TNA": "26.86%", "TEA": "30.90%", "Mod. Duration": 0.37, "Paridad": "139.29", "Vencimiento": "2027-04-30" },
-        { "Ticker": "T31Y7", "Último Precio": 130.91, "Var. Diaria": "-0.03%", "TIR": "29.66%", "TEM": "2.19%", "TNA": "26.26%", "TEA": "30.13%", "Mod. Duration": 0.44, "Paridad": "130.91", "Vencimiento": "2027-05-31" },
-        { "Ticker": "T30J7", "Último Precio": 132.15, "Var. Diaria": "-0.11%", "TIR": "29.27%", "TEM": "2.16%", "TNA": "25.95%", "TEA": "29.73%", "Mod. Duration": 0.51, "Paridad": "132.15", "Vencimiento": "2027-06-30" },
-        { "Ticker": "TY30P", "Último Precio": 113.70, "Var. Diaria": "0.22%", "TIR": "30.80%", "TEM": "2.26%", "TNA": "27.15%", "TEA": "31.28%", "Mod. Duration": 1.68, "Paridad": "113.55", "Vencimiento": "2027-09-30" }
+        { "Ticker": "S13N6", "Último Precio": 109.50, "Var. Diaria": "0.05%", "Tasa Directa": "0.14%", "TIR": "13.24%", "TEM": "1.04%", "TNA": "12.50%", "TEA": "13.44%", "Mod. Duration": 0.02, "Paridad": "109.50", "Vencimiento": "2026-11-13", "Días": 5 },
+        { "Ticker": "S30N6", "Último Precio": 128.41, "Var. Diaria": "0.10%", "Tasa Directa": "1.15%", "TIR": "21.60%", "TEM": "1.64%", "TNA": "19.72%", "TEA": "21.93%", "Mod. Duration": 0.05, "Paridad": "128.41", "Vencimiento": "2026-11-30", "Días": 22 },
+        { "Ticker": "T15E7", "Último Precio": 154.40, "Var. Diaria": "0.06%", "Tasa Directa": "4.34%", "TIR": "25.65%", "TEM": "1.92%", "TNA": "23.06%", "TEA": "26.05%", "Mod. Duration": 0.15, "Paridad": "154.40", "Vencimiento": "2027-01-15", "Días": 68 },
+        { "Ticker": "S29E7", "Último Precio": 106.15, "Var. Diaria": "0.08%", "Tasa Directa": "5.21%", "TIR": "25.35%", "TEM": "1.90%", "TNA": "22.80%", "TEA": "25.74%", "Mod. Duration": 0.19, "Paridad": "106.15", "Vencimiento": "2027-01-29", "Días": 82 },
+        { "Ticker": "S26F7", "Último Precio": 101.05, "Var. Diaria": "0.30%", "Tasa Directa": "7.24%", "TIR": "25.97%", "TEM": "1.94%", "TNA": "23.31%", "TEA": "26.38%", "Mod. Duration": 0.25, "Paridad": "101.05", "Vencimiento": "2027-02-26", "Días": 110 },
+        { "Ticker": "T30A7", "Último Precio": 139.29, "Var. Diaria": "0.06%", "Tasa Directa": "12.96%", "TIR": "30.42%", "TEM": "2.24%", "TNA": "26.86%", "TEA": "30.90%", "Mod. Duration": 0.37, "Paridad": "139.29", "Vencimiento": "2027-04-30", "Días": 173 },
+        { "Ticker": "T31Y7", "Último Precio": 130.91, "Var. Diaria": "-0.03%", "Tasa Directa": "16.11%", "TIR": "29.66%", "TEM": "2.19%", "TNA": "26.26%", "TEA": "30.13%", "Mod. Duration": 0.44, "Paridad": "130.91", "Vencimiento": "2027-05-31", "Días": 204 },
+        { "Ticker": "T30J7", "Último Precio": 132.15, "Var. Diaria": "-0.11%", "Tasa Directa": "18.08%", "TIR": "29.27%", "TEM": "2.16%", "TNA": "25.95%", "TEA": "29.73%", "Mod. Duration": 0.51, "Paridad": "132.15", "Vencimiento": "2027-06-30", "Días": 234 },
+        { "Ticker": "TY30P", "Último Precio": 113.70, "Var. Diaria": "0.22%", "Tasa Directa": "0.92%", "TIR": "30.80%", "TEM": "2.26%", "TNA": "27.15%", "TEA": "31.28%", "Mod. Duration": 1.68, "Paridad": "113.55", "Vencimiento": "2027-09-30", "Días": 326 }
       ],
       cer: [
-        { "Ticker": "TZXD6", "Último Precio": 316.30, "Var. Diaria": "-0.06%", "TIR": "3.34%", "TEM": "0.27%", "TNA": "3.29%", "Mod. Duration": 0.11, "Paridad": "99.85", "Vencimiento": "2026-12-15" },
-        { "Ticker": "X29E7", "Último Precio": 105.30, "Var. Diaria": "0.19%", "TIR": "0.80%", "TEM": "0.07%", "TNA": "0.80%", "Mod. Duration": 0.23, "Paridad": "100.00", "Vencimiento": "2027-01-29" },
-        { "Ticker": "TZXM7", "Último Precio": 235.00, "Var. Diaria": "-0.40%", "TIR": "3.37%", "TEM": "0.28%", "TNA": "3.32%", "Mod. Duration": 0.39, "Paridad": "98.89", "Vencimiento": "2027-03-31" },
-        { "Ticker": "TZXA7", "Último Precio": 130.50, "Var. Diaria": "0.42%", "TIR": "2.07%", "TEM": "0.17%", "TNA": "2.05%", "Mod. Duration": 0.48, "Paridad": "99.21", "Vencimiento": "2027-04-30" },
-        { "Ticker": "TZXY7", "Último Precio": 127.40, "Var. Diaria": "-0.62%", "TIR": "3.82%", "TEM": "0.31%", "TNA": "3.75%", "Mod. Duration": 0.55, "Paridad": "97.88", "Vencimiento": "2027-05-31" },
-        { "Ticker": "TZX27", "Último Precio": 418.50, "Var. Diaria": "-0.12%", "TIR": "4.04%", "TEM": "0.33%", "TNA": "3.97%", "Mod. Duration": 0.63, "Paridad": "97.67", "Vencimiento": "2027-06-30" },
-        { "Ticker": "TZXS7", "Último Precio": 113.95, "Var. Diaria": "0.49%", "TIR": "4.48%", "TEM": "0.37%", "TNA": "4.39%", "Mod. Duration": 0.87, "Paridad": "96.24", "Vencimiento": "2027-09-30" },
-        { "Ticker": "TZXD7", "Último Precio": 291.60, "Var. Diaria": "0.03%", "TIR": "7.99%", "TEM": "0.64%", "TNA": "7.71%", "Mod. Duration": 1.04, "Paridad": "92.05", "Vencimiento": "2027-12-15" }
+        { "Ticker": "TX26", "Último Precio": 766.70, "Var. Diaria": "-", "TIR": "583.77%", "TEM": "17.38%", "TNA": "208.50%", "Mod. Duration": 0.01, "Paridad": "100.72", "Vencimiento": "2026-11-09", "Días": 1 },
+        { "Ticker": "X30N6", "Último Precio": 130.10, "Var. Diaria": "-0.07%", "TIR": "-0.09%", "TEM": "-0.01%", "TNA": "-0.09%", "Mod. Duration": 0.07, "Paridad": "99.96", "Vencimiento": "2026-11-30", "Días": 22 },
+        { "Ticker": "TZXD6", "Último Precio": 316.30, "Var. Diaria": "-0.06%", "TIR": "3.34%", "TEM": "0.27%", "TNA": "3.29%", "Mod. Duration": 0.11, "Paridad": "99.85", "Vencimiento": "2026-12-15", "Días": 37 },
+        { "Ticker": "X29E7", "Último Precio": 105.30, "Var. Diaria": "0.19%", "TIR": "0.80%", "TEM": "0.07%", "TNA": "0.80%", "Mod. Duration": 0.23, "Paridad": "100.00", "Vencimiento": "2027-01-29", "Días": 82 },
+        { "Ticker": "TZXM7", "Último Precio": 235.00, "Var. Diaria": "-0.40%", "TIR": "3.37%", "TEM": "0.28%", "TNA": "3.32%", "Mod. Duration": 0.39, "Paridad": "98.89", "Vencimiento": "2027-03-31", "Días": 143 },
+        { "Ticker": "TZXA7", "Último Precio": 130.50, "Var. Diaria": "0.42%", "TIR": "2.07%", "TEM": "0.17%", "TNA": "2.05%", "Mod. Duration": 0.48, "Paridad": "99.21", "Vencimiento": "2027-04-30", "Días": 173 },
+        { "Ticker": "TZXY7", "Último Precio": 127.40, "Var. Diaria": "-0.62%", "TIR": "3.82%", "TEM": "0.31%", "TNA": "3.75%", "Mod. Duration": 0.55, "Paridad": "97.88", "Vencimiento": "2027-05-31", "Días": 204 },
+        { "Ticker": "TZX27", "Último Precio": 418.50, "Var. Diaria": "-0.12%", "TIR": "4.04%", "TEM": "0.33%", "TNA": "3.97%", "Mod. Duration": 0.63, "Paridad": "97.67", "Vencimiento": "2027-06-30", "Días": 234 },
+        { "Ticker": "TZXS7", "Último Precio": 113.95, "Var. Diaria": "0.49%", "TIR": "4.48%", "TEM": "0.37%", "TNA": "4.39%", "Mod. Duration": 0.87, "Paridad": "96.24", "Vencimiento": "2027-09-30", "Días": 326 },
+        { "Ticker": "TZXD7", "Último Precio": 291.60, "Var. Diaria": "0.03%", "TIR": "7.99%", "TEM": "0.64%", "TNA": "7.71%", "Mod. Duration": 1.04, "Paridad": "92.05", "Vencimiento": "2027-12-15", "Días": 402 },
+        { "Ticker": "TZXM8", "Último Precio": 105.70, "Var. Diaria": "0.48%", "TIR": "8.54%", "TEM": "0.69%", "TNA": "8.22%", "Mod. Duration": 1.31, "Paridad": "89.28", "Vencimiento": "2028-03-31", "Días": 509 },
+        { "Ticker": "TZX28", "Último Precio": 362.00, "Var. Diaria": "-1.03%", "TIR": "10.92%", "TEM": "0.87%", "TNA": "10.41%", "Mod. Duration": 1.51, "Paridad": "84.49", "Vencimiento": "2028-06-30", "Días": 600 },
+        { "Ticker": "TZXS8", "Último Precio": 98.70, "Var. Diaria": "-0.03%", "TIR": "10.13%", "TEM": "0.81%", "TNA": "9.69%", "Mod. Duration": 1.75, "Paridad": "83.36", "Vencimiento": "2028-09-29", "Días": 691 },
+        { "Ticker": "TX28", "Último Precio": 1428.00, "Var. Diaria": "0.28%", "TIR": "42.98%", "TEM": "3.02%", "TNA": "36.29%", "Mod. Duration": 0.59, "Paridad": "74.99", "Vencimiento": "2028-11-09", "Días": 732 },
+        { "Ticker": "TZXD8", "Último Precio": 88.75, "Var. Diaria": "-0.03%", "TIR": "10.11%", "TEM": "0.81%", "TNA": "9.67%", "Mod. Duration": 1.95, "Paridad": "81.81", "Vencimiento": "2028-12-15", "Días": 768 },
+        { "Ticker": "TZXM9", "Último Precio": 93.20, "Var. Diaria": "-0.38%", "TIR": "10.59%", "TEM": "0.84%", "TNA": "10.11%", "Mod. Duration": 2.20, "Paridad": "78.72", "Vencimiento": "2029-03-28", "Días": 871 },
+        { "Ticker": "TX31", "Último Precio": 1473.00, "Var. Diaria": "-0.20%", "TIR": "11.69%", "TEM": "0.93%", "TNA": "11.11%", "Mod. Duration": 2.28, "Paridad": "81.13", "Vencimiento": "2031-11-30", "Días": 1848 },
+        { "Ticker": "DIP0", "Último Precio": 48650.00, "Var. Diaria": "-0.71%", "TIR": "11.87%", "TEM": "0.94%", "TNA": "11.27%", "Mod. Duration": 3.21, "Paridad": "109.90", "Vencimiento": "2033-12-31", "Días": 2610 },
+        { "Ticker": "DICP", "Último Precio": 48700.00, "Var. Diaria": "-1.39%", "TIR": "11.83%", "TEM": "0.94%", "TNA": "11.23%", "Mod. Duration": 2.66, "Paridad": "86.63", "Vencimiento": "2033-12-31", "Días": 2610 },
+        { "Ticker": "PAP0", "Último Precio": 33000.00, "Var. Diaria": "0.00%", "TIR": "11.85%", "TEM": "0.94%", "TNA": "11.25%", "Mod. Duration": 5.63, "Paridad": "55.92", "Vencimiento": "2038-12-31", "Días": 4436 },
+        { "Ticker": "PARP", "Último Precio": 33020.00, "Var. Diaria": "-0.68%", "TIR": "11.82%", "TEM": "0.94%", "TNA": "11.22%", "Mod. Duration": 5.63, "Paridad": "55.96", "Vencimiento": "2038-12-31", "Días": 4436 },
+        { "Ticker": "CUAP", "Último Precio": 39000.00, "Var. Diaria": "-1.64%", "TIR": "11.09%", "TEM": "0.88%", "TNA": "10.56%", "Mod. Duration": 9.73, "Paridad": "66.08", "Vencimiento": "2045-12-31", "Días": 6993 }
       ],
-      duales: [
-        { "Ticker": "TTD26", "Último Precio": 176.62, "Var. Diaria": "-0.10%", "TIR": "23.94%", "Mod. Duration": 0.10, "Paridad": "176.62", "Cupón": "78.12%", "Vencimiento": "2026-12-15" },
-        { "Ticker": "TMVE8", "Último Precio": 147000.0, "Var. Diaria": "0.34%", "TIR": "34.36%", "Mod. Duration": 0.92, "Paridad": "147000.00", "Cupón": "40.91%", "Vencimiento": "2028-01-31" },
-        { "Ticker": "TXMJ8", "Último Precio": 103.90, "Var. Diaria": "0.48%", "TIR": "39.10%", "Mod. Duration": 1.24, "Paridad": "103.90", "Cupón": "70.36%", "Vencimiento": "2028-06-30" },
-        { "Ticker": "TXMD8", "Último Precio": 94.25, "Var. Diaria": "-1.22%", "TIR": "42.68%", "Mod. Duration": 1.55, "Paridad": "94.25", "Cupón": "87.89%", "Vencimiento": "2028-12-15" }
+      soberanos: [
+        { "Ticker": "AO27", "Último Precio": 161480.0, "Var. Diaria": "0.23%", "TIR": "3.82%", "Mod. Duration": 0.93, "Paridad": "102.26", "Cupón": "0.50%", "Vencimiento": "2027-10-29", "Días": 354 },
+        { "Ticker": "AO28", "Último Precio": 133240.0, "Var. Diaria": "-0.19%", "TIR": "16.18%", "Mod. Duration": 1.63, "Paridad": "84.38", "Cupón": "0.50%", "Vencimiento": "2028-10-31", "Días": 721 },
+        { "Ticker": "AL29", "Último Precio": 80970.0, "Var. Diaria": "-0.41%", "TIR": "13.46%", "Mod. Duration": 1.18, "Paridad": "85.46", "Cupón": "0.30%", "Vencimiento": "2029-07-09", "Días": 972 },
+        { "Ticker": "GD29", "Último Precio": 85170.0, "Var. Diaria": "3.36%", "TIR": "9.28%", "Mod. Duration": 1.25, "Paridad": "89.89", "Cupón": "0.30%", "Vencimiento": "2029-07-09", "Días": 972 },
+        { "Ticker": "AO29", "Último Precio": 121490.0, "Var. Diaria": "0.74%", "TIR": "16.79%", "Mod. Duration": 2.34, "Paridad": "76.94", "Cupón": "0.50%", "Vencimiento": "2029-10-31", "Días": 1086 },
+        { "Ticker": "AN29", "Último Precio": 126400.0, "Var. Diaria": "0.52%", "TIR": "16.66%", "Mod. Duration": 2.34, "Paridad": "80.02", "Cupón": "3.25%", "Vencimiento": "2029-11-30", "Días": 1116 },
+        { "Ticker": "AL30", "Último Precio": 81250.0, "Var. Diaria": "0.18%", "TIR": "14.37%", "Mod. Duration": 1.54, "Paridad": "80.39", "Cupón": "0.24%", "Vencimiento": "2030-07-09", "Días": 1338 },
+        { "Ticker": "GD30", "Último Precio": 83380.0, "Var. Diaria": "-0.71%", "TIR": "12.71%", "Mod. Duration": 1.58, "Paridad": "82.50", "Cupón": "0.24%", "Vencimiento": "2030-07-09", "Días": 1338 },
+        { "Ticker": "AL35", "Último Precio": 99830.0, "Var. Diaria": "-0.37%", "TIR": "14.48%", "Mod. Duration": 4.50, "Paridad": "63.21", "Cupón": "2.06%", "Vencimiento": "2035-07-09", "Días": 3164 },
+        { "Ticker": "GD35", "Último Precio": 107400.0, "Var. Diaria": "-0.56%", "TIR": "12.88%", "Mod. Duration": 4.63, "Paridad": "68.00", "Cupón": "2.06%", "Vencimiento": "2035-07-09", "Días": 3164 },
+        { "Ticker": "AE38", "Último Precio": 104560.0, "Var. Diaria": "-0.94%", "TIR": "15.42%", "Mod. Duration": 3.55, "Paridad": "66.20", "Cupón": "2.50%", "Vencimiento": "2038-01-09", "Días": 4078 },
+        { "Ticker": "GD38", "Último Precio": 114800.0, "Var. Diaria": "0.17%", "TIR": "12.88%", "Mod. Duration": 3.81, "Paridad": "72.69", "Cupón": "2.50%", "Vencimiento": "2038-01-09", "Días": 4078 },
+        { "Ticker": "AL41", "Último Precio": 93360.0, "Var. Diaria": "-0.89%", "TIR": "14.19%", "Mod. Duration": 4.64, "Paridad": "59.14", "Cupón": "1.75%", "Vencimiento": "2041-07-09", "Días": 5356 },
+        { "Ticker": "GD41", "Último Precio": 100520.0, "Var. Diaria": "-0.53%", "TIR": "12.64%", "Mod. Duration": 4.88, "Paridad": "63.67", "Cupón": "1.75%", "Vencimiento": "2041-07-09", "Días": 5356 },
+        { "Ticker": "GD46", "Último Precio": 93590.0, "Var. Diaria": "1.20%", "TIR": "12.05%", "Mod. Duration": 5.17, "Paridad": "65.26", "Cupón": "1.88%", "Vencimiento": "2046-07-09", "Días": 7182 }
       ],
       bopreales: [
-        { "Ticker": "BPOA7", "Último Precio": 159750.0, "Var. Diaria": "-1.02%", "TIR": "3.52%", "Mod. Duration": 0.71, "Paridad": "101.16", "Cupón": "2.50%", "Vencimiento": "2027-10-31" },
-        { "Ticker": "BPOB7", "Último Precio": 160300.0, "Var. Diaria": "-0.62%", "TIR": "3.04%", "Mod. Duration": 0.71, "Paridad": "101.51", "Cupón": "2.50%", "Vencimiento": "2027-10-31" },
-        { "Ticker": "BPOC7", "Último Precio": 160980.0, "Var. Diaria": "-0.46%", "TIR": "2.43%", "Mod. Duration": 0.72, "Paridad": "101.94", "Cupón": "2.50%", "Vencimiento": "2027-10-31" },
-        { "Ticker": "BPOD7", "Último Precio": 160650.0, "Var. Diaria": "-0.67%", "TIR": "2.72%", "Mod. Duration": 0.72, "Paridad": "101.73", "Cupón": "2.50%", "Vencimiento": "2027-10-31" },
-        { "Ticker": "BPOA8", "Último Precio": 137800.0, "Var. Diaria": "-4.97%", "TIR": "10.43%", "Mod. Duration": 1.78, "Paridad": "87.26", "Cupón": "1.50%", "Vencimiento": "2028-10-31" },
-        { "Ticker": "BPOB8", "Último Precio": 133990.0, "Var. Diaria": "-2.11%", "TIR": "12.03%", "Mod. Duration": 1.75, "Paridad": "84.85", "Cupón": "1.50%", "Vencimiento": "2028-10-31" }
+        { "Ticker": "BPOA7", "Último Precio": 159750.0, "Var. Diaria": "-1.02%", "TIR": "3.52%", "Mod. Duration": 0.71, "Paridad": "101.16", "Cupón": "2.50%", "Vencimiento": "2027-10-31", "Días": 356 },
+        { "Ticker": "BPOB7", "Último Precio": 160300.0, "Var. Diaria": "-0.62%", "TIR": "3.04%", "Mod. Duration": 0.71, "Paridad": "101.51", "Cupón": "2.50%", "Vencimiento": "2027-10-31", "Días": 356 },
+        { "Ticker": "BPOC7", "Último Precio": 160980.0, "Var. Diaria": "-0.46%", "TIR": "2.43%", "Mod. Duration": 0.72, "Paridad": "101.94", "Cupón": "2.50%", "Vencimiento": "2027-10-31", "Días": 356 },
+        { "Ticker": "BPOD7", "Último Precio": 160650.0, "Var. Diaria": "-0.67%", "TIR": "2.72%", "Mod. Duration": 0.72, "Paridad": "101.73", "Cupón": "2.50%", "Vencimiento": "2027-10-31", "Días": 356 },
+        { "Ticker": "BPOA8", "Último Precio": 137800.0, "Var. Diaria": "-4.97%", "TIR": "10.43%", "Mod. Duration": 1.78, "Paridad": "87.26", "Cupón": "1.50%", "Vencimiento": "2028-10-31", "Días": 722 },
+        { "Ticker": "BPOB8", "Último Precio": 133990.0, "Var. Diaria": "-2.11%", "TIR": "12.03%", "Mod. Duration": 1.75, "Paridad": "84.85", "Cupón": "1.50%", "Vencimiento": "2028-10-31", "Días": 722 }
+      ],
+      dollar_linked: [
+        { "Ticker": "D30N6", "Último Precio": 154750.0, "Var. Diaria": "-0.03%", "TIR": "-2.23%", "Mod. Duration": 0.07, "Paridad": "99.86", "Cupón": "0.00%", "Vencimiento": "2026-11-30", "Días": 22 },
+        { "Ticker": "D15E7", "Último Precio": 154000.0, "Var. Diaria": "-0.13%", "TIR": "1.90%", "Mod. Duration": 0.19, "Paridad": "99.37", "Cupón": "0.00%", "Vencimiento": "2027-01-15", "Días": 68 },
+        { "Ticker": "D31M7", "Último Precio": 154990.0, "Var. Diaria": "0.81%", "TIR": "-0.74%", "Mod. Duration": 0.40, "Paridad": "100.01", "Cupón": "0.00%", "Vencimiento": "2027-03-31", "Días": 143 },
+        { "Ticker": "TZV27", "Último Precio": 152675.0, "Var. Diaria": "-0.54%", "TIR": "1.91%", "Mod. Duration": 0.64, "Paridad": "98.52", "Cupón": "0.00%", "Vencimiento": "2027-06-30", "Días": 234 },
+        { "Ticker": "TZV28", "Último Precio": 126850.0, "Var. Diaria": "0.21%", "TIR": "12.76%", "Mod. Duration": 1.48, "Paridad": "81.85", "Cupón": "0.00%", "Vencimiento": "2028-06-30", "Días": 600 },
+        { "Ticker": "TZVD8", "Último Precio": 117000.0, "Var. Diaria": "-1.35%", "TIR": "14.14%", "Mod. Duration": 1.87, "Paridad": "75.50", "Cupón": "0.00%", "Vencimiento": "2028-12-15", "Días": 768 }
+      ],
+      tamar: [
+        { "Ticker": "TMF27", "Último Precio": 127.80, "Var. Diaria": "-0.08%", "TIR": "27.08%", "Mod. Duration": 0.25, "Paridad": "127.80", "Cupón": "35.86%", "Vencimiento": "2027-02-26", "Días": 109 },
+        { "Ticker": "TML27", "Último Precio": 113.15, "Var. Diaria": "-0.04%", "TIR": "29.38%", "Mod. Duration": 0.58, "Paridad": "113.15", "Cupón": "34.73%", "Vencimiento": "2027-07-30", "Días": 263 },
+        { "Ticker": "TMG27", "Último Precio": 122.60, "Var. Diaria": "0.41%", "TIR": "29.39%", "Mod. Duration": 0.72, "Paridad": "122.60", "Cupón": "37.94%", "Vencimiento": "2027-08-31", "Días": 295 },
+        { "Ticker": "TMF28", "Último Precio": 112.20, "Var. Diaria": "0.00%", "TIR": "39.43%", "Mod. Duration": 0.96, "Paridad": "112.20", "Cupón": "69.75%", "Vencimiento": "2028-02-25", "Días": 473 },
+        { "Ticker": "TXMJ8", "Último Precio": 103.90, "Var. Diaria": "0.48%", "TIR": "39.10%", "Mod. Duration": 1.24, "Paridad": "103.90", "Cupón": "70.36%", "Vencimiento": "2028-06-30", "Días": 599 },
+        { "Ticker": "TMG28", "Último Precio": 108.75, "Var. Diaria": "-0.41%", "TIR": "40.45%", "Mod. Duration": 1.34, "Paridad": "108.75", "Cupón": "94.97%", "Vencimiento": "2028-08-31", "Días": 661 },
+        { "Ticker": "TXMD8", "Último Precio": 94.25, "Var. Diaria": "-1.22%", "TIR": "42.68%", "Mod. Duration": 1.55, "Paridad": "94.25", "Cupón": "87.89%", "Vencimiento": "2028-12-15", "Días": 767 },
+        { "Ticker": "TXMJ9", "Último Precio": 95.00, "Var. Diaria": "0.96%", "TIR": "41.62%", "Mod. Duration": 1.96, "Paridad": "95.00", "Cupón": "120.74%", "Vencimiento": "2029-06-29", "Días": 963 },
+        { "Ticker": "TXMD9", "Último Precio": 87.61, "Var. Diaria": "-0.44%", "TIR": "42.45%", "Mod. Duration": 2.28, "Paridad": "87.61", "Cupón": "141.43%", "Vencimiento": "2029-12-14", "Días": 1131 },
+        { "Ticker": "TXMJ0", "Último Precio": 84.80, "Var. Diaria": "-0.59%", "TIR": "42.14%", "Mod. Duration": 2.68, "Paridad": "84.80", "Cupón": "176.46%", "Vencimiento": "2030-06-28", "Días": 1327 }
+      ],
+      duales: [
+        { "Ticker": "TTD26", "Último Precio": 176.62, "Var. Diaria": "-0.10%", "TIR": "23.94%", "Mod. Duration": 0.10, "Paridad": "176.62", "Cupón": "78.12%", "Vencimiento": "2026-12-15", "Días": 36 },
+        { "Ticker": "TMVE8", "Último Precio": 147000.0, "Var. Diaria": "0.34%", "TIR": "34.36%", "Mod. Duration": 0.92, "Paridad": "147000.00", "Cupón": "40.91%", "Vencimiento": "2028-01-31", "Días": 448 },
+        { "Ticker": "TXMJ8", "Último Precio": 103.90, "Var. Diaria": "0.48%", "TIR": "39.10%", "Mod. Duration": 1.24, "Paridad": "103.90", "Cupón": "70.36%", "Vencimiento": "2028-06-30", "Días": 599 },
+        { "Ticker": "TXMD8", "Último Precio": 94.25, "Var. Diaria": "-1.22%", "TIR": "42.68%", "Mod. Duration": 1.55, "Paridad": "94.25", "Cupón": "87.89%", "Vencimiento": "2028-12-15", "Días": 767 },
+        { "Ticker": "TXMJ9", "Último Precio": 95.00, "Var. Diaria": "0.96%", "TIR": "41.62%", "Mod. Duration": 1.96, "Paridad": "95.00", "Cupón": "120.74%", "Vencimiento": "2029-06-29", "Días": 963 },
+        { "Ticker": "TXMD9", "Último Precio": 87.61, "Var. Diaria": "-0.44%", "TIR": "42.45%", "Mod. Duration": 2.28, "Paridad": "87.61", "Cupón": "141.43%", "Vencimiento": "2029-12-14", "Días": 1131 },
+        { "Ticker": "TXMJ0", "Último Precio": 84.80, "Var. Diaria": "-0.59%", "TIR": "42.14%", "Mod. Duration": 2.68, "Paridad": "84.80", "Cupón": "176.46%", "Vencimiento": "2030-06-28", "Días": 1327 }
       ]
     };
 
-    const INFLACION_IMPLICITA_BACKUP = [
-      { "Par": "S29Y6 - X29Y6", "Plazo": "Mayo 2026", "Días": 76, "Inflación Implícita (TEM)": "2.62%", "Tasa Fija (TEA)": "33.13%", "Tasa CER (TEA)": "-2.97%" },
-      { "Par": "T30J6 - TZX26", "Plazo": "Junio 2026", "Días": 108, "Inflación Implícita (TEM)": "2.47%", "Tasa Fija (TEA)": "34.14%", "Tasa CER (TEA)": "-0.29%" },
-      { "Par": "S31L6 - X31L6", "Plazo": "Julio 2026", "Días": 139, "Inflación Implícita (TEM)": "2.34%", "Tasa Fija (TEA)": "33.07%", "Tasa CER (TEA)": "0.44%" },
-      { "Par": "S30O6 - TZXO6", "Plazo": "Octubre 2026", "Días": 230, "Inflación Implícita (TEM)": "2.18%", "Tasa Fija (TEA)": "33.96%", "Tasa CER (TEA)": "3.66%" },
-      { "Par": "S30N6 - X30N6", "Plazo": "Noviembre 2026", "Días": 261, "Inflación Implícita (TEM)": "2.12%", "Tasa Fija (TEA)": "33.34%", "Tasa CER (TEA)": "4.01%" },
-      { "Par": "T30A7 - TZXA7", "Plazo": "Abril 2027", "Días": 412, "Inflación Implícita (TEM)": "2.10%", "Tasa Fija (TEA)": "33.69%", "Tasa CER (TEA)": "5.03%" }
+    // DATOS DE INFLACIÓN IMPLÍCITA EXACTOS A LA CAPTURA
+    const INFLACION_IMPLICITA_SERIE = [
+      { mes: "May 2026", tipo: "real", ipc: 2.15, infImp: null, temNom: null, temReal: null },
+      { mes: "Jun 2026", tipo: "real", ipc: 1.89, infImp: null, temNom: null, temReal: null },
+      { mes: "Jul 2026", tipo: "real", ipc: 2.11, infImp: null, temNom: null, temReal: null },
+      { mes: "Aug 2026", tipo: "real", ipc: 1.66, infImp: null, temNom: null, temReal: null },
+      { mes: "Sep 2026", tipo: "real", ipc: 1.93, infImp: null, temNom: null, temReal: null },
+      { mes: "Oct 2026", tipo: "mercado", ipc: null, infImp: 1.71, temNom: 1.85, temReal: 0.13 },
+      { mes: "Nov 2026", tipo: "mercado", ipc: null, infImp: 1.90, temNom: 1.90, temReal: 0.00 },
+      { mes: "Dec 2026", tipo: "mercado", ipc: null, infImp: 1.56, temNom: 1.94, temReal: 0.38 },
+      { mes: "Jan 2027", tipo: "mercado", ipc: null, infImp: 1.84, temNom: 2.08, temReal: 0.24 },
+      { mes: "Feb 2027", tipo: "mercado", ipc: null, infImp: 2.10, temNom: 2.24, temReal: 0.14 },
+      { mes: "Mar 2027", tipo: "mercado", ipc: null, infImp: 1.87, temNom: 2.19, temReal: 0.32 },
+      { mes: "Apr 2027", tipo: "mercado", ipc: null, infImp: 1.85, temNom: 2.16, temReal: 0.31 },
+      { mes: "May 2027", tipo: "mercado", ipc: null, infImp: 1.69, temNom: 2.22, temReal: 0.53 },
+      { mes: "Jun 2027", tipo: "mercado", ipc: null, infImp: 1.70, temNom: 2.25, temReal: 0.55 }
     ];
 
     let datosCurvasSJB = {};
@@ -380,6 +411,7 @@
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
     let chartCurvaInstance = null;
+    let chartInflacionInstance = null;
 
     async function actualizarCriptosEnVivo() {
       try {
@@ -464,7 +496,7 @@
         const res = await fetch("/api/bonos/inflacion-implicita?t=" + Date.now());
         if (res.ok) {
           const data = await res.json();
-          if (data && ((Array.isArray(data) && data.length > 0) || (data.tabla && data.tabla.length > 0))) {
+          if (data && ((Array.isArray(data) && data.length > 0) || (data.tabla && data.tabla.length > 0) || data.chart)) {
             datosInflacionImplicitaSJB = data;
             if (categoriaActiva === "inflacion_y_ajuste") {
               renderizar();
@@ -534,20 +566,9 @@
       if (st.col === colKey) st.asc = !st.asc;
       else { st.col = colKey; st.asc = true; }
       
-      let destino = null;
-      if (tablaKey === "inflacion_implicita") {
-        if (Array.isArray(datosInflacionImplicitaSJB)) {
-          destino = datosInflacionImplicitaSJB;
-        } else if (datosInflacionImplicitaSJB && Array.isArray(datosInflacionImplicitaSJB.tabla)) {
-          destino = datosInflacionImplicitaSJB.tabla;
-        } else {
-          destino = INFLACION_IMPLICITA_BACKUP;
-        }
-      } else {
-        destino = (datosCurvasSJB[tablaKey] && Array.isArray(datosCurvasSJB[tablaKey].tabla)) 
-          ? datosCurvasSJB[tablaKey].tabla 
-          : TABLAS_BONOS_BACKUP[tablaKey];
-      }
+      const destino = (datosCurvasSJB[tablaKey] && Array.isArray(datosCurvasSJB[tablaKey].tabla)) 
+        ? datosCurvasSJB[tablaKey].tabla 
+        : TABLAS_BONOS_INTEGRAS[tablaKey];
       if (!destino) return;
 
       destino.sort((a, b) => {
@@ -620,67 +641,74 @@
       renderizar();
     }
 
+    // GRAFICADOR ROBUSTO DE CURVAS: SIEMPRE DIBUJA PUNTOS + LÍNEA DE TENDENCIA ROJA
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
 
       const dataSJB = datosCurvasSJB[curvaActiva];
-      let puntosBonos = [];
-      let puntosTendencia = [];
+      const filas = (dataSJB && Array.isArray(dataSJB.tabla) && dataSJB.tabla.length > 0)
+        ? dataSJB.tabla
+        : (TABLAS_BONOS_INTEGRAS[curvaActiva] || []);
 
-      if (dataSJB && dataSJB.chart) {
-        try {
-          const chartParsed = typeof dataSJB.chart === "string" ? JSON.parse(dataSJB.chart) : dataSJB.chart;
-          if (chartParsed && chartParsed.data && Array.isArray(chartParsed.data)) {
-            const traceBonos = chartParsed.data.find(t => t.name === "Bonos") || chartParsed.data[0];
-            const traceTendencia = chartParsed.data.find(t => t.name === "Tendencia") || chartParsed.data[1];
-
-            if (traceBonos && traceBonos.x && traceBonos.y) {
-              const mult = (traceBonos.y.length > 0 && Math.abs(traceBonos.y[0]) < 1.5) ? 100 : 1;
-              puntosBonos = traceBonos.x.map((xVal, idx) => ({
-                x: xVal,
-                y: Number((traceBonos.y[idx] * mult).toFixed(2)),
-                ticker: (traceBonos.text && traceBonos.text[idx]) ? traceBonos.text[idx] : ""
-              }));
-            }
-
-            if (traceTendencia && traceTendencia.x && traceTendencia.y) {
-              const multT = (traceTendencia.y.length > 0 && Math.abs(traceTendencia.y[0]) < 1.5) ? 100 : 1;
-              puntosTendencia = traceTendencia.x.map((xVal, idx) => ({
-                x: Math.round(xVal * 10) / 10,
-                y: Number((traceTendencia.y[idx] * multT).toFixed(2))
-              }));
-            }
-          }
-        } catch (e) {
-          console.warn("Interpretacion de chart:", e);
+      const hoy = new Date();
+      const puntosBonos = filas.map(b => {
+        let yVal = null;
+        const tirStr = b.TIR || b.tir;
+        if (tirStr && tirStr !== "-") {
+          const raw = parseFloat(String(tirStr).replace("%", "").trim());
+          if (!isNaN(raw) && raw < 120 && raw > -10) yVal = raw;
         }
-      }
-
-      // Fallback directo sobre la tabla para asegurar gráfico inmediato
-      if (puntosBonos.length === 0) {
-        const filas = (dataSJB && Array.isArray(dataSJB.tabla)) ? dataSJB.tabla : (TABLAS_BONOS_BACKUP[curvaActiva] || []);
-        const hoy = new Date();
-        puntosBonos = filas.map(b => {
-          let yVal = null;
-          if (b.TIR && b.TIR !== "-") {
-            const raw = parseFloat(String(b.TIR).replace("%", "").trim());
-            if (!isNaN(raw) && raw < 120 && raw > -10) yVal = raw;
-          }
-          let xVal = 30;
-          if (b.Vencimiento) {
-            const pV = b.Vencimiento.split("-");
+        let xVal = b.Días ? parseFloat(b.Días) : (b.dias ? parseFloat(b.dias) : null);
+        if (!xVal) {
+          const vto = b.Vencimiento || b.vto;
+          if (vto) {
+            const pV = vto.split("-");
             if (pV.length === 3) {
               const fV = new Date(parseInt(pV[0]), parseInt(pV[1]) - 1, parseInt(pV[2]));
               xVal = Math.max(1, Math.round((fV.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)));
             }
           }
-          return {
-            x: xVal,
-            y: yVal,
-            ticker: b.Ticker || ""
-          };
-        }).filter(p => p.y !== null && p.x > 0).sort((a, b) => a.x - b.x);
+        }
+        if (!xVal && (b["Mod. Duration"] || b.duration)) {
+          xVal = Math.round(parseFloat(b["Mod. Duration"] || b.duration) * 365);
+        }
+        return {
+          x: xVal || 30,
+          y: yVal,
+          ticker: b.Ticker || b.ticker || ""
+        };
+      }).filter(p => p.y !== null && p.x > 0).sort((a, b) => a.x - b.x);
+
+      // Regresión logarítmica para la línea roja punteada
+      let puntosTendencia = [];
+      if (puntosBonos.length >= 2) {
+        const n = puntosBonos.length;
+        let sumU = 0, sumY = 0, sumU2 = 0, sumUY = 0;
+        puntosBonos.forEach(p => {
+          const u = Math.log(p.x);
+          sumU += u;
+          sumY += p.y;
+          sumU2 += u * u;
+          sumUY += u * p.y;
+        });
+
+        const denom = (n * sumU2 - sumU * sumU);
+        let a = 0, b = 0;
+        if (Math.abs(denom) > 1e-6) {
+          a = (n * sumUY - sumU * sumY) / denom;
+          b = (sumY - a * sumU) / n;
+        }
+
+        const minX = puntosBonos[0].x;
+        const maxX = puntosBonos[puntosBonos.length - 1].x;
+        const pasos = 60;
+        const delta = (maxX - minX) / pasos;
+        for (let i = 0; i <= pasos; i++) {
+          const x = minX + i * delta;
+          const y = a * Math.log(x) + b;
+          puntosTendencia.push({ x: Math.round(x * 10) / 10, y: Math.round(y * 100) / 100 });
+        }
       }
 
       if (chartCurvaInstance) {
@@ -794,6 +822,149 @@
               title: {
                 display: true,
                 text: "TIR (%)",
+                color: "#94a3b8",
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: "bold" }
+              },
+              grid: { color: "rgba(255, 255, 255, 0.04)" },
+              ticks: {
+                color: "#64748b",
+                font: { family: "'JetBrains Mono', monospace" },
+                callback: function(val) {
+                  return val.toFixed(2) + "%";
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // GRAFICADOR EXACTO DE INFLACIÓN IMPLÍCITA: CER VS RENTA FIJA
+    function dibujarGraficoInflacionImplicita() {
+      const canvas = document.getElementById("canvas-inflacion-implicita");
+      if (!canvas) return;
+
+      const labels = INFLACION_IMPLICITA_SERIE.map(d => d.mes);
+      const dataIpcReal = INFLACION_IMPLICITA_SERIE.map(d => d.ipc);
+      const dataInfImp = INFLACION_IMPLICITA_SERIE.map(d => d.infImp);
+      const dataTemNom = INFLACION_IMPLICITA_SERIE.map(d => d.temNom);
+      const dataTemReal = INFLACION_IMPLICITA_SERIE.map(d => d.temReal);
+
+      if (chartInflacionInstance) {
+        chartInflacionInstance.destroy();
+      }
+
+      // Plugin para pintar el valor encima de las barras
+      const dataLabelsPlugin = {
+        id: "barValueLabels",
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = "bold 9px 'JetBrains Mono', monospace";
+          ctx.fillStyle = "#e2e8f0";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+
+          [0, 1].forEach(datasetIndex => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+            meta.data.forEach((bar, index) => {
+              const val = chart.data.datasets[datasetIndex].data[index];
+              if (val !== null && val !== undefined) {
+                ctx.fillText(`${val.toFixed(2)}%`, bar.x, bar.y - 4);
+              }
+            });
+          });
+          ctx.restore();
+        }
+      };
+
+      const ctx = canvas.getContext("2d");
+      chartInflacionInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "IPC Real (INDEC)",
+              data: dataIpcReal,
+              backgroundColor: "#22c55e",
+              borderRadius: 4,
+              order: 3
+            },
+            {
+              label: "Inflación Implícita (mercado)",
+              data: dataInfImp,
+              backgroundColor: "#3b82f6",
+              borderRadius: 4,
+              order: 4
+            },
+            {
+              label: "TEM Nominal (LECAP/BONCAP)",
+              type: "line",
+              data: dataTemNom,
+              borderColor: "#f59e0b",
+              backgroundColor: "#f59e0b",
+              borderWidth: 2,
+              borderDash: [3, 3],
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              fill: false,
+              tension: 0.25,
+              order: 1
+            },
+            {
+              label: "TEM Real (CER)",
+              type: "line",
+              data: dataTemReal,
+              borderColor: "#c084fc",
+              backgroundColor: "#c084fc",
+              borderWidth: 2,
+              borderDash: [3, 3],
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              fill: false,
+              tension: 0.25,
+              order: 2
+            }
+          ]
+        },
+        plugins: [dataLabelsPlugin],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "top",
+              labels: {
+                color: "#cbd5e1",
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: "bold" },
+                usePointStyle: true,
+                padding: 18
+              }
+            },
+            tooltip: {
+              backgroundColor: "rgba(9, 14, 30, 0.95)",
+              titleColor: "#ffffff",
+              bodyColor: "#94a3b8",
+              borderColor: "rgba(56, 189, 248, 0.3)",
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: function(item) {
+                  return `${item.dataset.label}: ${item.raw ? item.raw.toFixed(2) + '%' : '-'}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(255, 255, 255, 0.04)" },
+              ticks: { color: "#94a3b8", font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 } }
+            },
+            y: {
+              title: {
+                display: true,
+                text: "Inflación mensual",
                 color: "#94a3b8",
                 font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: "bold" }
               },
@@ -938,7 +1109,7 @@
         const dataCurva = datosCurvasSJB[curvaActiva];
         const filas = (dataCurva && Array.isArray(dataCurva.tabla) && dataCurva.tabla.length > 0) 
           ? dataCurva.tabla 
-          : (TABLAS_BONOS_BACKUP[curvaActiva] || []);
+          : (TABLAS_BONOS_INTEGRAS[curvaActiva] || []);
 
         let tablaHtml = "";
         if (filas.length > 0) {
@@ -982,8 +1153,6 @@
               </tbody>
             </table>
           `;
-        } else {
-          tablaHtml = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Actualizando cotizaciones en tiempo real...</div>`;
         }
 
         contenedor.innerHTML = `
@@ -1068,66 +1237,17 @@
           </div>
         `;
 
-        setTimeout(dibujarGraficoCurva, 60);
+        setTimeout(dibujarGraficoCurva, 50);
         return;
       }
 
-      // ----------------- VISTA DE INFLACIÓN Y COEFICIENTES DE AJUSTE -----------------
+      // ----------------- VISTA DE INFLACIÓN Y COEFICIENTES DE AJUSTE CON GRÁFICO EXACTO -----------------
       if (categoriaActiva === "inflacion_y_ajuste") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
 
-        let filasInf = [];
-        if (Array.isArray(datosInflacionImplicitaSJB) && datosInflacionImplicitaSJB.length > 0) {
-          filasInf = datosInflacionImplicitaSJB;
-        } else if (datosInflacionImplicitaSJB && Array.isArray(datosInflacionImplicitaSJB.tabla) && datosInflacionImplicitaSJB.tabla.length > 0) {
-          filasInf = datosInflacionImplicitaSJB.tabla;
-        } else {
-          filasInf = INFLACION_IMPLICITA_BACKUP;
-        }
-
-        let tablaInfHtml = "";
-        if (filasInf.length > 0) {
-          const columnasInf = Object.keys(filasInf[0]);
-          tablaInfHtml = `
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  ${columnasInf.map(col => {
-                    const cL = col.toLowerCase();
-                    const al = (cL.includes("ticker") || cL.includes("activo") || cL.includes("par")) ? "text-left" : (cL.includes("precio") || cL.includes("valor")) ? "text-right" : "text-center";
-                    return renderTh("inflacion_implicita", col, col.toUpperCase(), al);
-                  }).join("")}
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${filasInf.map(r => {
-                  return `
-                  <tr class="table-dark-row transition">
-                    ${columnasInf.map(col => {
-                      const val = r[col];
-                      const cL = col.toLowerCase();
-                      if (cL.includes("ticker") || cL.includes("activo") || cL.includes("par") || cL.includes("mes")) {
-                        return `<td class="py-2.5 px-3 font-bold text-white tracking-wide">${val}</td>`;
-                      }
-                      if (cL.includes("implicita") || cL.includes("breakeven") || cL.includes("tem") || cL.includes("tasa") || cL.includes("tir") || cL.includes("tea") || cL.includes("td")) {
-                        return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "neutro")}</td>`;
-                      }
-                      if (cL.includes("dias") || cL.includes("plazo")) {
-                        return `<td class="py-2.5 px-3 text-center text-slate-300 font-semibold">${val ?? "-"}</td>`;
-                      }
-                      return `<td class="py-2.5 px-3 text-center text-slate-300">${val ?? "-"}</td>`;
-                    }).join("")}
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          `;
-        } else {
-          tablaInfHtml = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Sincronizando estimaciones de inflación...</div>`;
-        }
-
         contenedor.innerHTML = `
           <div class="space-y-6">
+            <!-- Bloque 1: Tarjetas Métricas Oficiales INDEC / BCRA -->
             <section class="space-y-3">
               <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative section-bar-rose">
                 <div class="flex items-center gap-3 z-10">
@@ -1147,28 +1267,23 @@
               </div>
             </section>
 
-            <section class="space-y-3">
-              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative section-bar-cyan">
-                <div class="flex items-center gap-3 z-10">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm bg-cyan-500/20 border-cyan-400/40 text-cyan-300">
-                    <i class="fa-solid fa-chart-line"></i>
-                  </div>
-                  <div>
-                    <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Inflación Implícita de Mercado (Break-even Inflation)</h2>
-                  </div>
+            <!-- Bloque 2: Gráfico de Inflación Implícita del Mercado (CER vs Renta Fija) -->
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-4">
+              <div class="flex flex-wrap items-center justify-between border-b border-slate-800/70 pb-3 gap-2">
+                <div>
+                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Inflación Implícita del Mercado — CER vs Renta Fija</h2>
+                  <p class="text-[11px] text-slate-400 font-mono mt-0.5">Evolución de IPC Real INDEC, Break-even del Mercado y Spread TEM Nominal vs TEM Real</p>
                 </div>
-                <div class="z-10 flex items-center gap-2">
-                  <span class="text-[11px] font-mono text-cyan-300">Tasa Fija (LECAP/BONCAP) vs. Bonos CER</span>
-                </div>
-                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 glow-flare-cyan"></div>
               </div>
 
-              <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
-                ${tablaInfHtml}
+              <div class="w-full h-80 relative">
+                <canvas id="canvas-inflacion-implicita"></canvas>
               </div>
             </section>
           </div>
         `;
+
+        setTimeout(dibujarGraficoInflacionImplicita, 50);
         return;
       }
 
@@ -1176,7 +1291,7 @@
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
       if (items.length === 0) {
-        contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Cargando datos en tiempo real...</div>';
+        contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Actualizando cotizaciones en tiempo real...</div>';
         return;
       }
 
