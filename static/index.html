@@ -10,19 +10,46 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
     body {
       background-color: #030712;
       background-image: 
         radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
         radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.07) 0%, transparent 45%),
         radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      letter-spacing: -0.011em;
     }
 
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Scrollbar personalizada oscura y traslúcida */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(3, 7, 18, 0.6);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(14, 116, 144, 0.5);
+      border-radius: 9999px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(6, 182, 212, 0.8);
+      box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(14, 116, 144, 0.5) rgba(3, 7, 18, 0.6);
+    }
 
     .neon-card {
       background: linear-gradient(180deg, rgba(12, 22, 42, 0.75) 0%, rgba(5, 10, 22, 0.90) 100%);
@@ -75,11 +102,17 @@
       border: 1px solid rgba(251, 113, 133, 0.55);
       box-shadow: 0 0 18px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
+    .section-bar-emerald {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.35) 0%, rgba(6, 78, 59, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
+      border: 1px solid rgba(52, 211, 153, 0.55);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
 
     .glow-flare-cyan { background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%); }
     .glow-flare-purple { background: linear-gradient(90deg, rgba(192, 132, 252, 0.8) 0%, rgba(168, 85, 247, 0.3) 60%, transparent 100%); }
     .glow-flare-amber { background: linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(245, 158, 11, 0.3) 60%, transparent 100%); }
     .glow-flare-rose { background: linear-gradient(90deg, rgba(251, 113, 133, 0.8) 0%, rgba(244, 63, 94, 0.3) 60%, transparent 100%); }
+    .glow-flare-emerald { background: linear-gradient(90deg, rgba(52, 211, 153, 0.8) 0%, rgba(16, 185, 129, 0.3) 60%, transparent 100%); }
 
     @keyframes flash-up { 0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
     @keyframes flash-down { 0% { color: #f43f5e; text-shadow: 0 0 14px rgba(244, 63, 94, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
@@ -184,20 +217,21 @@
   </main>
 
   <script>
-    const NOMBRES_SECCIONES = {
-      home: { titulo: "Resumen Ejecutivo de Mercado", icono: "fa-gauge-high" },
-      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", icono: "fa-landmark" },
-      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", icono: "fa-dollar-sign" },
-      monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", icono: "fa-money-bill-1-wave" },
-      cripto: { titulo: "Cotizaciones Criptomonedas", icono: "fa-brands fa-bitcoin text-amber-400" },
-      cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", icono: "fa-file-invoice-dollar" },
-      indices: { titulo: "Índices y Sectores", icono: "fa-chart-line" },
-      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", icono: "fa-arrow-trend-up" },
-      metales: { titulo: "Metales Preciosos e Industriales", icono: "fa-coins" },
-      petroleo: { titulo: "Mercado Internacional de Petróleo y Crudo", icono: "fa-oil-well" },
-      macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Fiscal", icono: "fa-scale-balanced" },
-      micro_y_sectores: { titulo: "Economía Real y Crédito", icono: "fa-industry" },
-      commodities_agro_energia: { titulo: "Commodities, Agro y Energía", icono: "fa-wheat-awn" }
+    // Configuración estética de encabezados para TODAS las secciones
+    const CONFIG_SECCIONES = {
+      home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-gauge-high", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-landmark", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", sub: "6 Cotizaciones Principales", icono: "fa-dollar-sign", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", sub: "Pares de Monedas Globales", icono: "fa-money-bill-1-wave", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      cripto: { titulo: "Cotizaciones Criptomonedas en Vivo", sub: "Binance Spot Stream en Tiempo Real", icono: "fa-brands fa-bitcoin", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
+      cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", sub: "Rendimientos y Cotizaciones BYMA", icono: "fa-file-invoice-dollar", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      indices: { titulo: "Índices Principales y Sectores", sub: "Mercados Locales e Internacionales", icono: "fa-chart-line", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
+      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "INDEC • BCRA", icono: "fa-arrow-trend-up", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
+      metales: { titulo: "Metales Preciosos e Industriales", sub: "Commodities Metálicos en Tiempo Real", icono: "fa-coins", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
+      petroleo: { titulo: "Mercado Internacional de Crudo y Combustibles", sub: "Petróleo y Derivados Energéticos", icono: "fa-oil-well", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
+      macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-scale-balanced", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
+      micro_y_sectores: { titulo: "Economía Real, Crédito y Actividad Productiva", sub: "Construcción, Industria, Consumo y Crédito", icono: "fa-industry", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
+      commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", granos: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" }
     };
 
     const BLOQUES_HOME = [
@@ -655,6 +689,24 @@
       renderizar();
     }
 
+    // Encabezado estilizado universal con gradiente y neón
+    function renderizarBarraSeccion(cfg) {
+      return `
+        <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${cfg.barra}">
+          <div class="flex items-center gap-3 z-10">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${cfg.badge}">
+              <i class="${cfg.icono.includes('fa-') ? cfg.icono : 'fa-solid ' + cfg.icono}"></i>
+            </div>
+            <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${cfg.titulo}</h2>
+          </div>
+          <div class="z-10 flex items-center gap-2">
+            <span class="text-[11px] font-mono text-slate-300">${cfg.sub || ''}</span>
+          </div>
+          <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${cfg.flare}"></div>
+        </div>
+      `;
+    }
+
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
@@ -1045,11 +1097,9 @@
         return;
       }
 
-      // ----------------- VISTA DE DÓLAR Y BRECHAS CON 6 TARJETAS SIMÉTRICAS -----------------
       if (categoriaActiva === "dolar_y_cambiario") {
         const rawItems = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
 
-        // Orden estricto simétrico (3x2 = 6 tarjetas)
         const orden6 = ["DOLAR_OFICIAL", "DOLAR_A3500", "DOLAR_BLUE", "DOLAR_MEP", "DOLAR_CCL", "DOLAR_FUTURO"];
         const items = [];
         orden6.forEach(cod => {
@@ -1090,30 +1140,17 @@
         const rCriticoMax = bSup;
 
         const fmt$ = (num) => `$${num.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const cfgHeader = CONFIG_SECCIONES.dolar_y_cambiario;
 
         contenedor.innerHTML = `
           <div class="space-y-6">
-            <!-- Bloque 1: 6 Tarjetas Simétricas (3 columnas x 2 filas) -->
             <section class="space-y-3">
-              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative section-bar-cyan">
-                <div class="flex items-center gap-3 z-10">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm bg-cyan-500/20 border-cyan-400/40 text-cyan-300">
-                    <i class="fa-solid fa-dollar-sign"></i>
-                  </div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Mercado Cambiario y Cotizaciones</h2>
-                </div>
-                <div class="z-10 flex items-center gap-2">
-                  <span class="text-[11px] font-mono text-cyan-300">6 Cotizaciones Principales</span>
-                </div>
-                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 glow-flare-cyan"></div>
-              </div>
-
+              ${renderizarBarraSeccion(cfgHeader)}
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 ${items.map(item => crearTarjeta(item, "dolar_y_cambiario", valorOficial)).join("")}
               </div>
             </section>
 
-            <!-- Bloque 2: Monitoreo de Bandas Cambiarias en Vivo -->
             <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-6 shadow-2xl backdrop-blur-md space-y-6">
               <div class="border-b border-slate-800/70 pb-3 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
@@ -1126,9 +1163,7 @@
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <!-- Columna Izquierda: Gauge / Velocímetro semicircular -->
                 <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
-                  
                   <div class="mb-2">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-xs tracking-wide shadow-md">
                       <span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}
@@ -1180,9 +1215,7 @@
                   </div>
                 </div>
 
-                <!-- Columna Derecha: Tablas con Máximo Contraste -->
                 <div class="lg:col-span-7 space-y-4">
-                  <!-- Tabla 1: Valores actuales de las bandas -->
                   <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fa-solid fa-sliders text-cyan-400 text-[11px]"></i>
@@ -1214,7 +1247,6 @@
                     </table>
                   </div>
 
-                  <!-- Tabla 2: Rango de valores -->
                   <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fa-solid fa-chart-simple text-amber-400 text-[11px]"></i>
@@ -1266,7 +1298,6 @@
                     </table>
                   </div>
 
-                  <!-- Card de Diferencias con las bandas -->
                   <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2 font-mono text-xs shadow-md">
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 font-sans flex items-center gap-1.5">
                       <i class="fa-solid fa-arrows-up-down text-purple-400 text-[11px]"></i>
@@ -1309,50 +1340,55 @@
           return false;
         });
 
+        const cfgHeader = CONFIG_SECCIONES.indices;
+
         contenedor.innerHTML = `
-          <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
-              <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
-              </div>
-              
-              <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Argentina</span>
+          <div class="space-y-4">
+            ${renderizarBarraSeccion(cfgHeader)}
+            <div class="flex flex-col lg:flex-row gap-5 items-start">
+              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
+                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
+                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
                 </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'argentina' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">3</span>
-              </button>
+                
+                <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Argentina</span>
+                  </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'argentina' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">3</span>
+                </button>
 
-              <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-flag-usa text-blue-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Estados Unidos</span>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
-              </button>
+                <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-flag-usa text-blue-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Estados Unidos</span>
+                  </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
+                </button>
 
-              <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-chart-pie text-amber-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Sectores (SPDRs)</span>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'sectores' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">11</span>
-              </button>
-            </aside>
+                <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-chart-pie text-amber-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Sectores (SPDRs)</span>
+                  </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'sectores' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">11</span>
+                </button>
+              </aside>
 
-            <section class="flex-1 w-full space-y-3 overflow-hidden">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i>
-                  <h2 class="text-sm font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h2>
+              <section class="flex-1 w-full space-y-3 overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h3>
+                  </div>
+                  <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
-              </div>
-            </section>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
+                </div>
+              </section>
+            </div>
           </div>
         `;
         return;
@@ -1409,85 +1445,91 @@
           `;
         }
 
+        const cfgHeader = CONFIG_SECCIONES.cotizacion_bonos;
+
         contenedor.innerHTML = `
-          <div class="flex flex-col lg:flex-row gap-5 items-start">
-            <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
-              <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
-              </div>
-              
-              <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-money-bill-trend-up text-amber-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Lecaps y Boncaps</span>
+          <div class="space-y-4">
+            ${renderizarBarraSeccion(cfgHeader)}
+            <div class="flex flex-col lg:flex-row gap-5 items-start">
+              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
+                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
+                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
                 </div>
-              </button>
+                
+                <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-money-bill-trend-up text-amber-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Lecaps y Boncaps</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-arrow-trend-up text-purple-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Bonos CER</span>
-                </div>
-              </button>
+                <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-arrow-trend-up text-purple-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Bonos CER</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Soberanos en Dólares</span>
-                </div>
-              </button>
+                <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Soberanos en Dólares</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
-                </div>
-              </button>
+                <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Dollar Linked</span>
-                </div>
-              </button>
+                <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Dollar Linked</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
-                </div>
-              </button>
+                <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
+                  </div>
+                </button>
 
-              <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                <div class="flex items-center gap-2 truncate">
-                  <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
-                  <span class="text-xs font-semibold truncate">Bonos Duales</span>
-                </div>
-              </button>
-            </aside>
+                <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Bonos Duales</span>
+                  </div>
+                </button>
+              </aside>
 
-            <section class="flex-1 w-full space-y-4 overflow-hidden">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
-                  <h2 class="text-sm font-bold text-white uppercase tracking-wider">${infoCurva.titulo}</h2>
+              <section class="flex-1 w-full space-y-4 overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo}</h3>
+                  </div>
+                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
-              </div>
-              
-              <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
-                ${tablaHtml}
-              </div>
+                
+                <!-- Contenedor con scrollbar estilizada y oscura -->
+                <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
+                  ${tablaHtml}
+                </div>
 
-              <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-                <div class="border-b border-slate-800/70 pb-2">
-                  <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
+                <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
+                  <div class="border-b border-slate-800/70 pb-2">
+                    <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
+                  </div>
+                  <div class="w-full h-80 relative">
+                    <canvas id="canvas-curva-bonos"></canvas>
+                  </div>
                 </div>
-                <div class="w-full h-80 relative">
-                  <canvas id="canvas-curva-bonos"></canvas>
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         `;
 
@@ -1497,23 +1539,12 @@
 
       if (categoriaActiva === "inflacion_y_ajuste") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
+        const cfgHeader = CONFIG_SECCIONES.inflacion_y_ajuste;
 
         contenedor.innerHTML = `
           <div class="space-y-6">
             <section class="space-y-3">
-              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative section-bar-rose">
-                <div class="flex items-center gap-3 z-10">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm bg-rose-500/20 border-rose-400/40 text-rose-300">
-                    <i class="fa-solid fa-arrow-trend-up"></i>
-                  </div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Indicadores de Inflación & Ajuste</h2>
-                </div>
-                <div class="z-10 flex items-center gap-2">
-                  <span class="text-[11px] font-mono text-rose-300">INDEC • BCRA</span>
-                </div>
-                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 glow-flare-rose"></div>
-              </div>
-
+              ${renderizarBarraSeccion(cfgHeader)}
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 ${items.map(item => crearTarjeta(item, "inflacion_y_ajuste", valorOficial)).join("")}
               </div>
@@ -1538,8 +1569,16 @@
         return;
       }
 
+      // TODAS LAS DEMÁS CATEGORÍAS (Cripto, Monedas, Tasas, Metales, Petróleo, Macro, Micro, Agro)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
-      const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
+      const cfgHeader = CONFIG_SECCIONES[categoriaActiva] || {
+        titulo: categoriaActiva.replace(/_/g, " ").toUpperCase(),
+        sub: "Mercado en Tiempo Real",
+        icono: "fa-circle-dot",
+        barra: "section-bar-cyan",
+        flare: "glow-flare-cyan",
+        badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300"
+      };
 
       if (items.length === 0) {
         contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Actualizando cotizaciones en tiempo real...</div>';
@@ -1547,11 +1586,8 @@
       }
 
       contenedor.innerHTML = `
-        <section class="space-y-4">
-          <div class="flex items-center gap-2 text-slate-300 font-semibold text-xs border-b border-slate-800/80 pb-2">
-            <i class="${info.icono.includes('fa-') ? info.icono : 'fa-solid ' + info.icono} text-sm"></i>
-            <h2>${info.titulo}</h2>
-          </div>
+        <section class="space-y-3">
+          ${renderizarBarraSeccion(cfgHeader)}
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             ${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}
           </div>
