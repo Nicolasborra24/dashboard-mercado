@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     body {
       background-color: #030712;
@@ -1049,11 +1049,10 @@
         return;
       }
 
-      // ----------------- VISTA DE DÓLAR Y BRECHAS CON MÓDULO DE BANDAS CAMBIARIAS -----------------
+      // ----------------- VISTA DE DÓLAR Y BRECHAS CON MÓDULO DE BANDAS CAMBIARIAS DE ALTA VISIBILIDAD -----------------
       if (categoriaActiva === "dolar_y_cambiario") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
 
-        // Cálculo matemático exacto de las bandas
         const bInf = datosBandasCambiarias.banda_inferior || 703.82;
         const bSup = datosBandasCambiarias.banda_superior || 1974.20;
         const dMay = datosBandasCambiarias.dolar_mayorista || (valorOficial || 1545.50);
@@ -1109,145 +1108,181 @@
               </div>
             </section>
 
-            <!-- Bloque 2: Monitoreo de Bandas Cambiarias en Vivo (Exacto a captura) -->
-            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-6">
-              <div class="border-b border-slate-800/70 pb-3 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-gauge text-cyan-400 text-sm"></i>
+            <!-- Bloque 2: Monitoreo de Bandas Cambiarias en Vivo (Alta Legibilidad y Calidad Estética) -->
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-6 shadow-2xl backdrop-blur-md space-y-6">
+              <div class="border-b border-slate-800/70 pb-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs">
+                    <i class="fa-solid fa-gauge-high"></i>
+                  </div>
                   <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo Oficial de Bandas Cambiarias BCRA</h2>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">Tipo de Cambio Mayorista vs Zona de Intervención</span>
+                <span class="text-xs font-mono text-slate-300 bg-slate-900/90 border border-slate-700/60 px-3 py-1 rounded-full">Zona de No Intervención</span>
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <!-- Columna Izquierda: Gauge / Velocímetro semicircular -->
-                <div class="lg:col-span-5 flex flex-col items-center justify-center p-3">
-                  <div class="relative w-72 h-44 flex flex-col items-center justify-end">
-                    <!-- Arco de fondo coloreado -->
+                <!-- Columna Izquierda: Gauge / Velocímetro semicircular con Números Grandes de Alto Contraste -->
+                <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
+                  
+                  <!-- Etiqueta Superior de Punto Medio -->
+                  <div class="mb-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-xs tracking-wide shadow-md">
+                      <span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}
+                    </span>
+                  </div>
+
+                  <!-- Gráfico Vectorial -->
+                  <div class="relative w-72 h-40 flex items-end justify-center">
                     <svg viewBox="0 0 200 115" class="w-full h-full overflow-visible">
-                      <!-- Segmento Favorable (Verde 0 - 20%) -> 180° a 144° -->
-                      <path d="M 20 100 A 80 80 0 0 1 35.28 52.98" fill="none" stroke="#22c55e" stroke-width="22" stroke-linecap="round" />
-                      <!-- Segmento Intermedio (Amarillo 20 - 75%) -> 144° a 45° -->
-                      <path d="M 35.28 52.98 A 80 80 0 0 1 156.57 43.43" fill="none" stroke="#eab308" stroke-width="22" />
-                      <!-- Segmento Precaución (Naranja 75 - 90%) -> 45° a 18° -->
-                      <path d="M 156.57 43.43 A 80 80 0 0 1 176.08 75.28" fill="none" stroke="#f97316" stroke-width="22" />
-                      <!-- Segmento Crítico (Rojo 90 - 100%) -> 18° a 0° -->
-                      <path d="M 176.08 75.28 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" stroke-width="22" stroke-linecap="round" />
+                      <defs>
+                        <filter id="shadowAguja" x="-20%" y="-20%" width="140%" height="140%">
+                          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.7"/>
+                        </filter>
+                      </defs>
 
-                      <!-- Aguja indicadora con rotación dinámica -->
-                      <g transform="translate(100, 100) rotate(${rotacionAguja})">
-                        <polygon points="-3,-10 3,-10 1,-78 -1,-78" fill="#e2e8f0" />
-                        <circle cx="0" cy="0" r="8" fill="#ffffff" stroke="#0f172a" stroke-width="2.5" />
+                      <!-- Segmento Favorable (Verde 0 - 20%) -->
+                      <path d="M 22 100 A 78 78 0 0 1 36.90 54.16" fill="none" stroke="#22c55e" stroke-width="20" stroke-linecap="round" />
+                      <!-- Segmento Intermedio (Amarillo 20 - 75%) -->
+                      <path d="M 36.90 54.16 A 78 78 0 0 1 155.16 44.85" fill="none" stroke="#eab308" stroke-width="20" />
+                      <!-- Segmento Precaución (Naranja 75 - 90%) -->
+                      <path d="M 155.16 44.85 A 78 78 0 0 1 174.18 75.90" fill="none" stroke="#f97316" stroke-width="20" />
+                      <!-- Segmento Crítico (Rojo 90 - 100%) -->
+                      <path d="M 174.18 75.90 A 78 78 0 0 1 178 100" fill="none" stroke="#ef4444" stroke-width="20" stroke-linecap="round" />
+
+                      <!-- Aguja de Alta Calidad -->
+                      <g transform="translate(100, 100) rotate(${rotacionAguja})" filter="url(#shadowAguja)">
+                        <polygon points="-4,-10 4,-10 1.2,-78 -1.2,-78" fill="#f8fafc" />
+                        <line x1="0" y1="-10" x2="0" y2="-74" stroke="#0f172a" stroke-width="1" />
+                        <circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#020617" stroke-width="3" />
+                        <circle cx="0" cy="0" r="3.5" fill="#38bdf8" />
                       </g>
-
-                      <!-- Etiquetas del gráfico -->
-                      <text x="100" y="14" fill="#94a3b8" font-size="9" font-family="'JetBrains Mono'" text-anchor="middle" font-weight="bold">${fmt$(pMedio)}</text>
-                      <text x="14" y="112" fill="#64748b" font-size="8.5" font-family="'JetBrains Mono'" text-anchor="end">${fmt$(bInf)}</text>
-                      <text x="186" y="112" fill="#64748b" font-size="8.5" font-family="'JetBrains Mono'" text-anchor="start">${fmt$(bSup)}</text>
                     </svg>
                   </div>
 
-                  <!-- Badges dorados inferiores -->
-                  <div class="mt-4 flex flex-col items-center gap-2 text-center w-full max-w-xs">
-                    <div class="w-full py-2 px-3 rounded-xl border border-amber-500/70 bg-[#0d162a] text-amber-300 font-mono font-bold text-sm shadow-[0_0_12px_rgba(245,158,11,0.2)]">
-                      Dólar Mayorista: ${fmt$(dMay)}
+                  <!-- Etiquetas Inferiores en los Extremos (Grandes y con Alto Contraste) -->
+                  <div class="w-full flex items-center justify-between px-2 mt-1 font-mono">
+                    <div class="flex flex-col items-start bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-2.5 py-1">
+                      <span class="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">Piso Banda</span>
+                      <span class="text-xs font-extrabold text-white">${fmt$(bInf)}</span>
                     </div>
-                    <div class="w-full py-1.5 px-3 rounded-xl border border-amber-500/50 bg-[#0d162a]/80 text-amber-300 font-mono text-xs">
-                      El dólar está al <span class="font-bold text-amber-200">${pctClamped.toFixed(2)}%</span> de la banda inferior
+                    <div class="flex flex-col items-end bg-rose-950/40 border border-rose-500/40 rounded-lg px-2.5 py-1">
+                      <span class="text-[9px] uppercase tracking-wider text-rose-400 font-bold">Techo Banda</span>
+                      <span class="text-xs font-extrabold text-white">${fmt$(bSup)}</span>
+                    </div>
+                  </div>
+
+                  <!-- Badges dorados con alto contraste -->
+                  <div class="mt-4 flex flex-col items-center gap-2.5 text-center w-full">
+                    <div class="w-full py-2.5 px-4 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 text-amber-300 font-mono font-bold text-sm shadow-[0_0_16px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2">
+                      <i class="fa-solid fa-dollar-sign text-amber-400 text-xs"></i>
+                      <span>Dólar Mayorista:</span>
+                      <span class="text-white text-base font-extrabold">${fmt$(dMay)}</span>
+                    </div>
+                    <div class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-slate-950 text-slate-300 font-mono text-xs">
+                      El dólar está al <strong class="text-amber-300 font-bold text-sm">${pctClamped.toFixed(2)}%</strong> de la banda inferior
                     </div>
                   </div>
                 </div>
 
-                <!-- Columna Derecha: Tablas y Diferencias -->
+                <!-- Columna Derecha: Tablas con Máximo Contraste y Legibilidad -->
                 <div class="lg:col-span-7 space-y-4">
                   <!-- Tabla 1: Valores actuales de las bandas -->
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-3.5 space-y-2">
-                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Valores actuales de las bandas cambiarias</h3>
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fa-solid fa-sliders text-cyan-400 text-[11px]"></i>
+                      Valores actuales de las bandas cambiarias
+                    </h3>
                     <table class="w-full text-xs font-mono">
-                      <thead class="text-slate-400 text-[11px] border-b border-slate-800">
+                      <thead class="text-slate-400 text-[11px] border-b border-slate-800/80">
                         <tr>
-                          <th class="py-1.5 text-left">Banda cambiaria</th>
-                          <th class="py-1.5 text-right">Valor</th>
+                          <th class="py-2 text-left font-semibold">Banda cambiaria</th>
+                          <th class="py-2 text-right font-semibold">Valor</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                        <tr>
-                          <td class="py-2 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                      <tbody class="divide-y divide-slate-800/60">
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2.5 flex items-center gap-2 text-slate-200 font-medium">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
                             <span>USD banda inferior</span>
                           </td>
-                          <td class="py-2 text-right font-bold text-emerald-400">${fmt$(bInf)}</td>
+                          <td class="py-2.5 text-right font-extrabold text-emerald-400 text-sm">${fmt$(bInf)}</td>
                         </tr>
-                        <tr>
-                          <td class="py-2 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2.5 flex items-center gap-2 text-slate-200 font-medium">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
                             <span>USD banda superior</span>
                           </td>
-                          <td class="py-2 text-right font-bold text-rose-400">${fmt$(bSup)}</td>
+                          <td class="py-2.5 text-right font-extrabold text-rose-400 text-sm">${fmt$(bSup)}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
                   <!-- Tabla 2: Rango de valores -->
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-3.5 space-y-2">
-                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Rango de valores</h3>
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fa-solid fa-chart-simple text-amber-400 text-[11px]"></i>
+                      Rango de valores
+                    </h3>
                     <table class="w-full text-xs font-mono">
-                      <thead class="text-slate-400 text-[11px] border-b border-slate-800">
+                      <thead class="text-slate-400 text-[11px] border-b border-slate-800/80">
                         <tr>
-                          <th class="py-1.5 text-left">Estado</th>
-                          <th class="py-1.5 text-center">Rango (%)</th>
-                          <th class="py-1.5 text-right">Valor mínimo</th>
-                          <th class="py-1.5 text-right">Valor máximo</th>
+                          <th class="py-2 text-left font-semibold">Estado</th>
+                          <th class="py-2 text-center font-semibold">Rango (%)</th>
+                          <th class="py-2 text-right font-semibold">Valor mínimo</th>
+                          <th class="py-2 text-right font-semibold">Valor máximo</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
-                        <tr>
-                          <td class="py-1.5 flex items-center gap-1.5 text-emerald-300 font-semibold">
+                      <tbody class="divide-y divide-slate-800/60 text-slate-200 text-xs">
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2 flex items-center gap-2 font-bold text-emerald-300">
                             <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Favorable
                           </td>
-                          <td class="py-1.5 text-center text-slate-400">0-20%</td>
-                          <td class="py-1.5 text-right">${fmt$(rFavorableMin)}</td>
-                          <td class="py-1.5 text-right">${fmt$(rFavorableMax)}</td>
+                          <td class="py-2 text-center text-slate-400">0 - 20%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rFavorableMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rFavorableMax)}</td>
                         </tr>
-                        <tr>
-                          <td class="py-1.5 flex items-center gap-1.5 text-yellow-300 font-semibold">
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2 flex items-center gap-2 font-bold text-yellow-300">
                             <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Intermedio
                           </td>
-                          <td class="py-1.5 text-center text-slate-400">20-75%</td>
-                          <td class="py-1.5 text-right">${fmt$(rIntermedioMin)}</td>
-                          <td class="py-1.5 text-right">${fmt$(rIntermedioMax)}</td>
+                          <td class="py-2 text-center text-slate-400">20 - 75%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rIntermedioMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rIntermedioMax)}</td>
                         </tr>
-                        <tr>
-                          <td class="py-1.5 flex items-center gap-1.5 text-orange-400 font-semibold">
-                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Precaucion
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2 flex items-center gap-2 font-bold text-orange-400">
+                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Precaución
                           </td>
-                          <td class="py-1.5 text-center text-slate-400">75-90%</td>
-                          <td class="py-1.5 text-right">${fmt$(rPrecaucionMin)}</td>
-                          <td class="py-1.5 text-right">${fmt$(rPrecaucionMax)}</td>
+                          <td class="py-2 text-center text-slate-400">75 - 90%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rPrecaucionMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rPrecaucionMax)}</td>
                         </tr>
-                        <tr>
-                          <td class="py-1.5 flex items-center gap-1.5 text-rose-400 font-semibold">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Critico
+                        <tr class="hover:bg-slate-900/40 transition">
+                          <td class="py-2 flex items-center gap-2 font-bold text-rose-400">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Crítico
                           </td>
-                          <td class="py-1.5 text-center text-slate-400">90-100%</td>
-                          <td class="py-1.5 text-right">${fmt$(rCriticoMin)}</td>
-                          <td class="py-1.5 text-right">${fmt$(rCriticoMax)}</td>
+                          <td class="py-2 text-center text-slate-400">90 - 100%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rCriticoMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rCriticoMax)}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
                   <!-- Card de Diferencias con las bandas -->
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-3.5 space-y-1.5 font-mono text-xs">
-                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-1 font-sans">Diferencias con las bandas</h3>
-                    <div class="flex items-center gap-2 text-slate-200">
-                      <span class="text-emerald-400 font-bold">▲</span>
-                      <span>El dólar debería subir <strong class="text-emerald-400 font-bold">${fmt$(difSubir)} (${pctSubir.toFixed(2)}%)</strong> para llegar a la banda superior</span>
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2 font-mono text-xs shadow-md">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 font-sans flex items-center gap-1.5">
+                      <i class="fa-solid fa-arrows-up-down text-purple-400 text-[11px]"></i>
+                      Diferencias con las bandas
+                    </h3>
+                    <div class="flex items-center gap-2.5 text-slate-200">
+                      <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">▲</span>
+                      <span>El dólar debería subir <strong class="text-emerald-400 font-extrabold text-sm">${fmt$(difSubir)} (${pctSubir.toFixed(2)}%)</strong> para llegar a la banda superior</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-200">
-                      <span class="text-amber-500 font-bold">▼</span>
-                      <span>El dólar debería bajar <strong class="text-amber-400 font-bold">${fmt$(difBajar)} (${pctBajar.toFixed(2)}%)</strong> para llegar a la banda inferior</span>
+                    <div class="flex items-center gap-2.5 text-slate-200">
+                      <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">▼</span>
+                      <span>El dólar debería bajar <strong class="text-amber-400 font-extrabold text-sm">${fmt$(difBajar)} (${pctBajar.toFixed(2)}%)</strong> para llegar a la banda inferior</span>
                     </div>
                   </div>
                 </div>
