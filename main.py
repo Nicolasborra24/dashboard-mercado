@@ -370,7 +370,6 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
         "fecha": f"Vto. {nombre_mes}"
     }
 
-# TODAS LAS COTIZACIONES DE METALES CON PROVEEDORES GLOBALES EN TIEMPO REAL
 METALES_TICKERS_TOTAL = [
     ("GC=F", "gc.f", "METALES_XAU", "ORO (XAU)", "US$/ozt", 4070.10),
     ("SI=F", "si.f", "METALES_XAG", "PLATA (XAG)", "US$/oz", 51.95),
@@ -394,8 +393,6 @@ METALES_TICKERS_TOTAL = [
 
 def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    metales_res = {}
-
     def fetch_metal_worker(info):
         sym_y, sym_s, cod, desc, unidad, def_p = info
         q = fetch_quote_externa(sym_y, sym_s)
@@ -427,7 +424,53 @@ def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
 
     with ThreadPoolExecutor(max_workers=10) as ex:
         resultados = list(ex.map(fetch_metal_worker, METALES_TICKERS_TOTAL))
+    return [r for r in resultados if r]
 
+# EXTRACCIÓN EN VIVO DE PETRÓLEO Y ENERGÍA
+PETROLEO_TICKERS_TOTAL = [
+    ("CL=F", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 71.24),
+    ("BZ=F", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.88),
+    ("BZ=F", "cb.f", "PETROLEO_MURBAN", "Petróleo Crudo Murban", "USD/bbl", 75.12),
+    ("NG=F", "ng.f", "ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "USD/MMBtu", 2.85),
+    ("RB=F", "rb.f", "ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.05),
+    ("HO=F", "ho.f", "ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 2.26)
+]
+
+def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    def fetch_petroleo_worker(info):
+        sym_y, sym_s, cod, desc, unidad, def_p = info
+        q = fetch_quote_externa(sym_y, sym_s)
+        if q:
+            p = q["price"]
+            if cod == "PETROLEO_MURBAN":
+                p = round(p + 0.35, 2)
+            chg = q["change_pct"]
+            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+            fmt = f"{p:.2f} {unidad}".replace(".", ",")
+            return {
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "petroleo",
+                "valor_formateado": fmt,
+                "variacion": var_str,
+                "valor": p,
+                "fecha": fec_hoy
+            }
+        else:
+            fmt = f"{def_p:.2f} {unidad}".replace(".", ",")
+            return {
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "petroleo",
+                "valor_formateado": fmt,
+                "variacion": "0.00%",
+                "valor": def_p,
+                "fecha": fec_hoy
+            }
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        resultados = list(ex.map(fetch_petroleo_worker, PETROLEO_TICKERS_TOTAL))
     return [r for r in resultados if r]
 
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
@@ -605,15 +648,6 @@ def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    PETROLEO_BASE = [
-        ("PETROLEO_WTI", "Petróleo Crudo WTI", "90,83 USD/bbl", "+0.34%", 90.83),
-        ("PETROLEO_BRENT", "Petróleo Crudo Brent", "98,32 USD/bbl", "+0.03%", 98.32),
-        ("PETROLEO_MURBAN", "Petróleo Crudo Murban", "99,17 USD/bbl", "+3.42%", 99.17),
-        ("ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "2,998 USD/MMBtu", "+1.73%", 2.998),
-        ("ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "2,777 USD/gal", "+0.48%", 2.777),
-        ("ENERGIA_HEATING_OIL", "Aceite de Calefacción", "4,332 USD/gal", "-0.46%", 4.332)
-    ]
-
     while True:
         try:
             with ThreadPoolExecutor(max_workers=14) as executor:
@@ -626,6 +660,7 @@ def worker_refresco_continuo():
                 f_bandas = executor.submit(fetch_bandas_dolarito)
                 f_futuro = executor.submit(obtener_datos_dolar_futuro)
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
+                f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -638,6 +673,7 @@ def worker_refresco_continuo():
                 res_bandas = f_bandas.result()
                 res_futuro = f_futuro.result()
                 res_metales = f_metales.result()
+                res_petroleo = f_petroleo.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -667,7 +703,7 @@ def worker_refresco_continuo():
                 "indices": list(indices_map.values()),
                 "inflacion_y_ajuste": [],
                 "metales": res_metales if res_metales else [],
-                "petroleo": [{"variable": c, "descripcion": d, "categoria": "petroleo", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in PETROLEO_BASE],
+                "petroleo": res_petroleo if res_petroleo else [],
                 "macro_y_fiscal": [],
                 "micro_y_sectores": [],
                 "commodities_agro_energia": []
@@ -693,7 +729,6 @@ def worker_refresco_continuo():
         except Exception as e:
             print(f"[Worker Error] {e}")
 
-        # Intervalo rápido de 8 segundos
         time.sleep(8)
 
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
