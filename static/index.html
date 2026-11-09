@@ -280,7 +280,7 @@
     let subIndiceActivo = "argentina";
 
     const SUB_INDICES_INFO = {
-      argentina: { titulo: "Mercado Argentino — S&P Merval", desc: "Bolsa de Buenos Aires (BYMA) & Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
+      argentina: { titulo: "Mercado Argentino — S&P Merval", desc: "Bolsa de Buenos Aires (BCBA / BYMA) & Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
       estados_unidos: { titulo: "Mercado Estadounidense — S&P 500", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
       sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
     };
@@ -307,6 +307,16 @@
       { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
       { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
     ];
+
+    const CURVAS_INFO = {
+      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
+      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
+      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
+      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
+      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
+      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
+      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
+    };
 
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
@@ -635,7 +645,7 @@
         return;
       }
 
-      // ----------------- VISTA CRIPTO (CON WEB COMPONENT OFICIAL DE TRADINGVIEW) -----------------
+      // ----------------- VISTA CRIPTO (CON WEB COMPONENT EXACTO DE TRADINGVIEW DARK) -----------------
       if (categoriaActiva === "cripto") {
         const items = datosGlobales.cripto || [];
         const cfgHeader = CONFIG_SECCIONES.cripto;
@@ -649,17 +659,17 @@
               </div>
             </section>
 
-            <!-- Mapa de Calor Criptomonedas TradingView Live Web Component -->
+            <!-- Mapa de Calor Criptomonedas TradingView Live Web Component Dark -->
             <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
               <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i class="fa-brands fa-bitcoin text-amber-400 text-sm"></i>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor Criptomonedas — Mercado Global</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Top Market Cap</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • 24h Change</span>
               </div>
-              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap heatmap-type="crypto" grouping="no_group" block-size="market_cap_calc" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
+              <div class="w-full h-[620px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
+                <tv-heatmap heatmap-type="crypto-coins" data-source="Crypto" block-size="market_cap_calc" block-color="24h_close_change|5" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </section>
           </div>
@@ -914,7 +924,6 @@
 
         const cfgHeader = CONFIG_SECCIONES.indices;
 
-        // Renderizado del mapa de calor utilizando el Web Component nativo exacto provisto por TradingView
         let mapaCalorHtml = "";
         if (subIndiceActivo === "argentina") {
           mapaCalorHtml = `
@@ -924,10 +933,10 @@
                   <i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — S&P Merval (BCBAIMV)</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • BCBA</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
               </div>
               <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap heatmap-type="stock" data-source="BCBAIMV" grouping="sector" block-size="market_cap_basic" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
+                <tv-heatmap exchanges="ADX,AMEX,ASX,BCBA,BCS,BER,BET,BIVA,BVCV,BME,BMFBOVESPA,BSE,BVC,BX,CSECY,DUS,EGX,EURONEXT,FWB,GPW,HAM,HNX,IDX,KRX,KSE,MIL,MUN,NASDAQ,NASDAQDUBAI,NEO,NEWCONNECT,NYSE,OMXCOP,OMXHEX,OMXICE,OMXRSE,OMXSTO,OMXTSE,OMXVSE,OTC,SIX,SSE,TASE,TPEX,TSX,TSXV,UPCOM,XETR" heatmap-type="stock" data-source="BCBAIMV" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </div>
           `;
@@ -939,10 +948,10 @@
                   <i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Wall Street</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
               </div>
               <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
+                <tv-heatmap exchanges="ADX,AMEX,ASX,BCBA,BCS,BER,BET,BIVA,BVCV,BME,BMFBOVESPA,BSE,BVC,BX,CSECY,DUS,EGX,EURONEXT,FWB,GPW,HAM,HNX,IDX,KRX,KSE,MIL,MUN,NASDAQ,NASDAQDUBAI,NEO,NEWCONNECT,NYSE,OMXCOP,OMXHEX,OMXICE,OMXRSE,OMXSTO,OMXTSE,OMXVSE,OTC,SIX,SSE,TASE,TPEX,TSX,TSXV,UPCOM,XETR" heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </div>
           `;
