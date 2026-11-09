@@ -208,6 +208,19 @@ INDICES_BASE_MEMORIA = [
     {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
 ]
 
+# URLs intradiarias de SJB para cada familia de bonos
+SJB_CURVAS_URLS = {
+    "bopreales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=ARS",
+    "lecaps": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LECAP%20y%20BONCAP&moneda=ARS",
+    "cer": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
+    "soberanos": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS",
+    "duales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=DUALES&moneda=ARS",
+    "tamar": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LETAM&moneda=ARS",
+    "dollar_linked": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=D%C3%B3lar%20Linked&moneda=ARS"
+}
+
+CACHE_CURVAS_SJB: Dict[str, Any] = {}
+
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
     "dolar_y_cambiario": [],
@@ -443,8 +456,17 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
         pass
     return items
 
+def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
+    try:
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+        if r.status_code == 200:
+            return clave, r.json()
+    except Exception as e:
+        print(f"[Curva SJB {clave} Error] {e}")
+    return clave, None
+
 def worker_refresco_continuo():
-    global CACHE_VARIABLES, ULTIMA_ACTUALIZACION
+    global CACHE_VARIABLES, CACHE_CURVAS_SJB, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     METALES_BASE = [
@@ -478,18 +500,26 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=5) as executor:
+            with ThreadPoolExecutor(max_workers=7) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
                 f_usa = executor.submit(obtener_datos_mercado_usa)
 
+                # Consultar las 7 curvas intradiarias de SJB concurrentemente
+                futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
+
                 res_ind = f_ind.result()
                 res_tasas = f_tasas.result()
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
                 res_usa = f_usa.result()
+
+                for fut in futures_curvas:
+                    k, data = fut.result()
+                    if data:
+                        CACHE_CURVAS_SJB[k] = data
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
@@ -559,6 +589,12 @@ def ver_bcra(formato: str = Query("agrupado")):
                 lista_plana.extend(v)
             return lista_plana
         return CACHE_VARIABLES
+
+@app.get("/api/bonos/curvas-sjb")
+def ver_curvas_sjb():
+    """Devuelve las 7 tablas intradiarias y gráficos procesados por SJB"""
+    with CACHE_LOCK:
+        return CACHE_CURVAS_SJB
 
 @app.get("/dolar")
 def ver_dolar():
