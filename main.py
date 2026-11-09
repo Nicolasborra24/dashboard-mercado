@@ -204,11 +204,10 @@ INDICES_BASE_MEMORIA = [
     {"variable": "SPDR_XLP", "descripcion": "Consumo Básico (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
     {"variable": "SPDR_XLU", "descripcion": "Servicios Públicos (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
     {"variable": "SPDR_XLB", "descripcion": "Materiales (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
-    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
-    {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
+    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0.62%", valor: 43.10, fecha: "Cierre"},
+    {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", valor: 92.74, fecha: "Cierre"}
 ]
 
-# URLs intradiarias de SJB (Duales con parámetros ampliados de CER y DL TAMAR)
 SJB_CURVAS_URLS = {
     "bopreales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=ARS",
     "lecaps": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LECAP%20y%20BONCAP&moneda=ARS",
@@ -220,6 +219,7 @@ SJB_CURVAS_URLS = {
 }
 
 CACHE_CURVAS_SJB: Dict[str, Any] = {}
+CACHE_INFLACION_IMPLICITA: Any = None
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
@@ -465,8 +465,17 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
         print(f"[Curva SJB {clave} Error] {e}")
     return clave, None
 
+def fetch_inflacion_implicita_sjb():
+    try:
+        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"[Inflacion Implicita Error] {e}")
+    return None
+
 def worker_refresco_continuo():
-    global CACHE_VARIABLES, CACHE_CURVAS_SJB, ULTIMA_ACTUALIZACION
+    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     METALES_BASE = [
@@ -500,12 +509,13 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=7) as executor:
+            with ThreadPoolExecutor(max_workers=8) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
                 f_usa = executor.submit(obtener_datos_mercado_usa)
+                f_inf_imp = executor.submit(fetch_inflacion_implicita_sjb)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -514,11 +524,15 @@ def worker_refresco_continuo():
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
                 res_usa = f_usa.result()
+                res_inf_imp = f_inf_imp.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
                     if data:
                         CACHE_CURVAS_SJB[k] = data
+
+            if res_inf_imp:
+                CACHE_INFLACION_IMPLICITA = res_inf_imp
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
@@ -593,6 +607,11 @@ def ver_bcra(formato: str = Query("agrupado")):
 def ver_curvas_sjb():
     with CACHE_LOCK:
         return CACHE_CURVAS_SJB
+
+@app.get("/api/bonos/inflacion-implicita")
+def ver_inflacion_implicita():
+    with CACHE_LOCK:
+        return CACHE_INFLACION_IMPLICITA or {}
 
 @app.get("/dolar")
 def ver_dolar():
