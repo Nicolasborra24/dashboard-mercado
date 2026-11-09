@@ -196,7 +196,7 @@
             </button>
           </div>
 
-          <!-- Fila 3: Nuevas Secciones -->
+          <!-- Fila 3: Nueva Sección -->
           <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('calendario_economico', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5 col-span-2">
               <i class="fa-regular fa-calendar-days text-cyan-400 text-[11px]"></i>
@@ -298,11 +298,11 @@
     const FLASH_REGISTRO = {};
 
     let subIndiceActivo = "argentina";
-    let subCalendarioActivo = "datos_ar";
+    let subCalendarioActivo = "licitaciones_ar";
 
     const SUB_CALENDARIO_INFO = {
+      licitaciones_ar: { titulo: "Calendario de licitaciones", desc: "A3 Mercados / MAE • Cronograma de Emisiones Primarias", icono: "fa-gavel", color: "text-amber-400" },
       datos_ar: { titulo: "Datos Macroeconómicos Argentina", desc: "TradingView Economic Calendar Oficial • Argentina (AR)", icono: "fa-landmark-flag", color: "text-sky-400" },
-      licitaciones_ar: { titulo: "Licitaciones del Tesoro & Mercado Primario", desc: "A3 Mercados / MAE • Letras y Bonos del Tesoro Nacional", icono: "fa-gavel", color: "text-amber-400" },
       datos_us: { titulo: "Datos Macroeconómicos Estados Unidos", desc: "TradingView Economic Calendar Oficial • High Importance (US)", icono: "fa-flag-usa", color: "text-blue-400" }
     };
 
@@ -335,15 +335,55 @@
       { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
     ];
 
-    const CURVAS_INFO = {
-      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
-    };
+    // DATOS COMPLETOS DE LICITACIONES SEGÚN EL CRONOGRAMA OFICIAL DE A3 MERCADOS
+    const LICITACIONES_A3_DATABASE = [
+      {
+        fecha: "2026-11-11",
+        diaSemana: "miércoles",
+        fechaTexto: "11 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 30/06/2027 (T30J7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 30/06/2028 (TZX28) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 29/01/2027 (S29E7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 30/04/2027 (M30A7) - NUEVA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA" }
+        ]
+      },
+      {
+        fecha: "2026-11-12",
+        diaSemana: "jueves",
+        fechaTexto: "12 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO MADERO HARBOUR SERIE II" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 15 (REAPERTURA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 18 (REAPERTURA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 21 (NUEVA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 22 (NUEVA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 23 (NUEVA)" }
+        ]
+      },
+      {
+        fecha: "2026-11-13",
+        diaSemana: "viernes",
+        fechaTexto: "13 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO INGACOT COMERCIAL SERIE I" }
+        ]
+      },
+      {
+        fecha: "2026-11-25",
+        diaSemana: "miércoles",
+        fechaTexto: "25 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 26/02/2027 (S26F7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS VTO. 31/05/2027 (T31Y7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL VINCULADO AL DÓLAR VTO. 31/03/2027 (D31M7) - REAPERTURA" }
+        ]
+      }
+    ];
+
+    let fechaLicitacionOffsetSemanas = 0;
+    let modoVistaLicitacion = "agenda"; // "agenda" o "mes"
 
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
@@ -474,7 +514,7 @@
         const res = await fetch("/api/licitaciones/mae?t=" + Date.now());
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && data.length > 0) {
             datosLicitacionesMAE = data;
             if (categoriaActiva === "calendario_economico" && subCalendarioActivo === "licitaciones_ar") {
               renderizar();
@@ -538,6 +578,36 @@
     function cambiarSubCalendario(subKey) {
       subCalendarioActivo = subKey;
       renderizar();
+    }
+
+    // CONTROLES DE LA AGENDA DE LICITACIONES DE A3 MERCADOS
+    function moverSemanaLicitacion(delta) {
+      fechaLicitacionOffsetSemanas += delta;
+      renderizar();
+    }
+
+    function reiniciarSemanaLicitacion() {
+      fechaLicitacionOffsetSemanas = 0;
+      renderizar();
+    }
+
+    function cambiarModoVistaLicitacion(modo) {
+      modoVistaLicitacion = modo;
+      renderizar();
+    }
+
+    function obtenerFechasSemanaActual(offsetSemanas) {
+      const hoy = new Date(2026, 10, 9); // Lunes 9 de Noviembre 2026
+      const inicio = new Date(hoy);
+      inicio.setDate(hoy.getDate() + offsetSemanas * 7);
+      
+      const fin = new Date(inicio);
+      fin.setDate(inicio.getDate() + 6);
+
+      const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const textoRango = `${inicio.getDate()} - ${fin.getDate()} ${meses[fin.getMonth()]} ${fin.getFullYear()}`;
+
+      return { inicio, fin, textoRango };
     }
 
     function renderizarBarraSeccion(cfg) {
@@ -611,7 +681,7 @@
         return;
       }
 
-      // ----------------- VISTA CALENDARIO ECONÓMICO & LICITACIONES -----------------
+      // ----------------- VISTA CALENDARIO ECONÓMICO & LICITACIONES (AGENDA A3 MERCADOS) -----------------
       if (categoriaActiva === "calendario_economico") {
         const infoSub = SUB_CALENDARIO_INFO[subCalendarioActivo];
         const cfgHeader = CONFIG_SECCIONES.calendario_economico;
@@ -648,70 +718,114 @@
             </div>
           `;
         } else if (subCalendarioActivo === "licitaciones_ar") {
-          let filasLicitHtml = "";
-          if (datosLicitacionesMAE && datosLicitacionesMAE.length > 0) {
-            filasLicitHtml = datosLicitacionesMAE.map(lic => {
-              const instrumento = lic.instrumento || lic.especie || lic.nombre || lic.titulo || "Título del Tesoro";
-              const fechaApertura = lic.fechaApertura || lic.fecha_apertura || lic.fecha || "-";
-              const fechaCierre = lic.fechaCierre || lic.fecha_cierre || "-";
-              const moneda = lic.moneda || "ARS";
-              const estado = lic.estado || "Vigente";
-              const tipo = lic.tipo || "Reapertura / Emisión";
-              const estadoClass = estado.toLowerCase().includes("vigente") || estado.toLowerCase().includes("abierta")
-                ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40"
-                : "bg-slate-800/60 text-slate-300 border-slate-700/60";
+          const { inicio, fin, textoRango } = obtenerFechasSemanaActual(fechaLicitacionOffsetSemanas);
 
-              return `
-                <tr class="hover:bg-slate-800/40 transition">
-                  <td class="py-3 px-3 text-white font-mono font-bold">${instrumento}</td>
-                  <td class="py-3 px-3 text-slate-300">${tipo}</td>
-                  <td class="py-3 px-3 text-center font-mono text-slate-400">${fechaApertura}</td>
-                  <td class="py-3 px-3 text-center font-mono text-slate-400">${fechaCierre}</td>
-                  <td class="py-3 px-3 text-center font-mono text-slate-300">${moneda}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${estadoClass}">${estado}</span>
-                  </td>
-                </tr>
+          // Filtrar días que caen dentro del rango visible
+          const diasFiltrados = LICITACIONES_A3_DATABASE.filter(d => {
+            const fechaObj = new Date(d.fecha + "T00:00:00");
+            return fechaObj >= inicio && fechaObj <= fin;
+          });
+
+          let contenidoAgendaHtml = "";
+          if (modoVistaLicitacion === "agenda") {
+            if (diasFiltrados.length > 0) {
+              contenidoAgendaHtml = diasFiltrados.map(dia => `
+                <div class="border-b border-slate-800/80 last:border-b-0">
+                  <!-- Header del Día (Exacto a la captura de A3) -->
+                  <div class="bg-[#0b1328] px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-300 border-t border-slate-800/60 first:border-t-0">
+                    <span class="text-slate-300 lowercase">${dia.diaSemana}</span>
+                    <span class="text-slate-400 font-mono text-[11px]">${dia.fechaTexto}</span>
+                  </div>
+
+                  <!-- Lista de Licitaciones del Día -->
+                  <div class="divide-y divide-slate-800/40 bg-[#060a16]">
+                    ${dia.items.map(it => `
+                      <div class="px-4 py-2.5 flex items-center gap-3 text-xs hover:bg-slate-900/60 transition group">
+                        <span class="font-mono text-slate-400 text-[11px] shrink-0 w-24">${it.horario}</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_6px_rgba(6,182,212,0.8)]"></span>
+                        <span class="text-slate-200 group-hover:text-white transition font-medium tracking-wide leading-relaxed">${it.titulo}</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              `).join("");
+            } else {
+              contenidoAgendaHtml = `
+                <div class="py-16 text-center text-slate-400 text-xs font-mono">
+                  <i class="fa-solid fa-circle-info text-cyan-400 text-sm mb-2 block"></i>
+                  No hay licitaciones programadas para la semana del <span class="text-white font-bold">${textoRango}</span>.
+                </div>
               `;
-            }).join("");
+            }
           } else {
-            filasLicitHtml = `
-              <tr>
-                <td colspan="6" class="py-12 text-center text-slate-400 text-xs font-mono">
-                  <i class="fa-solid fa-circle-info text-cyan-400 mr-2"></i>
-                  En este período no hay licitaciones primarias activas registradas en MAE / A3 Mercados.
-                </td>
-              </tr>
+            // Modo Vista Mes
+            contenidoAgendaHtml = `
+              <div class="p-6 text-center space-y-4">
+                <div class="grid grid-cols-7 gap-2 text-xs font-mono text-slate-400 border-b border-slate-800 pb-2">
+                  <span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span><span>DOM</span>
+                </div>
+                <div class="grid grid-cols-7 gap-2 pt-2 text-xs font-mono">
+                  ${[9, 10, 11, 12, 13, 14, 15].map(diaNum => {
+                    const diaConLicit = LICITACIONES_A3_DATABASE.find(d => d.fecha === `2026-11-${diaNum}`);
+                    const badge = diaConLicit ? `<span class="mt-2 text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 truncate max-w-full">${diaConLicit.items.length} Licit.</span>` : '';
+                    return `
+                      <div class="h-24 rounded-xl border border-slate-800/80 bg-[#060a16] p-2 flex flex-col justify-between items-start hover:border-cyan-500/40 transition">
+                        <span class="font-bold ${diaNum === 9 ? 'text-cyan-400' : 'text-slate-300'}">${diaNum}</span>
+                        ${badge}
+                      </div>
+                    `;
+                  }).join("")}
+                </div>
+              </div>
             `;
           }
 
           vistaSubHtml = `
-            <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-4">
-              <div class="border-b border-slate-800/70 pb-2.5 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-gavel text-amber-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Cronograma Oficial de Licitaciones — A3 Mercados / MAE</h3>
+            <div class="rounded-2xl border border-slate-800 bg-[#070d1d] shadow-2xl backdrop-blur-md overflow-hidden space-y-0">
+              
+              <!-- Barra Superior de Control de la Agenda (Exacta a la captura de A3 Mercados) -->
+              <div class="bg-[#050a18] px-5 py-3.5 flex flex-wrap items-center justify-between border-b border-slate-800 gap-3">
+                
+                <!-- Título y Botones Izquierda: [<] [>] [Hoy] -->
+                <div class="flex items-center gap-3">
+                  <h3 class="text-sm font-bold text-white tracking-wide mr-2">Calendario de licitaciones</h3>
+                  
+                  <div class="inline-flex items-center rounded-lg border border-slate-700/80 bg-slate-900/90 p-0.5">
+                    <button onclick="moverSemanaLicitacion(-1)" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition text-xs" title="Semana anterior">
+                      <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <button onclick="moverSemanaLicitacion(1)" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition text-xs" title="Semana siguiente">
+                      <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                  </div>
+
+                  <button onclick="reiniciarSemanaLicitacion()" class="px-3 py-1 rounded-lg border border-slate-700/80 bg-slate-900/90 text-slate-300 hover:text-white hover:border-cyan-400 text-xs font-medium transition">
+                    Hoy
+                  </button>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">Emisiones Primarias del Tesoro Nacional y Letras</span>
+
+                <!-- Rango de Fechas Central -->
+                <div class="font-mono text-xs font-semibold text-slate-300 tracking-wide">
+                  ${textoRango}
+                </div>
+
+                <!-- Botones Derecha: [Mes] [Agenda] -->
+                <div class="inline-flex items-center rounded-lg border border-slate-700/80 bg-slate-900/90 p-0.5 text-xs">
+                  <button onclick="cambiarModoVistaLicitacion('mes')" class="px-3 py-1 rounded transition font-medium ${modoVistaLicitacion === 'mes' ? 'bg-cyan-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}">
+                    Mes
+                  </button>
+                  <button onclick="cambiarModoVistaLicitacion('agenda')" class="px-3 py-1 rounded transition font-medium ${modoVistaLicitacion === 'agenda' ? 'bg-cyan-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}">
+                    Agenda
+                  </button>
+                </div>
+
               </div>
 
-              <div class="overflow-x-auto rounded-xl border border-slate-800 bg-[#060a16]">
-                <table class="w-full text-left text-xs">
-                  <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                    <tr>
-                      <th class="py-2.5 px-3">Instrumento / Especie</th>
-                      <th class="py-2.5 px-3">Tipo de Operación</th>
-                      <th class="py-2.5 px-3 text-center">Apertura</th>
-                      <th class="py-2.5 px-3 text-center">Cierre</th>
-                      <th class="py-2.5 px-3 text-center">Moneda</th>
-                      <th class="py-2.5 px-3 text-center">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-800/60">
-                    ${filasLicitHtml}
-                  </tbody>
-                </table>
+              <!-- Cuerpo Principal de la Agenda -->
+              <div class="w-full">
+                ${contenidoAgendaHtml}
               </div>
+
             </div>
           `;
         }
@@ -725,20 +839,20 @@
                   <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
                 </div>
                 
+                <button onclick="cambiarSubCalendario('licitaciones_ar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subCalendarioActivo === 'licitaciones_ar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i class="fa-solid fa-gavel text-amber-400 text-xs"></i>
+                    <span class="text-xs font-semibold truncate">Licitaciones Argentina</span>
+                  </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subCalendarioActivo === 'licitaciones_ar' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">A3</span>
+                </button>
+
                 <button onclick="cambiarSubCalendario('datos_ar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subCalendarioActivo === 'datos_ar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
                   <div class="flex items-center gap-2 truncate">
                     <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
                     <span class="text-xs font-semibold truncate">Datos Argentina</span>
                   </div>
                   <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subCalendarioActivo === 'datos_ar' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">AR</span>
-                </button>
-
-                <button onclick="cambiarSubCalendario('licitaciones_ar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subCalendarioActivo === 'licitaciones_ar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-gavel text-amber-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Licitaciones Argentina</span>
-                  </div>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subCalendarioActivo === 'licitaciones_ar' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">MAE</span>
                 </button>
 
                 <button onclick="cambiarSubCalendario('datos_us')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subCalendarioActivo === 'datos_us' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
@@ -1139,7 +1253,7 @@
         const dataCurva = datosCurvasSJB[curvaActiva];
         const filas = (dataCurva && Array.isArray(dataCurva.tabla) && dataCurva.tabla.length > 0) 
           ? dataCurva.tabla 
-          : (window.TABLAS_BONOS_INTEGRAS ? window.TABLAS_BONOS_INTEGRAS[curvaActiva] : []);
+          : [];
 
         let tablaHtml = "";
         if (filas && filas.length > 0) {
@@ -1151,35 +1265,30 @@
                   ${columnas.map(col => {
                     const cL = col.toLowerCase();
                     const al = cL.includes("ticker") ? "text-left" : (cL.includes("precio") || cL.includes("valor")) ? "text-right" : "text-center";
-                    return renderTh(curvaActiva, col, col.toUpperCase(), al);
+                    return `<th class="py-3 px-3 ${al}">${col.toUpperCase()}</th>`;
                   }).join("")}
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${filas.map(b => {
-                  return `
+                ${filas.map(b => `
                   <tr class="table-dark-row transition">
                     ${columnas.map(col => {
                       const val = b[col];
                       const cL = col.toLowerCase();
-                      if (cL === "ticker") {
-                        return `<td class="py-2.5 px-3 font-bold text-white tracking-wide">${val}</td>`;
-                      }
+                      if (cL === "ticker") return `<td class="py-2.5 px-3 font-bold text-white tracking-wide">${val}</td>`;
                       if (cL.includes("precio") || cL.includes("valor")) {
                         const num = parseFloat(val);
                         const formatted = !isNaN(num) ? (num >= 1000 ? '$ ' + num.toLocaleString('es-AR') : num.toFixed(2)) : val;
                         return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${formatted}</td>`;
                       }
-                      if (cL.includes("var")) {
-                        return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
-                      }
+                      if (cL.includes("var")) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
                       if (cL.includes("tir") || cL.includes("tasa") || cL.includes("tea") || cL.includes("tna") || cL.includes("tem") || cL.includes("cupón") || cL.includes("paridad")) {
                         return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "neutro")}</td>`;
                       }
                       return `<td class="py-2.5 px-3 text-center text-slate-300">${val ?? "-"}</td>`;
                     }).join("")}
-                  </tr>`;
-                }).join("")}
+                  </tr>
+                `).join("")}
               </tbody>
             </table>
           `;
@@ -1252,27 +1361,16 @@
                     <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo}</h3>
                   </div>
-                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
+                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc}</span>
                 </div>
                 
                 <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                   ${tablaHtml}
                 </div>
-
-                <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-                  <div class="border-b border-slate-800/70 pb-2">
-                    <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
-                  </div>
-                  <div class="w-full h-80 relative">
-                    <canvas id="canvas-curva-bonos"></canvas>
-                  </div>
-                </div>
               </section>
             </div>
           </div>
         `;
-
-        setTimeout(dibujarGraficoCurva, 50);
         return;
       }
 
@@ -1335,30 +1433,71 @@
       `;
     }
 
+    function dibujarGraficoInflacionImplicita() {
+      const canvas = document.getElementById("canvas-inflacion-implicita");
+      if (!canvas) return;
+
+      const INFLACION_IMPLICITA_SERIE = [
+        { mes: "May 2026", tipo: "real", ipc: 2.15, infImp: null, temNom: null, temReal: null },
+        { mes: "Jun 2026", tipo: "real", ipc: 1.89, infImp: null, temNom: null, temReal: null },
+        { mes: "Jul 2026", tipo: "real", ipc: 2.11, infImp: null, temNom: null, temReal: null },
+        { mes: "Aug 2026", tipo: "real", ipc: 1.66, infImp: null, temNom: null, temReal: null },
+        { mes: "Sep 2026", tipo: "real", ipc: 1.93, infImp: null, temNom: null, temReal: null },
+        { mes: "Oct 2026", tipo: "mercado", ipc: null, infImp: 1.71, temNom: 1.85, temReal: 0.13 },
+        { mes: "Nov 2026", tipo: "mercado", ipc: null, infImp: 1.90, temNom: 1.90, temReal: 0.00 },
+        { mes: "Dec 2026", tipo: "mercado", ipc: null, infImp: 1.56, temNom: 1.94, temReal: 0.38 },
+        { mes: "Jan 2027", tipo: "mercado", ipc: null, infImp: 1.84, temNom: 2.08, temReal: 0.24 },
+        { mes: "Feb 2027", tipo: "mercado", ipc: null, infImp: 2.10, temNom: 2.24, temReal: 0.14 },
+        { mes: "Mar 2027", tipo: "mercado", ipc: null, infImp: 1.87, temNom: 2.19, temReal: 0.32 },
+        { mes: "Apr 2027", tipo: "mercado", ipc: null, infImp: 1.85, temNom: 2.16, temReal: 0.31 },
+        { mes: "May 2027", tipo: "mercado", ipc: null, infImp: 1.69, temNom: 2.22, temReal: 0.53 },
+        { mes: "Jun 2027", tipo: "mercado", ipc: null, infImp: 1.70, temNom: 2.25, temReal: 0.55 }
+      ];
+
+      const labels = INFLACION_IMPLICITA_SERIE.map(d => d.mes);
+      const dataIpcReal = INFLACION_IMPLICITA_SERIE.map(d => d.ipc);
+      const dataInfImp = INFLACION_IMPLICITA_SERIE.map(d => d.infImp);
+      const dataTemNom = INFLACION_IMPLICITA_SERIE.map(d => d.temNom);
+      const dataTemReal = INFLACION_IMPLICITA_SERIE.map(d => d.temReal);
+
+      if (chartInflacionInstance) chartInflacionInstance.destroy();
+
+      const ctx = canvas.getContext("2d");
+      chartInflacionInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            { label: "IPC Real (INDEC)", data: dataIpcReal, backgroundColor: "#22c55e", borderRadius: 4, order: 3 },
+            { label: "Inflación Implícita (mercado)", data: dataInfImp, backgroundColor: "#3b82f6", borderRadius: 4, order: 4 },
+            { label: "TEM Nominal (LECAP/BONCAP)", type: "line", data: dataTemNom, borderColor: "#f59e0b", backgroundColor: "#f59e0b", borderWidth: 2, borderDash: [3, 3], pointRadius: 4, fill: false, order: 1 },
+            { label: "TEM Real (CER)", type: "line", data: dataTemReal, borderColor: "#c084fc", backgroundColor: "#c084fc", borderWidth: 2, borderDash: [3, 3], pointRadius: 4, fill: false, order: 2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top", labels: { color: "#cbd5e1", font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: "bold" }, usePointStyle: true } }
+          },
+          scales: {
+            x: { grid: { color: "rgba(255, 255, 255, 0.04)" }, ticks: { color: "#94a3b8" } },
+            y: { title: { display: true, text: "Inflación mensual", color: "#94a3b8" }, grid: { color: "rgba(255, 255, 255, 0.04)" }, ticks: { color: "#64748b", callback: v => v.toFixed(2) + "%" } }
+          }
+        }
+      });
+    }
+
     function crearTarjeta(item, categoria, valorOficial) {
       if (!item) return "";
-
       const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
       let varBadge = "";
-      
       if (variacion.includes("+")) {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]">
-            <span>↑</span><span>${variacion}</span>
-          </span>
-        `;
+        varBadge = `<span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]"><span>↑</span><span>${variacion}</span></span>`;
       } else if (variacion.includes("-") || variacion.includes("−")) {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]">
-            <span>↓</span><span>${variacion}</span>
-          </span>
-        `;
+        varBadge = `<span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]"><span>↓</span><span>${variacion}</span></span>`;
       } else {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">
-            ${variacion || "0,0%"}
-          </span>
-        `;
+        varBadge = `<span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">${variacion || "0,0%"}</span>`;
       }
 
       let badgeBrecha = "";
@@ -1377,25 +1516,12 @@
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
-      if (item.variable === "INFLACION_MENSUAL" && fecha) {
-        desc = `INFLACIÓN MENSUAL`;
-      }
+      if (item.variable === "INFLACION_MENSUAL" && fecha) desc = `INFLACIÓN MENSUAL`;
+      if (item.variable && item.variable.startsWith("TASA_") && !valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
 
-      if (item.variable && item.variable.startsWith("TASA_")) {
-        if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
-      }
-
-      const variablesPesos = [
-        "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
-        "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
-      ];
-      if (variablesPesos.includes(item.variable)) {
-        if (!valFmt.startsWith("$")) valFmt = `$${valFmt}`;
-      }
-
-      if (item.variable === "RIESGO_PAIS") {
-        if (!valFmt.toLowerCase().includes("puntos") && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
-      }
+      const variablesPesos = ["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"];
+      if (variablesPesos.includes(item.variable) && !valFmt.startsWith("$")) valFmt = `$${valFmt}`;
+      if (item.variable === "RIESGO_PAIS" && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
 
       return `
         <div class="neon-card rounded-2xl p-4 flex flex-col justify-between">
@@ -1418,13 +1544,8 @@
 
     function filtrarCategoria(cat, ev) {
       categoriaActiva = cat;
-      document.querySelectorAll(".nav-tab").forEach(b => {
-        b.classList.remove("active");
-      });
-
-      if (ev && ev.currentTarget) {
-        ev.currentTarget.classList.add("active");
-      }
+      document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
+      if (ev && ev.currentTarget) ev.currentTarget.classList.add("active");
       renderizar();
     }
 
