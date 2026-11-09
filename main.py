@@ -247,7 +247,7 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     h = {"User-Agent": "Mozilla/5.0"}
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
-        r = requests.get(url, headers=h, timeout=3.5)
+        r = requests.get(url, headers=h, timeout=2.8)
         if r.status_code == 200:
             res = r.json().get("chart", {}).get("result", [])
             if res:
@@ -262,7 +262,7 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
 
     try:
         url_s = f"https://stooq.com/q/l/?s={sym_s}&f=sd2t2ohlcv&h&e=csv"
-        r_s = requests.get(url_s, headers=h, timeout=3.0)
+        r_s = requests.get(url_s, headers=h, timeout=2.5)
         if r_s.status_code == 200 and "Close" in r_s.text:
             lines = r_s.text.strip().split("\n")
             if len(lines) >= 2:
@@ -309,7 +309,7 @@ def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
 def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     items = []
     try:
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
             cargadas = set()
@@ -350,7 +350,7 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
 
     try:
         h = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get("https://www.dolarito.ar/", headers=h, timeout=4)
+        r = requests.get("https://www.dolarito.ar/", headers=h, timeout=3.5)
         if r.status_code == 200:
             m = re.search(r"dolar futuro[^\d]*([\d\.,]+)", r.text, re.IGNORECASE)
             if m:
@@ -370,29 +370,50 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
         "fecha": f"Vto. {nombre_mes}"
     }
 
+# MATRIZ COMPLETA DE METALES CON TICKERS DE MERCADO INTERNACIONAL
+METALES_MERCADO_TICKERS = [
+    ("GC=F", "gc.f", "METALES_XAU", "ORO (XAU)", "US$/ozt", 4070.10, 1.0),
+    ("SI=F", "si.f", "METALES_XAG", "PLATA (XAG)", "US$/oz", 51.95, 1.0),
+    ("HG=F", "hg.f", "METALES_HG00", "COBRE (HG00)", "US$/lb", 6.24, 1.0),
+    ("PL=F", "pl.f", "METALES_XPT", "PLATINO (XPT)", "US$/oz", 1534.00, 1.0),
+    ("PA=F", "pa.f", "METALES_XPD", "PALADIO (XPD)", "US$/oz", 1004.00, 1.0),
+    ("ALI=F", "al.f", "METALES_ALU", "ALUMINIO (ALU)", "US$/lb", 1.15, 1.0),
+    ("ZN=F", "zn.f", "METALES_ZNC", "ZINC (ZNC)", "US$/lb", 1.42, 1.0),
+    ("NI=F", "ni.f", "METALES_NI", "NÍQUEL (NI)", "US$/lb", 7.85, 1.0),
+    ("TIN=F", "sn.f", "METALES_TIN", "ESTAÑO (TIN)", "US$/lb", 14.50, 1.0),
+    ("LED=F", "pb.f", "METALES_LEAD", "PLOMO (LEAD)", "US$/lb", 0.98, 1.0),
+    ("TIO=F", "tio.f", "METALES_IRON", "MINERAL DE HIERRO (IRON)", "US$/tn", 104.50, 1.0),
+    ("URNM", "urnm.us", "METALES_U", "URANIO (U)", "US$/lb", 91.85, 1.0),
+    ("LIT", "lit.us", "METALES_LI", "LITIO (LI)", "US$/kg", 18.20, 1.0),
+    ("LIT", "lit.us", "METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "US$/kg", 18.20, 1.0),
+    ("COBALT", "cobalt.us", "METALES_LCO", "COBALTO (LCO)", "US$/lb", 12.35, 1.0),
+    ("MO=F", "mo.f", "METALES_MO", "MOLIBDENO (MO)", "US$/lb", 21.50, 1.0),
+    ("VAN=F", "van.f", "METALES_VAN", "VANADIO (VAN)", "US$/kg", 28.00, 1.0),
+    ("XRH=X", "xrh.x", "METALES_XRH", "RODIO (XRH)", "US$/oz", 9200.00, 1.0)
+]
+
 def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    metales_res = {}
+    metales_res: Dict[str, Dict[str, Any]] = {}
 
-    # 1. Scraping primario de Panorama Minero
+    # 1. Scraping de Panorama Minero (widgets / cinta / tablas)
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        }
+        h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"}
         for url in ["https://www.panorama-minero.com/es/markets/metals", "https://www.panorama-minero.com/"]:
             try:
-                r = requests.get(url, headers=headers, timeout=4)
+                r = requests.get(url, headers=h, timeout=3.5)
                 if r.status_code == 200:
                     text = r.text
-                    # Buscar el patrón típico: ORO$4,070.10 0.07%24h o variantes
                     patrones = [
                         (r"ORO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_XAU", "ORO (XAU)", "US$/ozt"),
                         (r"PLATA\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_XAG", "PLATA (XAG)", "US$/oz"),
                         (r"COBRE\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_HG00", "COBRE (HG00)", "US$/lb"),
                         (r"PLATINO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_XPT", "PLATINO (XPT)", "US$/oz"),
                         (r"PALADIO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_XPD", "PALADIO (XPD)", "US$/oz"),
-                        (r"LITIO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_LI", "LITIO (LI)", "US$/oz"),
+                        (r"ALUMINIO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_ALU", "ALUMINIO (ALU)", "US$/lb"),
+                        (r"ZINC\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_ZNC", "ZINC (ZNC)", "US$/lb"),
+                        (r"N[IÍ]QUEL\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_NI", "NÍQUEL (NI)", "US$/lb"),
+                        (r"LITIO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_LI", "LITIO (LI)", "US$/kg"),
                         (r"URANIO\s*\$?\s*([\d\.,]+)\s*([+\-−]?[\d\.,]+%)?", "METALES_U", "URANIO (U)", "US$/lb")
                     ]
                     for regex, cod, desc, unidad in patrones:
@@ -413,71 +434,51 @@ def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
                                     "valor": val_p,
                                     "fecha": fec_hoy
                                 }
-                    if len(metales_res) >= 3:
+                    if len(metales_res) >= 4:
                         break
             except Exception:
                 pass
-    except Exception as e:
-        print(f"[Metales Panorama Error] {e}")
+    except Exception:
+        pass
 
-    # 2. Respaldo de futuros en vivo vía mercado global para Oro, Plata, Cobre, Platino y Paladio
-    METALES_FUTUROS_MAP = [
-        ("GC=F", "gc.f", "METALES_XAU", "ORO (XAU)", "US$/ozt"),
-        ("SI=F", "si.f", "METALES_XAG", "PLATA (XAG)", "US$/oz"),
-        ("HG=F", "hg.f", "METALES_HG00", "COBRE (HG00)", "US$/lb"),
-        ("PL=F", "pl.f", "METALES_XPT", "PLATINO (XPT)", "US$/oz"),
-        ("PA=F", "pa.f", "METALES_XPD", "PALADIO (XPD)", "US$/oz")
-    ]
-    for sym_y, sym_s, cod, desc, unidad in METALES_FUTUROS_MAP:
-        if cod not in metales_res:
-            q = fetch_quote_externa(sym_y, sym_s)
-            if q:
-                p = q["price"]
-                chg = q["change_pct"]
-                var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
-                fmt = f"{p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"{p:.2f} {unidad}".replace(".", ",")
-                metales_res[cod] = {
-                    "variable": cod,
-                    "descripcion": desc,
-                    "categoria": "metales",
-                    "valor_formateado": fmt,
-                    "variacion": var_str,
-                    "valor": p,
-                    "fecha": fec_hoy
-                }
-
-    # 3. Lista completa garantizada con fallbacks actualizados si no responden
-    METALES_CATALOGO_BASE = [
-        ("METALES_XAU", "ORO (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
-        ("METALES_XAG", "PLATA (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
-        ("METALES_HG00", "COBRE (HG00)", "6,24 US$/lb", "-3.77%", 6.24),
-        ("METALES_XPT", "PLATINO (XPT)", "1534,00 US$/oz", "+7.35%", 1534.00),
-        ("METALES_XPD", "PALADIO (XPD)", "1004,00 US$/oz", "+4.47%", 1004.00),
-        ("METALES_ALU", "ALUMINIO (ALU)", "10,49 US$/ozt", "-0.19%", 10.49),
-        ("METALES_XRH", "RODIO (XRH)", "9200,00 US$/oz", "+1.10%", 9200.00),
-        ("METALES_ZNC", "ZINC (ZNC)", "8,55 US$/ozt", "+5.23%", 8.55),
-        ("METALES_NI", "NÍQUEL (NI)", "2,00 US$/oz", "-5.31%", 2.00),
-        ("METALES_TIN", "ESTAÑO (TIN)", "1,45 US$/oz", "-5.06%", 1.45),
-        ("METALES_LEAD", "PLOMO (LEAD)", "17,31 US$/oz", "+1.78%", 17.31),
-        ("METALES_MO", "MOLIBDENO (MO)", "2,81 US$/ozt", "+0.72%", 2.81),
-        ("METALES_IRON", "MINERAL DE HIERRO (IRON)", "380,52 US$/oz", "-2.15%", 380.52),
-        ("METALES_LI", "LITIO (LI)", "2,29 US$/oz", "+0.35%", 2.29),
-        ("METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "2,29 US$/ozt", "+0.23%", 2.29),
-        ("METALES_LCO", "COBALTO (LCO)", "1,04 US$/oz", "+0.04%", 1.04),
-        ("METALES_U", "URANIO (U)", "91,85 US$/lb", "-0.76%", 91.85),
-        ("METALES_VAN", "VANADIO (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
-    ]
-    for c, d, f, v, n in METALES_CATALOGO_BASE:
-        if c not in metales_res:
-            metales_res[c] = {
-                "variable": c,
-                "descripcion": d,
+    # 2. Consultar concurrentemente los tickers de mercado para los metales faltantes
+    def worker_metal(item_t):
+        sym_y, sym_s, cod, desc, unidad, def_p, mult = item_t
+        if cod in metales_res:
+            return None
+        q = fetch_quote_externa(sym_y, sym_s)
+        if q:
+            p = round(q["price"] * mult, 2)
+            chg = q["change_pct"]
+            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+            fmt = f"{p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"{p:.2f} {unidad}".replace(".", ",")
+            return {
+                "variable": cod,
+                "descripcion": desc,
                 "categoria": "metales",
-                "valor_formateado": f,
-                "variacion": v,
-                "valor": n,
+                "valor_formateado": fmt,
+                "variacion": var_str,
+                "valor": p,
                 "fecha": fec_hoy
             }
+        else:
+            fmt = f"{def_p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if def_p >= 1000 else f"{def_p:.2f} {unidad}".replace(".", ",")
+            return {
+                "variable": cod,
+                "descripcion": desc,
+                "categoria": "metales",
+                "valor_formateado": fmt,
+                "variacion": "0.00%",
+                "valor": def_p,
+                "fecha": fec_hoy
+            }
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        resultados = list(ex.map(worker_metal, METALES_MERCADO_TICKERS))
+
+    for res in resultados:
+        if res and res["variable"] not in metales_res:
+            metales_res[res["variable"]] = res
 
     return list(metales_res.values())
 
@@ -485,7 +486,7 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
         if r.status_code == 200:
             d = r.json()
             for row in d.get("principales", []):
@@ -532,7 +533,7 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     usd_oficial = 1015.50
     try:
-        r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=4)
+        r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=3.5)
         if r_a.status_code == 200:
             d = r_a.json().get("data", [])
             if d and len(d[0]) >= 2 and d[0][1]:
@@ -551,7 +552,7 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
 
     rates = {}
     try:
-        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=4)
+        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=3.5)
         if r_fx.status_code == 200:
             rates = r_fx.json().get("rates", {})
     except Exception:
@@ -579,7 +580,7 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
         if r.status_code == 200:
             bonos_raw = r.json()
             if isinstance(bonos_raw, dict):
@@ -604,7 +605,7 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
 
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
             return clave, r.json()
     except Exception as e:
@@ -613,7 +614,7 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
 
 def fetch_inflacion_implicita_sjb():
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -626,19 +627,19 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
     d_may = 1545.50
     try:
         h = {"User-Agent": "Mozilla/5.0"}
-        r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=4)
+        r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=3.5)
         if r1.status_code == 200:
             d1 = r1.json()
             v1 = float(d1.get("value") or d1.get("valor") or b_inf)
             if v1 > 0: b_inf = v1
 
-        r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=4)
+        r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=3.5)
         if r2.status_code == 200:
             d2 = r2.json()
             v2 = float(d2.get("value") or d2.get("valor") or b_sup)
             if v2 > 0: b_sup = v2
 
-        r_m = requests.get("https://dolarapi.com/v1/dolares/mayorista", headers=h, timeout=4)
+        r_m = requests.get("https://dolarapi.com/v1/dolares/mayorista", headers=h, timeout=3.5)
         if r_m.status_code == 200:
             dm = r_m.json()
             vm = float(dm.get("venta") or dm.get("compra") or d_may)
@@ -667,7 +668,7 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ThreadPoolExecutor(max_workers=12) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
@@ -744,7 +745,8 @@ def worker_refresco_continuo():
         except Exception as e:
             print(f"[Worker Error] {e}")
 
-        time.sleep(20)
+        # Refresco acelerado a 10 segundos para mayor dinamismo
+        time.sleep(10)
 
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
 hilo_worker.start()
@@ -790,7 +792,7 @@ def ver_bandas():
 @app.get("/dolar")
 def ver_dolar():
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=5)
+        r = requests.get("https://dolarapi.com/v1/dolares", timeout=4)
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -800,7 +802,7 @@ def ver_dolar():
 @app.get("/mercado/resumen")
 def ver_resumen_mercado():
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=5)
+        r = requests.get("https://dolarapi.com/v1/dolares", timeout=4)
         dolares = r.json() if r.status_code == 200 else []
         precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
         mayorista = precios.get("mayorista") or precios.get("oficial", 1)
@@ -821,7 +823,7 @@ def ver_resumen_mercado():
 @app.get("/indec/ipc")
 def ver_indec_ipc():
     try:
-        r = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=5)
+        r = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=4)
         if r.status_code == 200:
             puntos = r.json().get("data", [])
             return [{"fecha": p[0], "indice_ipc": float(p[1])} for p in puntos if p[1] is not None]
