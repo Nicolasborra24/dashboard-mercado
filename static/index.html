@@ -6,13 +6,17 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Financiero Argentino</title>
+  <title>Monitor Maestro De Mercado</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Web Component Oficial de TradingView Heatmap -->
+  <script type="module" src="https://widgets.tradingview-widget.com/w/es/tv-heatmap.js"></script>
+
   <style>
     body {
       background-color: #030712;
@@ -26,27 +30,11 @@
 
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(3, 7, 18, 0.6);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(14, 116, 144, 0.5);
-      border-radius: 9999px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(6, 182, 212, 0.8);
-      box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
-    }
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(14, 116, 144, 0.5) rgba(3, 7, 18, 0.6);
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.6); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: rgba(14, 116, 144, 0.5); border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.8); box-shadow: 0 0 8px rgba(34, 211, 238, 0.6); }
+    * { scrollbar-width: thin; scrollbar-color: rgba(14, 116, 144, 0.5) rgba(3, 7, 18, 0.6); }
 
     .neon-card {
       background: linear-gradient(180deg, rgba(12, 22, 42, 0.75) 0%, rgba(5, 10, 22, 0.90) 100%);
@@ -319,16 +307,6 @@
       { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
       { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
     ];
-
-    const CURVAS_INFO = {
-      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
-    };
 
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
@@ -657,7 +635,7 @@
         return;
       }
 
-      // ----------------- VISTA CRIPTO (CON MAPA DE CALOR CRIPTO EN VIVO) -----------------
+      // ----------------- VISTA CRIPTO (CON WEB COMPONENT OFICIAL DE TRADINGVIEW) -----------------
       if (categoriaActiva === "cripto") {
         const items = datosGlobales.cripto || [];
         const cfgHeader = CONFIG_SECCIONES.cripto;
@@ -671,22 +649,17 @@
               </div>
             </section>
 
-            <!-- Mapa de Calor Criptomonedas TradingView Live -->
+            <!-- Mapa de Calor Criptomonedas TradingView Live Web Component -->
             <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
               <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i class="fa-brands fa-bitcoin text-amber-400 text-sm"></i>
                   <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor Criptomonedas — Mercado Global</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">Tamaño por Capitalización • Rendimiento 24h en Vivo</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Top Market Cap</span>
               </div>
-              <div class="w-full h-[580px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <iframe 
-                  src="https://s.tradingview.com/embed-widget/crypto-coins-heatmap/?locale=es#%7B%22dataSource%22%3A%22Crypto%22%2C%22blockSize%22%3A%22market_cap_calc%22%2C%22blockColor%22%3A%22change%22%2C%22colorTheme%22%3A%22dark%22%2C%22hasTopBar%22%3Atrue%2C%22isDataSetEnabled%22%3Atrue%2C%22isZoomEnabled%22%3Atrue%2C%22hasSymbolTooltip%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%7D" 
-                  class="w-full h-full border-0"
-                  loading="lazy"
-                  title="Mapa de Calor Cripto TradingView">
-                </iframe>
+              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
+                <tv-heatmap heatmap-type="crypto" grouping="no_group" block-size="market_cap_calc" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </section>
           </div>
@@ -694,7 +667,7 @@
         return;
       }
 
-      // ----------------- VISTA DE DÓLAR Y BRECHAS CON 6 TARJETAS Y BANDAS -----------------
+      // ----------------- VISTA DE DÓLAR Y BRECHAS -----------------
       if (categoriaActiva === "dolar_y_cambiario") {
         const rawItems = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
 
@@ -918,7 +891,7 @@
         return;
       }
 
-      // ----------------- VISTA DE ÍNDICES Y SECTORES (MAPAS DE CALOR EN VIVO DE TRADINGVIEW) -----------------
+      // ----------------- VISTA DE ÍNDICES Y SECTORES CON WEB COMPONENTS OFICIALES DE TRADINGVIEW -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
@@ -941,7 +914,7 @@
 
         const cfgHeader = CONFIG_SECCIONES.indices;
 
-        // Mapas de Calor interactivos y en vivo de TradingView
+        // Renderizado del mapa de calor utilizando el Web Component nativo exacto provisto por TradingView
         let mapaCalorHtml = "";
         if (subIndiceActivo === "argentina") {
           mapaCalorHtml = `
@@ -949,17 +922,12 @@
               <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (BYMA / S&P Merval)</h3>
+                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — S&P Merval (BCBAIMV)</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Stream • Tamaño por Cap. Bursátil</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • BCBA</span>
               </div>
-              <div class="w-full h-[540px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <iframe 
-                  src="https://s.tradingview.com/embed-widget/stock-heatmap/?locale=es#%7B%22dataSource%22%3A%22AllARG%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22blockColor%22%3A%22change%22%2C%22grouping%22%3A%22sector%22%2C%22colorTheme%22%3A%22dark%22%2C%22hasTopBar%22%3Atrue%2C%22isDataSetEnabled%22%3Atrue%2C%22isZoomEnabled%22%3Atrue%2C%22hasSymbolTooltip%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%7D" 
-                  class="w-full h-full border-0"
-                  loading="lazy"
-                  title="Mapa de Calor Acciones Argentina TradingView">
-                </iframe>
+              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
+                <tv-heatmap heatmap-type="stock" data-source="BCBAIMV" grouping="sector" block-size="market_cap_basic" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </div>
           `;
@@ -969,17 +937,12 @@
               <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 Wall Street</h3>
+                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3>
                 </div>
-                <span class="text-[11px] font-mono text-slate-400">Agrupado por Sector • Tamaño por Market Cap • TradingView Live</span>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Wall Street</span>
               </div>
-              <div class="w-full h-[540px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <iframe 
-                  src="https://s.tradingview.com/embed-widget/stock-heatmap/?locale=es#%7B%22dataSource%22%3A%22SPX500%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22blockColor%22%3A%22change%22%2C%22grouping%22%3A%22sector%22%2C%22colorTheme%22%3A%22dark%22%2C%22hasTopBar%22%3Atrue%2C%22isDataSetEnabled%22%3Atrue%2C%22isZoomEnabled%22%3Atrue%2C%22hasSymbolTooltip%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%7D" 
-                  class="w-full h-full border-0"
-                  loading="lazy"
-                  title="S&P 500 Stock Heatmap TradingView">
-                </iframe>
+              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
+                <tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" style="width: 100%; height: 100%;"></tv-heatmap>
               </div>
             </div>
           `;
