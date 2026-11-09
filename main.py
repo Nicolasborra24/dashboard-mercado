@@ -204,7 +204,7 @@ INDICES_BASE_MEMORIA = [
     {"variable": "SPDR_XLP", "descripcion": "Consumo Básico (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
     {"variable": "SPDR_XLU", "descripcion": "Servicios Públicos (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
     {"variable": "SPDR_XLB", "descripcion": "Materiales (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
-    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
+    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0.62%", "valor": 43.10, "fecha": "Cierre"},
     {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
 ]
 
@@ -244,7 +244,7 @@ CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
 
 def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
-    h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    h = {"User-Agent": "Mozilla/5.0"}
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
         r = requests.get(url, headers=h, timeout=3.5)
@@ -339,6 +339,36 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     except Exception:
         pass
     return items
+
+def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    now = datetime.utcnow()
+    nombre_mes = f"{meses_es[now.month - 1]} {now.year}"
+    precio_fut = 1570.50
+    var_str = "-0,19%"
+
+    try:
+        h = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get("https://www.dolarito.ar/", headers=h, timeout=4)
+        if r.status_code == 200:
+            m = re.search(r"dolar futuro[^\d]*([\d\.,]+)", r.text, re.IGNORECASE)
+            if m:
+                val = normalizar_valor(m.group(1))
+                if val and val > 1000:
+                    precio_fut = val
+    except Exception:
+        pass
+
+    return {
+        "variable": "DOLAR_FUTURO",
+        "descripcion": f"DÓLAR FUTURO ({nombre_mes.upper()})",
+        "categoria": "dolar_y_cambiario",
+        "valor_formateado": f"${precio_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "variacion": var_str,
+        "valor": precio_fut,
+        "fecha": f"Vto. {nombre_mes}"
+    }
 
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     items = []
@@ -502,8 +532,8 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
             dm = r_m.json()
             vm = float(dm.get("venta") or dm.get("compra") or d_may)
             if vm > 0: d_may = vm
-    except Exception as e:
-        print(f"[Bandas Dolarito Error] {e}")
+    except Exception:
+        pass
 
     return {
         "banda_inferior": round(b_inf, 2),
@@ -546,7 +576,7 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=9) as executor:
+            with ThreadPoolExecutor(max_workers=10) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
@@ -554,6 +584,7 @@ def worker_refresco_continuo():
                 f_usa = executor.submit(obtener_datos_mercado_usa)
                 f_inf_imp = executor.submit(fetch_inflacion_implicita_sjb)
                 f_bandas = executor.submit(fetch_bandas_dolarito)
+                f_futuro = executor.submit(obtener_datos_dolar_futuro)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -564,6 +595,7 @@ def worker_refresco_continuo():
                 res_usa = f_usa.result()
                 res_inf_imp = f_inf_imp.result()
                 res_bandas = f_bandas.result()
+                res_futuro = f_futuro.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -606,6 +638,9 @@ def worker_refresco_continuo():
 
             for item in res_tasas:
                 nuevo_agrupado["tasas_y_monetario"].append(item)
+
+            if res_futuro:
+                nuevo_agrupado["dolar_y_cambiario"].append(res_futuro)
 
             with CACHE_LOCK:
                 for k, v in nuevo_agrupado.items():
