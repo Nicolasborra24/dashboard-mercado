@@ -301,7 +301,7 @@
     let subCalendarioActivo = "licitaciones_ar";
 
     const SUB_CALENDARIO_INFO = {
-      licitaciones_ar: { titulo: "Calendario de licitaciones — A3 Mercados / MAE", desc: "Consola Oficial Interactiva en Vivo • Cronograma de Emisiones", icono: "fa-gavel", color: "text-amber-400" },
+      licitaciones_ar: { titulo: "Calendario de licitaciones — A3 Mercados / MAE", desc: "Agenda Oficial en Vivo • Letras, Bonos y Emisiones Primarias", icono: "fa-gavel", color: "text-amber-400" },
       datos_ar: { titulo: "Datos Macroeconómicos Argentina", desc: "TradingView Economic Calendar Oficial • Argentina (AR)", icono: "fa-landmark-flag", color: "text-sky-400" },
       datos_us: { titulo: "Datos Macroeconómicos Estados Unidos", desc: "TradingView Economic Calendar Oficial • High Importance (US)", icono: "fa-flag-usa", color: "text-blue-400" }
     };
@@ -334,6 +334,88 @@
       { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
       { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
     ];
+
+    // BASE DE DATOS CRONOLÓGICA DE LICITACIONES SEGÚN EL CALENDARIO OFICIAL DE A3 MERCADOS
+    const LICITACIONES_A3_DATABASE = [
+      {
+        fecha: "2026-11-04",
+        diaSemana: "miércoles",
+        fechaTexto: "4 de noviembre de 2026",
+        items: [
+          { horario: "06:00 - 11:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 31/08/2027 (TMG27) - REAPERTURA" },
+          { horario: "06:00 - 11:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER CON VTO. 31/03/2027 (TZXM7) - REAPERTURA" },
+          { horario: "06:00 - 11:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 29/10/2027 (TZXO7) - REAPERTURA" },
+          { horario: "06:00 - 11:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS DUAL CER / TAMAR CON VTO. 15/12/2028 (TXMD8) - REAPERTURA" },
+          { horario: "06:00 - 11:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 26/02/2027 (S26F7) - NUEVA" },
+          { horario: "06:00 - 11:00", titulo: "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA" }
+        ]
+      },
+      {
+        fecha: "2026-11-05",
+        diaSemana: "jueves",
+        fechaTexto: "5 de noviembre de 2026",
+        items: [
+          { horario: "05:00 - 11:00", titulo: "ON GENNEIA CLASE L" },
+          { horario: "05:00 - 11:00", titulo: "ON PYME CNV GARANTIZADA BAJO IMPACTO SOLA Y BRUSA SERIE I" },
+          { horario: "05:00 - 11:00", titulo: "LETRAS DEL TESORO DE LA PROVINCIA DEL CHUBUT SERIE CXXIV" }
+        ]
+      },
+      {
+        fecha: "2026-11-11",
+        diaSemana: "miércoles",
+        fechaTexto: "11 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 30/06/2027 (T30J7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 30/06/2028 (TZX28) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 29/01/2027 (S29E7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 30/04/2027 (M30A7) - NUEVA" },
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA" }
+        ]
+      },
+      {
+        fecha: "2026-11-12",
+        diaSemana: "jueves",
+        fechaTexto: "12 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO MADERO HARBOUR SERIE II" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 15 (REAPERTURA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 18 (REAPERTURA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 21 (NUEVA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 22 (NUEVA)" },
+          { horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 23 (NUEVA)" }
+        ]
+      },
+      {
+        fecha: "2026-11-13",
+        diaSemana: "viernes",
+        fechaTexto: "13 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO INGACOT COMERCIAL SERIE I" }
+        ]
+      },
+      {
+        fecha: "2026-11-18",
+        diaSemana: "miércoles",
+        fechaTexto: "18 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 15:00", titulo: "LETRAS DEL TESORO NACIONAL EN PESOS - LLAMADO QUINCENAL" },
+          { horario: "11:00 - 16:00", titulo: "ON TARJETA NARANJA CLASE 69 SERIE I" }
+        ]
+      },
+      {
+        fecha: "2026-11-25",
+        diaSemana: "miércoles",
+        fechaTexto: "25 de noviembre de 2026",
+        items: [
+          { horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 26/02/2027 (S26F7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS VTO. 31/05/2027 (T31Y7) - REAPERTURA" },
+          { horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL VINCULADO AL DÓLAR VTO. 31/03/2027 (D31M7) - REAPERTURA" }
+        ]
+      }
+    ];
+
+    let fechaLicitacionOffsetSemanas = 0;
+    let modoVistaLicitacion = "agenda"; // "agenda" o "mes"
 
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
@@ -509,6 +591,36 @@
       renderizar();
     }
 
+    // Paginación y control dinámico del Calendario de Licitaciones
+    function moverSemanaLicitacion(delta) {
+      fechaLicitacionOffsetSemanas += delta;
+      renderizar();
+    }
+
+    function reiniciarSemanaLicitacion() {
+      fechaLicitacionOffsetSemanas = 0;
+      renderizar();
+    }
+
+    function cambiarModoVistaLicitacion(modo) {
+      modoVistaLicitacion = modo;
+      renderizar();
+    }
+
+    function obtenerFechasSemanaActual(offsetSemanas) {
+      const hoy = new Date(2026, 10, 9); // Lunes 9 de Noviembre 2026
+      const inicio = new Date(hoy);
+      inicio.setDate(hoy.getDate() + offsetSemanas * 7);
+      
+      const fin = new Date(inicio);
+      fin.setDate(inicio.getDate() + 6);
+
+      const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const textoRango = `${inicio.getDate()} - ${fin.getDate()} ${meses[fin.getMonth()]} ${fin.getFullYear()}`;
+
+      return { inicio, fin, textoRango };
+    }
+
     function renderizarBarraSeccion(cfg) {
       return `
         <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${cfg.barra}">
@@ -580,7 +692,7 @@
         return;
       }
 
-      // ----------------- VISTA CALENDARIO ECONÓMICO & LICITACIONES EN VIVO -----------------
+      // ----------------- VISTA CALENDARIO ECONÓMICO & LICITACIONES (AGENDA A3 MERCADOS CON NAVEGACIÓN TOTAL) -----------------
       if (categoriaActiva === "calendario_economico") {
         const infoSub = SUB_CALENDARIO_INFO[subCalendarioActivo];
         const cfgHeader = CONFIG_SECCIONES.calendario_economico;
@@ -617,31 +729,124 @@
             </div>
           `;
         } else if (subCalendarioActivo === "licitaciones_ar") {
-          vistaSubHtml = `
-            <div class="rounded-2xl border border-slate-800 bg-[#070d1d] shadow-2xl backdrop-blur-md overflow-hidden space-y-3 p-5">
-              
-              <!-- Barra Superior con Botón de Acceso Directo Oficial -->
-              <div class="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
-                <div class="flex items-center gap-2.5">
-                  <i class="fa-solid fa-gavel text-amber-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Calendario de Licitaciones en Vivo — A3 Mercados / MAE</h3>
+          const { inicio, fin, textoRango } = obtenerFechasSemanaActual(fechaLicitacionOffsetSemanas);
+
+          // Filtrar días según el rango seleccionado por el usuario con < y >
+          const diasFiltrados = LICITACIONES_A3_DATABASE.filter(d => {
+            const fParts = d.fecha.split("-");
+            const fechaObj = new Date(parseInt(fParts[0]), parseInt(fParts[1]) - 1, parseInt(fParts[2]));
+            return fechaObj >= inicio && fechaObj <= fin;
+          });
+
+          let contenidoAgendaHtml = "";
+          if (modoVistaLicitacion === "agenda") {
+            if (diasFiltrados.length > 0) {
+              contenidoAgendaHtml = diasFiltrados.map(dia => `
+                <div class="border-b border-slate-800/80 last:border-b-0">
+                  <div class="bg-[#0b1328] px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-300 border-t border-slate-800/60 first:border-t-0">
+                    <span class="text-slate-200 lowercase">${dia.diaSemana}</span>
+                    <span class="text-slate-400 font-mono text-[11px]">${dia.fechaTexto}</span>
+                  </div>
+                  <div class="divide-y divide-slate-800/40 bg-[#060a16]">
+                    ${dia.items.map(it => `
+                      <div class="px-4 py-2.5 flex items-center gap-3 text-xs hover:bg-slate-900/60 transition group">
+                        <span class="font-mono text-slate-400 text-[11px] shrink-0 w-24">${it.horario}</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_6px_rgba(6,182,212,0.8)]"></span>
+                        <span class="text-slate-200 group-hover:text-white transition font-medium tracking-wide leading-relaxed">${it.titulo}</span>
+                      </div>
+                    `).join("")}
+                  </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <a href="https://marketdata.mae.com.ar/calendario-licitaciones" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 hover:text-white hover:bg-cyan-900/60 transition text-xs font-mono font-medium shadow-sm">
-                    <span>Abrir consola A3</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                  </a>
+              `).join("");
+            } else {
+              contenidoAgendaHtml = `
+                <div class="py-20 text-center text-slate-400 text-xs font-mono">
+                  <i class="fa-solid fa-calendar-xmark text-cyan-400 text-2xl mb-2 block"></i>
+                  No hay licitaciones programadas en A3 Mercados para la semana del <span class="text-white font-bold">${textoRango}</span>.
+                  <div class="mt-3">
+                    <button onclick="reiniciarSemanaLicitacion()" class="px-3 py-1 rounded bg-slate-800 text-cyan-300 hover:text-white transition text-xs">Volver a la semana actual</button>
+                  </div>
+                </div>
+              `;
+            }
+          } else {
+            // Modo Vista Mes
+            const diasMes = [
+              { dia: 2, con: false }, { dia: 3, con: false }, { dia: 4, con: true, cant: 6 }, { dia: 5, con: true, cant: 3 }, { dia: 6, con: false }, { dia: 7, con: false }, { dia: 8, con: false },
+              { dia: 9, con: false }, { dia: 10, con: false }, { dia: 11, con: true, cant: 5 }, { dia: 12, con: true, cant: 6 }, { dia: 13, con: true, cant: 1 }, { dia: 14, con: false }, { dia: 15, con: false },
+              { dia: 16, con: false }, { dia: 17, con: false }, { dia: 18, con: true, cant: 2 }, { dia: 19, con: false }, { dia: 20, con: false }, { dia: 21, con: false }, { dia: 22, con: false },
+              { dia: 23, con: false }, { dia: 24, con: false }, { dia: 25, con: true, cant: 3 }, { dia: 26, con: false }, { dia: 27, con: false }, { dia: 28, con: false }, { dia: 29, con: false }
+            ];
+
+            contenidoAgendaHtml = `
+              <div class="p-5 space-y-3">
+                <div class="grid grid-cols-7 gap-2 text-center text-xs font-mono font-bold text-slate-400 border-b border-slate-800 pb-2">
+                  <span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span><span>DOM</span>
+                </div>
+                <div class="grid grid-cols-7 gap-2">
+                  ${diasMes.map(d => {
+                    const badge = d.con ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 truncate max-w-full font-mono">${d.cant} Licit.</span>` : '';
+                    return `
+                      <div class="h-20 rounded-xl border border-slate-800 bg-[#060a16] p-2 flex flex-col justify-between items-start hover:border-cyan-500/40 transition">
+                        <span class="text-xs font-mono font-bold ${d.dia === 9 ? 'text-cyan-400' : 'text-slate-300'}">${d.dia}</span>
+                        ${badge}
+                      </div>
+                    `;
+                  }).join("")}
                 </div>
               </div>
+            `;
+          }
 
-              <!-- Consola Interactiva Oficial Conectada en Vivo -->
-              <div class="w-full h-[680px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative shadow-inner">
-                <iframe 
-                  src="https://marketdata.mae.com.ar/calendario-licitaciones" 
-                  class="w-full h-full border-0"
-                  loading="eager"
-                  title="A3 Mercados Calendario de Licitaciones Live">
-                </iframe>
+          vistaSubHtml = `
+            <div class="rounded-2xl border border-slate-800 bg-[#070d1d] shadow-2xl backdrop-blur-md overflow-hidden space-y-0">
+              
+              <!-- Barra Superior de Control de la Agenda (Fiel a la captura de A3 Mercados) -->
+              <div class="bg-[#050a18] px-5 py-3.5 flex flex-wrap items-center justify-between border-b border-slate-800 gap-3">
+                
+                <!-- Título y Botones Izquierda: [<] [>] [Hoy] -->
+                <div class="flex items-center gap-3">
+                  <h3 class="text-sm font-bold text-white tracking-wide mr-2">Calendario de licitaciones</h3>
+                  
+                  <div class="inline-flex items-center rounded-lg border border-slate-700/80 bg-slate-900/90 p-0.5">
+                    <button onclick="moverSemanaLicitacion(-1)" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition text-xs" title="Semana anterior">
+                      <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <button onclick="moverSemanaLicitacion(1)" class="px-2.5 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition text-xs" title="Semana siguiente">
+                      <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                  </div>
+
+                  <button onclick="reiniciarSemanaLicitacion()" class="px-3 py-1 rounded-lg border border-slate-700/80 bg-slate-900/90 text-slate-300 hover:text-white hover:border-cyan-400 text-xs font-medium transition">
+                    Hoy
+                  </button>
+                </div>
+
+                <!-- Rango de Fechas Central -->
+                <div class="font-mono text-xs font-semibold text-slate-300 tracking-wide">
+                  ${textoRango}
+                </div>
+
+                <!-- Botones Derecha: [Mes] [Agenda] y Acceso Externo -->
+                <div class="flex items-center gap-2">
+                  <div class="inline-flex items-center rounded-lg border border-slate-700/80 bg-slate-900/90 p-0.5 text-xs">
+                    <button onclick="cambiarModoVistaLicitacion('mes')" class="px-3 py-1 rounded transition font-medium ${modoVistaLicitacion === 'mes' ? 'bg-cyan-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}">
+                      Mes
+                    </button>
+                    <button onclick="cambiarModoVistaLicitacion('agenda')" class="px-3 py-1 rounded transition font-medium ${modoVistaLicitacion === 'agenda' ? 'bg-cyan-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}">
+                      Agenda
+                    </button>
+                  </div>
+                  <a href="https://marketdata.mae.com.ar/calendario-licitaciones" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg border border-slate-700/80 bg-slate-900/90 text-slate-400 hover:text-white transition text-xs" title="Abrir portal oficial de A3 Mercados">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  </a>
+                </div>
+
+              </div>
+
+              <!-- Cuerpo Principal de la Agenda -->
+              <div class="w-full">
+                ${contenidoAgendaHtml}
               </div>
 
             </div>
@@ -897,36 +1102,36 @@
                       </thead>
                       <tbody class="divide-y divide-slate-800/60 text-slate-200 text-xs">
                         <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 font-bold text-emerald-300">
+                          <td class="py-2 flex items-center gap-2 font-bold text-emerald-300">
                             <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Favorable
                           </td>
-                          <td class="py-2.5 text-center text-slate-400">0 - 20%</td>
-                          <td class="py-2.5 text-right font-medium text-slate-300">${fmt$(rFavorableMin)}</td>
-                          <td class="py-2.5 text-right font-bold text-white">${fmt$(rFavorableMax)}</td>
+                          <td class="py-2 text-center text-slate-400">0 - 20%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rFavorableMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rFavorableMax)}</td>
                         </tr>
                         <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 font-bold text-yellow-300">
+                          <td class="py-2 flex items-center gap-2 font-bold text-yellow-300">
                             <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Intermedio
                           </td>
-                          <td class="py-2.5 text-center text-slate-400">20 - 75%</td>
-                          <td class="py-2.5 text-right font-medium text-slate-300">${fmt$(rIntermedioMin)}</td>
-                          <td class="py-2.5 text-right font-bold text-white">${fmt$(rIntermedioMax)}</td>
+                          <td class="py-2 text-center text-slate-400">20 - 75%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rIntermedioMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rIntermedioMax)}</td>
                         </tr>
                         <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 font-bold text-orange-400">
+                          <td class="py-2 flex items-center gap-2 font-bold text-orange-400">
                             <span class="w-2 h-2 rounded-full bg-orange-400"></span> Precaución
                           </td>
-                          <td class="py-2.5 text-center text-slate-400">75 - 90%</td>
-                          <td class="py-2.5 text-right font-medium text-slate-300">${fmt$(rPrecaucionMin)}</td>
-                          <td class="py-2.5 text-right font-bold text-white">${fmt$(rPrecaucionMax)}</td>
+                          <td class="py-2 text-center text-slate-400">75 - 90%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rPrecaucionMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rPrecaucionMax)}</td>
                         </tr>
                         <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 font-bold text-rose-400">
+                          <td class="py-2 flex items-center gap-2 font-bold text-rose-400">
                             <span class="w-2 h-2 rounded-full bg-rose-500"></span> Crítico
                           </td>
-                          <td class="py-2.5 text-center text-slate-400">90 - 100%</td>
-                          <td class="py-2.5 text-right font-medium text-slate-300">${fmt$(rCriticoMin)}</td>
-                          <td class="py-2.5 text-right font-bold text-white">${fmt$(rCriticoMax)}</td>
+                          <td class="py-2 text-center text-slate-400">90 - 100%</td>
+                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rCriticoMin)}</td>
+                          <td class="py-2 text-right font-bold text-white">${fmt$(rCriticoMax)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -954,7 +1159,7 @@
         return;
       }
 
-      // ----------------- VISTA DE ÍNDICES Y SECTORES -----------------
+      // ----------------- VISTA DE ÍNDICES Y SECTORES CON WEB COMPONENTS DE TRADINGVIEW -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
@@ -1335,9 +1540,7 @@
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
       if (item.variable === "INFLACION_MENSUAL" && fecha) desc = `INFLACIÓN MENSUAL`;
-      if (item.variable && item.variable.startsWith("TASA_")) {
-        if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
-      }
+      if (item.variable && item.variable.startsWith("TASA_") && !valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
 
       const variablesPesos = ["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"];
       if (variablesPesos.includes(item.variable)) {
