@@ -225,6 +225,7 @@ CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {
     "banda_superior": 1974.20,
     "dolar_mayorista": 1545.50
 }
+CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
@@ -426,7 +427,6 @@ def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
         resultados = list(ex.map(fetch_metal_worker, METALES_TICKERS_TOTAL))
     return [r for r in resultados if r]
 
-# EXTRACCIÓN EN VIVO DE PETRÓLEO Y ENERGÍA
 PETROLEO_TICKERS_TOTAL = [
     ("CL=F", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 71.24),
     ("BZ=F", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.88),
@@ -472,6 +472,21 @@ def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
     with ThreadPoolExecutor(max_workers=6) as ex:
         resultados = list(ex.map(fetch_petroleo_worker, PETROLEO_TICKERS_TOTAL))
     return [r for r in resultados if r]
+
+def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
+    url = "https://api.marketdata.mae.com.ar/api/mercado/licitaciones"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    try:
+        r = requests.get(url, headers=headers, timeout=4.0)
+        if r.status_code == 200:
+            data = r.json()
+            if isinstance(data, list):
+                return data
+            elif isinstance(data, dict):
+                return data.get("licitaciones") or data.get("data") or [data]
+    except Exception as e:
+        print(f"[MAE Licitaciones Error] {e}")
+    return []
 
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     items = []
@@ -645,12 +660,12 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
     }
 
 def worker_refresco_continuo():
-    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, ULTIMA_ACTUALIZACION
+    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=14) as executor:
+            with ThreadPoolExecutor(max_workers=15) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
@@ -661,6 +676,7 @@ def worker_refresco_continuo():
                 f_futuro = executor.submit(obtener_datos_dolar_futuro)
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
                 f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
+                f_licit = executor.submit(fetch_licitaciones_mae)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -674,6 +690,7 @@ def worker_refresco_continuo():
                 res_futuro = f_futuro.result()
                 res_metales = f_metales.result()
                 res_petroleo = f_petroleo.result()
+                res_licit = f_licit.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -684,6 +701,8 @@ def worker_refresco_continuo():
                 CACHE_INFLACION_IMPLICITA = res_inf_imp
             if res_bandas:
                 CACHE_BANDAS_CAMBIARIAS = res_bandas
+            if res_licit is not None:
+                CACHE_LICITACIONES_MAE = res_licit
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
@@ -771,6 +790,11 @@ def ver_inflacion_implicita():
 def ver_bandas():
     with CACHE_LOCK:
         return CACHE_BANDAS_CAMBIARIAS
+
+@app.get("/api/licitaciones/mae")
+def ver_licitaciones_mae():
+    with CACHE_LOCK:
+        return CACHE_LICITACIONES_MAE
 
 @app.get("/dolar")
 def ver_dolar():
