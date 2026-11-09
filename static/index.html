@@ -130,6 +130,7 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
+    <!-- Barra de Navegación de Pestañas -->
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
         <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-2xl neon-tab text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shrink-0">
@@ -421,158 +422,17 @@
       ]
     };
 
-    const CURVAS_INFO = {
-      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
-    };
-
-    const SORT_STATE = {};
-    function ordenarTabla(tablaKey, colKey) {
-      if (!SORT_STATE[tablaKey]) {
-        SORT_STATE[tablaKey] = { col: null, asc: true };
-      }
-      const st = SORT_STATE[tablaKey];
-      if (st.col === colKey) st.asc = !st.asc;
-      else { st.col = colKey; st.asc = true; }
-      
-      const destino = (datosCurvasSJB[tablaKey] && Array.isArray(datosCurvasSJB[tablaKey].tabla)) 
-        ? datosCurvasSJB[tablaKey].tabla 
-        : (TABLAS_BONOS_INTEGRAS[tablaKey] || []);
-
-      destino.sort((a, b) => {
-        const va = a[colKey] ?? -999999;
-        const vb = b[colKey] ?? -999999;
-        return st.asc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
-      });
+    // Asegurarse de que el render se ejecute SIEMPRE con respaldo garantizado
+    try {
+      cargarDatos();
+      actualizarCriptosEnVivo();
+      cargarCurvasSJB();
+      cargarInflacionImplicita();
+      cargarBandas();
+    } catch (e) {
+      console.warn("Fallback init:", e);
       renderizar();
     }
-
-    function renderTh(tablaKey, colKey, label, align = "text-center") {
-      const st = SORT_STATE[tablaKey] || { col: null, asc: true };
-      let sortIcon = '<i class="fa-solid fa-sort text-slate-600 text-[10px] opacity-40 ml-1"></i>';
-      if (st.col === colKey) {
-        sortIcon = st.asc 
-          ? '<i class="fa-solid fa-arrow-up text-cyan-400 text-[10px] ml-1 font-bold"></i>' 
-          : '<i class="fa-solid fa-arrow-down text-cyan-400 text-[10px] ml-1 font-bold"></i>';
-      }
-      return `
-        <th onclick="ordenarTabla('${tablaKey}', '${colKey}')" class="py-3 px-3 ${align} cursor-pointer select-none hover:text-white hover:bg-slate-800/60 transition group whitespace-nowrap" title="Ordenar por ${label}">
-          <div class="inline-flex items-center gap-1 ${align === 'text-right' ? 'justify-end' : align === 'text-left' ? 'justify-start' : 'justify-center'}">
-            <span class="group-hover:text-cyan-300 transition">${label}</span>
-            ${sortIcon}
-          </div>
-        </th>
-      `;
-    }
-
-    function renderFilaTerminal(valStr, type) {
-      if (!valStr || valStr === "-") return `<span class="text-slate-500 font-mono">-</span>`;
-      let bgStyle = "";
-      let textStyle = "";
-      let borderStyle = "";
-
-      if (type === "var") {
-        const strLimpia = String(valStr).replace("%", "").trim();
-        const numVal = parseFloat(strLimpia);
-        if (!isNaN(numVal) && numVal < 0) {
-          bgStyle = "background-color: rgba(136, 19, 55, 0.45);";
-          textStyle = "color: #fb7185;";
-          borderStyle = "border: 1px solid rgba(244, 63, 94, 0.4);";
-        } else if (!isNaN(numVal) && numVal > 0) {
-          bgStyle = "background-color: rgba(6, 78, 59, 0.45);";
-          textStyle = "color: #34d399;";
-          borderStyle = "border: 1px solid rgba(52, 211, 153, 0.4);";
-        } else {
-          bgStyle = "background-color: rgba(30, 41, 59, 0.5);";
-          textStyle = "color: #94a3b8;";
-          borderStyle = "border: 1px solid rgba(71, 85, 105, 0.4);";
-        }
-      } else {
-        bgStyle = "background-color: rgba(69, 36, 10, 0.45);";
-        textStyle = "color: #fde047;";
-        borderStyle = "border: 1px solid rgba(180, 83, 9, 0.35);";
-      }
-
-      return `<span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${bgStyle} ${textStyle} ${borderStyle}">${valStr}</span>`;
-    }
-
-    function crearTarjeta(item, categoria, valorOficial) {
-      if (!item) return "";
-      const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
-      let varBadge = "";
-      if (variacion.includes("+")) {
-        varBadge = `<span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]"><span>↑</span><span>${variacion}</span></span>`;
-      } else if (variacion.includes("-") || variacion.includes("−")) {
-        varBadge = `<span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]"><span>↓</span><span>${variacion}</span></span>`;
-      } else {
-        varBadge = `<span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">${variacion || "0,0%"}</span>`;
-      }
-
-      let badgeBrecha = "";
-      if (categoria === "dolar_y_cambiario" || item.categoria === "dolar_y_cambiario") {
-        if (item.variable === "DOLAR_OFICIAL") {
-          badgeBrecha = '<span class="text-[9px] uppercase font-bold text-sky-300 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded tracking-wide shadow-sm">REF</span>';
-        } else if (valorOficial && item.valor > 0) {
-          const spread = ((item.valor / valorOficial) - 1) * 100;
-          const signo = spread >= 0 ? "+" : "";
-          badgeBrecha = `<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border border-amber-500/50 bg-amber-950/40 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)]">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
-        }
-      }
-
-      let desc = String(item.descripcion || "").replace(/Â/g, "").toUpperCase().trim();
-      let valFmt = String(item.valor_formateado || item.valor || "-").replace(/Â/g, "").trim();
-      const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
-      const animFlash = FLASH_REGISTRO[item.variable] || "";
-
-      if (item.variable === "INFLACION_MENSUAL" && fecha) desc = `INFLACIÓN MENSUAL`;
-      if (item.variable && item.variable.startsWith("TASA_") && !valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
-
-      const variablesPesos = ["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"];
-      if (variablesPesos.includes(item.variable)) {
-        if (!valFmt.startsWith("$")) valFmt = `$${valFmt}`;
-      }
-
-      if (item.variable === "RIESGO_PAIS") {
-        if (!valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
-      }
-
-      return `
-        <div class="neon-card rounded-2xl p-4 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between gap-1.5">
-              <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
-              ${badgeBrecha}
-            </div>
-            <div class="mt-2">
-              <span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span>
-            </div>
-          </div>
-          <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-            ${varBadge}
-            <span class="text-slate-400 text-[10px] font-mono">${fecha}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    function filtrarCategoria(cat, ev) {
-      categoriaActiva = cat;
-      document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
-      if (ev && ev.currentTarget) ev.currentTarget.classList.add("active");
-      renderizar();
-    }
-
-    // DISPARO SEGURO DE CARGAS
-    cargarDatos();
-    actualizarCriptosEnVivo();
-    cargarCurvasSJB();
-    cargarInflacionImplicita();
-    cargarBandas();
 
     setInterval(actualizarCriptosEnVivo, 5000);
     setInterval(cargarDatos, 8000);
