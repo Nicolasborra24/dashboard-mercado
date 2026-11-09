@@ -310,7 +310,7 @@
       lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
       cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • Títulos indexados por inflación", icono: "fa-arrow-trend-up", color: "text-purple-400" },
       soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - Bopreales BCRA", desc: "Precios en USD Cable • Series 1, 2 y 3", icono: "fa-shield-halved", color: "text-emerald-400" },
+      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series 1 y 2 BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
       dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
       tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
       duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
@@ -370,13 +370,12 @@
         { ticker: "GD46", precio: 93590, var: "1.20%", tir: "12.05%", duration: 5.17, paridad: "65.26", cupon: "1.88%", vto: "2046-07-09", dias: 7182 }
       ],
       bopreales: [
-        { ticker: "BPOA7", precio: 95.40, var: "0.10%", tir: "8.40%", duration: 0.85, paridad: "95.40", cupon: "5.00%", vto: "2027-10-31", dias: 356 },
-        { ticker: "BPOB7", precio: 89.20, var: "0.15%", tir: "9.15%", duration: 1.45, paridad: "89.20", cupon: "5.00%", vto: "2027-10-31", dias: 356 },
-        { ticker: "BPOC7", precio: 83.50, var: "0.00%", tir: "10.30%", duration: 2.10, paridad: "83.50", cupon: "5.00%", vto: "2027-10-31", dias: 356 },
-        { ticker: "BPOD7", precio: 81.10, var: "-0.20%", tir: "11.20%", duration: 2.75, paridad: "81.10", cupon: "5.00%", vto: "2027-10-31", dias: 356 },
-        { ticker: "BPY26", precio: 98.40, var: "0.05%", tir: "8.10%", duration: 0.45, paridad: "98.40", cupon: "0.00%", vto: "2026-06-30" },
-        { ticker: "BPD7D", precio: 92.50, var: "0.20%", tir: "9.40%", duration: 1.30, paridad: "92.50", cupon: "3.00%", vto: "2026-05-31", dias: 568 },
-        { ticker: "BPD8D", precio: 88.70, var: "0.10%", tir: "10.10%", duration: 1.80, paridad: "88.70", cupon: "3.00%", vto: "2026-11-30", dias: 751 }
+        { ticker: "BPOA7", precio: 159750.0, var: "-1.02%", tir: "3.52%", duration: 0.71, paridad: "101.16", cupon: "2.50%", vto: "2027-10-31", dias: 356 },
+        { ticker: "BPOB7", precio: 160300.0, var: "-0.62%", tir: "3.04%", duration: 0.71, paridad: "101.51", cupon: "2.50%", vto: "2027-10-31", dias: 356 },
+        { ticker: "BPOC7", precio: 160980.0, var: "-0.46%", tir: "2.43%", duration: 0.72, paridad: "101.94", cupon: "2.50%", vto: "2027-10-31", dias: 356 },
+        { ticker: "BPOD7", precio: 160650.0, var: "-0.67%", tir: "2.72%", duration: 0.72, paridad: "101.73", cupon: "2.50%", vto: "2027-10-31", dias: 356 },
+        { ticker: "BPOA8", precio: 137800.0, var: "-4.97%", tir: "10.43%", duration: 1.78, paridad: "87.26", cupon: "1.50%", vto: "2028-10-31", dias: 722 },
+        { ticker: "BPOB8", precio: 133990.0, var: "-2.11%", tir: "12.03%", duration: 1.75, paridad: "84.85", cupon: "1.50%", vto: "2028-10-31", dias: 722 }
       ],
       dollar_linked: [
         { ticker: "D30N6", precio: 154750, var: "-0.03%", tir: "-2.23%", duration: 0.07, paridad: "99.86", cupon: "0.00%", vto: "2026-11-30", dias: 22 },
@@ -633,7 +632,6 @@
       renderizar();
     }
 
-    // ----------------- RENDERIZADOR EXACTO AL SCREENSHOT: DÍAS AL VTO vs TIR + TENDENCIA -----------------
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
@@ -641,7 +639,6 @@
       const infoCurva = CURVAS_INFO[curvaActiva];
       const listaBonos = TABLAS_BONOS[curvaActiva] || [];
 
-      // Extraer datos: X = Días al Vencimiento, Y = TIR (%)
       const puntos = listaBonos
         .map(b => {
           let yVal = null;
@@ -665,7 +662,6 @@
         chartCurvaInstance.destroy();
       }
 
-      // Regresión logarítmica para la línea roja discontinua de "Tendencia": y = a * ln(x) + b
       let lineaTendencia = [];
       if (puntos.length >= 2) {
         const n = puntos.length;
@@ -696,7 +692,6 @@
         }
       }
 
-      // Plugin personalizado para dibujar los Tickers sobre cada punto azul
       const etiquetasPlugin = {
         id: "etiquetasBonos",
         afterDatasetsDraw(chart) {
@@ -1082,7 +1077,7 @@
                   return `
                   <tr class="table-dark-row transition">
                     <td class="py-2.5 px-4 font-bold text-white tracking-wide">${b.ticker}</td>
-                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">US$ ${Number(b.precio).toFixed(2)}</td>
+                    <td class="py-2.5 px-4 text-right font-medium text-slate-200 ${fl}">$ ${Number(b.precio).toLocaleString("es-AR")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.var, "var")}</td>
                     <td class="py-2.5 px-4 text-center">${renderFilaTerminal(b.tir, "neutro")}</td>
                     <td class="py-2.5 px-4 text-center text-slate-300">${b.duration}</td>
@@ -1233,7 +1228,7 @@
                   <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
                   <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
                 </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'bopreales' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">7</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${curvaActiva === 'bopreales' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
               </button>
 
               <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
@@ -1274,7 +1269,6 @@
                 ${tablaHtml}
               </div>
 
-              <!-- Contenedor idéntico al screenshot: Título, Eje X = Días al Vto, Eje Y = TIR (%) -->
               <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
                 <div class="border-b border-slate-800/70 pb-2">
                   <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
