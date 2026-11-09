@@ -208,13 +208,13 @@ INDICES_BASE_MEMORIA = [
     {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
 ]
 
-# URLs intradiarias de SJB para cada familia de bonos
+# URLs intradiarias de SJB (Duales con parámetros ampliados de CER y DL TAMAR)
 SJB_CURVAS_URLS = {
     "bopreales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=ARS",
     "lecaps": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LECAP%20y%20BONCAP&moneda=ARS",
     "cer": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
     "soberanos": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS",
-    "duales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=DUALES&moneda=ARS",
+    "duales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=DUALES&moneda=ARS&incluir_cer_tamar=true&incluir_dl_tamar=true",
     "tamar": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LETAM&moneda=ARS",
     "dollar_linked": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=D%C3%B3lar%20Linked&moneda=ARS"
 }
@@ -507,7 +507,6 @@ def worker_refresco_continuo():
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
                 f_usa = executor.submit(obtener_datos_mercado_usa)
 
-                # Consultar las 7 curvas intradiarias de SJB concurrentemente
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
                 res_ind = f_ind.result()
@@ -592,7 +591,6 @@ def ver_bcra(formato: str = Query("agrupado")):
 
 @app.get("/api/bonos/curvas-sjb")
 def ver_curvas_sjb():
-    """Devuelve las 7 tablas intradiarias y gráficos procesados por SJB"""
     with CACHE_LOCK:
         return CACHE_CURVAS_SJB
 
