@@ -24,11 +24,8 @@
       letter-spacing: -0.011em;
     }
 
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* Scrollbar personalizada oscura y traslúcida */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -217,7 +214,6 @@
   </main>
 
   <script>
-    // Configuración estética de encabezados para TODAS las secciones
     const CONFIG_SECCIONES = {
       home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-gauge-high", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-landmark", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
@@ -234,6 +230,7 @@
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", granos: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" }
     };
 
+    // BLOQUES HOME CON RIESGO E ÍNDICES REORGANIZADOS, Y TASAS Y COMMODITIES SEPARADOS
     const BLOQUES_HOME = [
       {
         id: "mercados_divisas",
@@ -253,17 +250,29 @@
         iconoIzq: "fa-solid fa-shield-halved text-purple-300",
         badgeBg: "bg-purple-500/20 border-purple-400/40 text-purple-300",
         iconoDer: "fa-solid fa-chart-simple text-purple-400/80",
-        variables: ["RIESGO_PAIS", "INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "MERVAL_ARS", "MERVAL_USD"]
+        // Fila 1: Merval en Pesos, Merval en USD, Riesgo País
+        // Fila 2: VIX, Nasdaq 100, S&P 500
+        variables: ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS", "INDICE_VIX", "INDICE_NASDAQ", "INDICE_SP500"]
       },
       {
-        id: "tasas_commodities",
-        titulo: "TASAS & COMMODITIES",
+        id: "tasas_monetario",
+        titulo: "TASAS & MONETARIO (BCRA)",
+        estiloBarra: "section-bar-cyan",
+        estiloFlare: "glow-flare-cyan",
+        iconoIzq: "fa-solid fa-landmark text-sky-300",
+        badgeBg: "bg-sky-500/20 border-sky-400/40 text-sky-300",
+        iconoDer: "fa-solid fa-percent text-sky-400/80",
+        variables: ["TASA_TAMAR", "TASA_BADLAR", "TASA_CALL"]
+      },
+      {
+        id: "commodities_energia",
+        titulo: "COMMODITIES & ENERGÍA",
         estiloBarra: "section-bar-amber",
         estiloFlare: "glow-flare-amber",
-        iconoIzq: "fa-solid fa-percent text-amber-300",
+        iconoIzq: "fa-solid fa-coins text-amber-300",
         badgeBg: "bg-amber-500/20 border-amber-400/40 text-amber-300",
-        iconoDer: "fa-solid fa-coins text-amber-400/80",
-        variables: ["TASA_TAMAR", "TASA_BADLAR", "TASA_CALL", "AGRO_SOJA", "METALES_XAU", "PETROLEO_WTI"]
+        iconoDer: "fa-solid fa-wheat-awn text-amber-400/80",
+        variables: ["AGRO_SOJA", "METALES_XAU", "PETROLEO_WTI"]
       }
     ];
 
@@ -689,7 +698,6 @@
       renderizar();
     }
 
-    // Encabezado estilizado universal con gradiente y neón
     function renderizarBarraSeccion(cfg) {
       return `
         <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${cfg.barra}">
@@ -1515,7 +1523,6 @@
                   <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
                 </div>
                 
-                <!-- Contenedor con scrollbar estilizada y oscura -->
                 <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                   ${tablaHtml}
                 </div>
@@ -1569,7 +1576,6 @@
         return;
       }
 
-      // TODAS LAS DEMÁS CATEGORÍAS (Cripto, Monedas, Tasas, Metales, Petróleo, Macro, Micro, Agro)
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const cfgHeader = CONFIG_SECCIONES[categoriaActiva] || {
         titulo: categoriaActiva.replace(/_/g, " ").toUpperCase(),
