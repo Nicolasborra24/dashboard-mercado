@@ -8,6 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Financiero Argentino</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -25,7 +26,6 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Tarjetas estilo Glassmorphic Neón */
     .neon-card {
       background: linear-gradient(180deg, rgba(12, 22, 42, 0.75) 0%, rgba(5, 10, 22, 0.90) 100%);
       border: 1px solid rgba(56, 189, 248, 0.22);
@@ -39,7 +39,6 @@
       transform: translateY(-1px);
     }
 
-    /* Pestañas de Navegación */
     .neon-tab {
       background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 14, 28, 0.9) 100%);
       border: 1px solid rgba(71, 85, 105, 0.45);
@@ -58,7 +57,6 @@
       color: #ffffff;
     }
 
-    /* Barras de Título Temáticas de Sección */
     .section-bar-cyan {
       background: linear-gradient(90deg, rgba(6, 182, 212, 0.35) 0%, rgba(8, 51, 68, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
       border: 1px solid rgba(34, 211, 238, 0.55);
@@ -75,7 +73,6 @@
       box-shadow: 0 0 18px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
-    /* Línea con flare de luz extendido */
     .glow-flare-cyan {
       background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%);
     }
@@ -86,7 +83,6 @@
       background: linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(245, 158, 11, 0.3) 60%, transparent 100%);
     }
 
-    /* Destellos de precio */
     @keyframes flash-up {
       0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); }
       100% { color: #ffffff; text-shadow: none; }
@@ -101,7 +97,6 @@
 </head>
 <body class="text-slate-100 antialiased min-h-screen pb-10">
 
-  <!-- Header -->
   <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-black shadow-[0_0_12px_rgba(6,182,212,0.3)]">
@@ -123,18 +118,15 @@
     </div>
   </header>
 
-  <!-- Navigation -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-6">
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
-        <!-- HOME Button -->
         <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-2xl neon-tab text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shrink-0">
           <i class="fa-solid fa-house text-base"></i>
           <span>HOME</span>
         </button>
 
         <div class="flex flex-col gap-1.5 flex-1 w-full text-[11px]">
-          <!-- Fila 1 (6 secciones) -->
           <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
@@ -162,7 +154,6 @@
             </button>
           </div>
 
-          <!-- Fila 2 (6 secciones) -->
           <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
@@ -193,7 +184,6 @@
       </div>
     </div>
 
-    <!-- Contenedor General Dinámico -->
     <div id="dashboard-content" class="space-y-7">
       <div class="flex justify-center items-center py-24 text-slate-500">
         <i class="fa-solid fa-spinner fa-spin text-3xl text-cyan-400"></i>
@@ -218,7 +208,6 @@
       commodities_agro_energia: { titulo: "Commodities, Agro y Energía", icono: "fa-wheat-awn" }
     };
 
-    // Bloques del HOME exactamente como en la imagen
     const BLOQUES_HOME = [
       {
         id: "mercados_divisas",
@@ -228,14 +217,7 @@
         iconoIzq: "fa-solid fa-chart-line text-cyan-300",
         badgeBg: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300",
         iconoDer: "fa-solid fa-globe text-cyan-400/80",
-        variables: [
-          "MONEDA_DXY",
-          "CRIPTO_BTC",
-          "DOLAR_OFICIAL",
-          "DOLAR_MEP",
-          "DOLAR_CCL",
-          "INFLACION_MENSUAL"
-        ]
+        variables: ["MONEDA_DXY", "CRIPTO_BTC", "DOLAR_OFICIAL", "DOLAR_MEP", "DOLAR_CCL", "INFLACION_MENSUAL"]
       },
       {
         id: "riesgo_indices",
@@ -245,14 +227,7 @@
         iconoIzq: "fa-solid fa-shield-halved text-purple-300",
         badgeBg: "bg-purple-500/20 border-purple-400/40 text-purple-300",
         iconoDer: "fa-solid fa-chart-simple text-purple-400/80",
-        variables: [
-          "RIESGO_PAIS",
-          "INDICE_SP500",
-          "INDICE_NASDAQ",
-          "INDICE_VIX",
-          "MERVAL_ARS",
-          "MERVAL_USD"
-        ]
+        variables: ["RIESGO_PAIS", "INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "MERVAL_ARS", "MERVAL_USD"]
       },
       {
         id: "tasas_commodities",
@@ -262,14 +237,7 @@
         iconoIzq: "fa-solid fa-percent text-amber-300",
         badgeBg: "bg-amber-500/20 border-amber-400/40 text-amber-300",
         iconoDer: "fa-solid fa-coins text-amber-400/80",
-        variables: [
-          "TASA_TAMAR",
-          "TASA_BADLAR",
-          "TASA_CALL",
-          "AGRO_SOJA",
-          "METALES_XAU",
-          "PETROLEO_WTI"
-        ]
+        variables: ["TASA_TAMAR", "TASA_BADLAR", "TASA_CALL", "AGRO_SOJA", "METALES_XAU", "PETROLEO_WTI"]
       }
     ];
 
@@ -339,13 +307,13 @@
     ];
 
     const CURVAS_INFO = {
-      lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva Bonos CER (Ajustables por Inflación)", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva Soberana en Dólares (Globales y Bonares)", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)", desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)", desc: "Precios en ARS • Cobertura cambiaria oficial", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva Tasa Flotante TAMAR y Badlar", desc: "Precios en ARS • Bonos Soberanos a Tasa Variable TAMAR / Badlar", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva Bonos Duales y Cupón Creciente", desc: "Precios en ARS • Títulos indexados y cupón creciente", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
+      lecaps: { titulo: "Curva Lecaps y Boncaps (Tasa Fija en Pesos)", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400", hexColor: "#f59e0b", ejeY: "TIR (%)" },
+      cer: { titulo: "Curva Bonos CER (Ajustables por Inflación)", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400", hexColor: "#a855f7", ejeY: "TIR Real (%)" },
+      soberanos: { titulo: "Curva Soberana en Dólares (Globales y Bonares)", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400", hexColor: "#06b6d4", ejeY: "TIR USD (%)" },
+      bopreales: { titulo: "Curva Bopreales BCRA (Series 1, 2 y 3)", desc: "Precios en USD Cable • Bonos de Reconstrucción BCRA", icono: "fa-shield-halved", color: "text-emerald-400", hexColor: "#10b981", ejeY: "TIR USD (%)" },
+      dollar_linked: { titulo: "Curva Bonos Dollar Linked (Ajustados al TC Mayorista A3500)", desc: "Precios en ARS • Cobertura cambiaria oficial", icono: "fa-link", color: "text-emerald-400", hexColor: "#34d399", ejeY: "TIR (%)" },
+      tamar: { titulo: "Curva Tasa Flotante TAMAR y Badlar", desc: "Precios en ARS • Bonos Soberanos a Tasa Variable TAMAR / Badlar", icono: "fa-chart-simple", color: "text-sky-400", hexColor: "#38bdf8", ejeY: "TIR (%)" },
+      duales: { titulo: "Curva Bonos Duales y Cupón Creciente", desc: "Precios en ARS • Títulos indexados y cupón creciente", icono: "fa-arrows-split-up-and-left", color: "text-rose-400", hexColor: "#f43f5e", ejeY: "TIR (%)" }
     };
 
     const TABLAS_BONOS = {
@@ -454,8 +422,8 @@
     let datosGlobales = {};
     let categoriaActiva = "home";
     let curvaActiva = "lecaps";
+    let chartCurvaInstance = null;
 
-    // Cripto en vivo desde Binance cada 5 segundos
     async function actualizarCriptosEnVivo() {
       try {
         const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
@@ -517,7 +485,6 @@
       }
     }
 
-    // Backend polling cada 15 segundos
     async function cargarDatos() {
       try {
         const res = await fetch("/bcra/variables?formato=agrupado&t=" + Date.now());
@@ -666,6 +633,119 @@
       renderizar();
     }
 
+    function dibujarGraficoCurva() {
+      const canvas = document.getElementById("canvas-curva-bonos");
+      if (!canvas) return;
+
+      const infoCurva = CURVAS_INFO[curvaActiva];
+      const listaBonos = TABLAS_BONOS[curvaActiva] || [];
+
+      const puntos = listaBonos
+        .map(b => {
+          let yVal = null;
+          if (b.tir && b.tir !== "-") {
+            const raw = parseFloat(String(b.tir).replace("%", "").trim());
+            if (!isNaN(raw) && raw < 120 && raw > -10) yVal = raw;
+          }
+          if (yVal === null && b.precio) {
+            yVal = parseFloat(b.precio);
+          }
+          return {
+            x: parseFloat(b.duration) || 0.01,
+            y: yVal,
+            ticker: b.ticker,
+            precio: b.precio,
+            tir: b.tir || "-"
+          };
+        })
+        .filter(p => p.y !== null)
+        .sort((a, b) => a.x - b.x);
+
+      if (chartCurvaInstance) {
+        chartCurvaInstance.destroy();
+      }
+
+      const colorHex = infoCurva.hexColor || "#06b6d4";
+
+      const ctx = canvas.getContext("2d");
+      chartCurvaInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          datasets: [{
+            label: `${infoCurva.titulo} (${infoCurva.ejeY})`,
+            data: puntos,
+            borderColor: colorHex,
+            backgroundColor: colorHex + "22",
+            borderWidth: 2.5,
+            pointBackgroundColor: colorHex,
+            pointBorderColor: "#030712",
+            pointBorderWidth: 2,
+            pointRadius: 5.5,
+            pointHoverRadius: 8,
+            fill: true,
+            tension: 0.38
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#e2e8f0",
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: "bold" }
+              }
+            },
+            tooltip: {
+              backgroundColor: "rgba(9, 14, 30, 0.95)",
+              titleColor: "#ffffff",
+              bodyColor: "#94a3b8",
+              borderColor: "rgba(56, 189, 248, 0.3)",
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                title: function(items) {
+                  const it = items[0].raw;
+                  return `${it.ticker} (Duration: ${it.x} años)`;
+                },
+                label: function(item) {
+                  const it = item.raw;
+                  return [
+                    `TIR: ${it.tir}`,
+                    `Precio: $ ${Number(it.precio).toLocaleString('es-AR')}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: "linear",
+              title: {
+                display: true,
+                text: "Modified Duration (Años)",
+                color: "#94a3b8",
+                font: { family: "'JetBrains Mono', monospace", size: 11, weight: "bold" }
+              },
+              grid: { color: "rgba(255, 255, 255, 0.04)" },
+              ticks: { color: "#64748b", font: { family: "'JetBrains Mono', monospace" } }
+            },
+            y: {
+              title: {
+                display: true,
+                text: infoCurva.ejeY,
+                color: "#94a3b8",
+                font: { family: "'JetBrains Mono', monospace", size: 11, weight: "bold" }
+              },
+              grid: { color: "rgba(255, 255, 255, 0.04)" },
+              ticks: { color: "#64748b", font: { family: "'JetBrains Mono', monospace" } }
+            }
+          }
+        }
+      });
+    }
+
     function renderizar() {
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
@@ -675,7 +755,6 @@
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
-      // ----------------- VISTA HOME: 3 BLOQUES TEMÁTICOS CON ESTÉTICA NEÓN EXACTA -----------------
       if (categoriaActiva === "home") {
         let todos = [];
         for (const cat in datosGlobales) {
@@ -696,7 +775,6 @@
 
           htmlHome += `
             <section class="space-y-3">
-              <!-- Barra de Título Neón con Flare -->
               <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
                 <div class="flex items-center gap-3 z-10">
                   <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${bloque.badgeBg}">
@@ -707,11 +785,9 @@
                 <div class="z-10 flex items-center gap-2">
                   <i class="${bloque.iconoDer} text-sm"></i>
                 </div>
-                <!-- Línea de estela con resplandor -->
                 <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
               </div>
 
-              <!-- Grilla de 6 tarjetas (3 columnas x 2 filas) -->
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
               </div>
@@ -723,7 +799,6 @@
         return;
       }
 
-      // ----------------- VISTA DE ÍNDICES Y SECTORES: MENÚ LATERAL + TARJETAS -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
@@ -793,7 +868,6 @@
         return;
       }
 
-      // ----------------- VISTA DE COTIZACIÓN BONOS -----------------
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva];
         let tablaHtml = "";
@@ -1111,7 +1185,7 @@
               </button>
             </aside>
 
-            <section class="flex-1 w-full space-y-3 overflow-hidden">
+            <section class="flex-1 w-full space-y-4 overflow-hidden">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
@@ -1119,16 +1193,31 @@
                 </div>
                 <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
               </div>
+              
               <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                 ${tablaHtml}
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800/70 pb-2.5">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-chart-area ${infoCurva.color} text-xs"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Estructura Temporal de Rendimientos (Yield Curve)</h3>
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-400">Duration (Eje X) vs ${infoCurva.ejeY} (Eje Y)</span>
+                </div>
+                <div class="w-full h-72 relative">
+                  <canvas id="canvas-curva-bonos"></canvas>
+                </div>
               </div>
             </section>
           </div>
         `;
+
+        setTimeout(dibujarGraficoCurva, 50);
         return;
       }
 
-      // ----------------- RESTO DE CATEGORÍAS -----------------
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const info = NOMBRES_SECCIONES[categoriaActiva] || { titulo: categoriaActiva, icono: "fa-solid fa-circle-dot" };
 
@@ -1150,7 +1239,6 @@
       `;
     }
 
-    // TARJETAS CON LA ESTÉTICA EXACTA DE LA IMAGEN
     function crearTarjeta(item, categoria, valorOficial) {
       if (!item) return "";
 
