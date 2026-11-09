@@ -370,6 +370,91 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
         "fecha": f"Vto. {nombre_mes}"
     }
 
+def obtener_datos_metales_panorama() -> List[Dict[str, Any]]:
+    items = []
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+
+    MAPA_METALES = {
+        "oro": ("METALES_XAU", "ORO (XAU)", "US$/ozt"),
+        "gold": ("METALES_XAU", "ORO (XAU)", "US$/ozt"),
+        "plata": ("METALES_XAG", "PLATA (XAG)", "US$/oz"),
+        "silver": ("METALES_XAG", "PLATA (XAG)", "US$/oz"),
+        "cobre": ("METALES_HG00", "COBRE (HG00)", "US$/lb"),
+        "copper": ("METALES_HG00", "COBRE (HG00)", "US$/lb"),
+        "platino": ("METALES_XPT", "PLATINO (XPT)", "US$/oz"),
+        "platinum": ("METALES_XPT", "PLATINO (XPT)", "US$/oz"),
+        "paladio": ("METALES_XPD", "PALADIO (XPD)", "US$/oz"),
+        "palladium": ("METALES_XPD", "PALADIO (XPD)", "US$/oz"),
+        "aluminio": ("METALES_ALU", "ALUMINIO (ALU)", "US$/ozt"),
+        "aluminum": ("METALES_ALU", "ALUMINIO (ALU)", "US$/ozt"),
+        "rodio": ("METALES_XRH", "RODIO (XRH)", "US$/oz"),
+        "rhodium": ("METALES_XRH", "RODIO (XRH)", "US$/oz"),
+        "zinc": ("METALES_ZNC", "ZINC (ZNC)", "US$/ozt"),
+        "niquel": ("METALES_NI", "NÍQUEL (NI)", "US$/oz"),
+        "nickel": ("METALES_NI", "NÍQUEL (NI)", "US$/oz"),
+        "estaño": ("METALES_TIN", "ESTAÑO (TIN)", "US$/oz"),
+        "tin": ("METALES_TIN", "ESTAÑO (TIN)", "US$/oz"),
+        "plomo": ("METALES_LEAD", "PLOMO (LEAD)", "US$/oz"),
+        "lead": ("METALES_LEAD", "PLOMO (LEAD)", "US$/oz"),
+        "molibdeno": ("METALES_MO", "MOLIBDENO (MO)", "US$/ozt"),
+        "molybdenum": ("METALES_MO", "MOLIBDENO (MO)", "US$/ozt"),
+        "hierro": ("METALES_IRON", "MINERAL DE HIERRO (IRON)", "US$/oz"),
+        "iron": ("METALES_IRON", "MINERAL DE HIERRO (IRON)", "US$/oz"),
+        "litio": ("METALES_LI", "LITIO (LI)", "US$/oz"),
+        "lithium": ("METALES_LI", "LITIO (LI)", "US$/oz"),
+        "carbonato de litio": ("METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "US$/ozt"),
+        "cobalto": ("METALES_LCO", "COBALTO (LCO)", "US$/oz"),
+        "cobalt": ("METALES_LCO", "COBALTO (LCO)", "US$/oz"),
+        "uranio": ("METALES_U", "URANIO (U)", "US$/lb"),
+        "uranium": ("METALES_U", "URANIO (U)", "US$/lb"),
+        "vanadio": ("METALES_VAN", "VANADIO (VAN)", "US$/ozt"),
+        "vanadium": ("METALES_VAN", "VANADIO (VAN)", "US$/ozt")
+    }
+
+    try:
+        url = "https://www.panorama-minero.com/es/markets/metals"
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            cargados = set()
+
+            for tr in soup.find_all("tr"):
+                tds = tr.find_all(["td", "th"])
+                if len(tds) >= 2:
+                    nombre_raw = tds[0].get_text(strip=True).lower()
+                    texto_limpio = nombre_raw.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+
+                    for clave, (cod, desc, unidad) in MAPA_METALES.items():
+                        if clave in texto_limpio and cod not in cargados:
+                            val_str = tds[1].get_text(strip=True)
+                            val_num = normalizar_valor(val_str)
+                            if val_num is not None:
+                                var_str = "0.00%"
+                                if len(tds) >= 3:
+                                    raw_var = tds[2].get_text(strip=True)
+                                    if "%" in raw_var or "+" in raw_var or "-" in raw_var:
+                                        var_str = raw_var
+
+                                fmt = f"{val_num:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if val_num >= 1000 else f"{val_num:.2f} {unidad}".replace(".", ",")
+                                items.append({
+                                    "variable": cod,
+                                    "descripcion": desc,
+                                    "categoria": "metales",
+                                    "valor_formateado": fmt,
+                                    "variacion": var_str,
+                                    "valor": val_num,
+                                    "fecha": fec_hoy
+                                })
+                                cargados.add(cod)
+    except Exception as e:
+        print(f"[Panorama Minero Scraping Error] {e}")
+
+    return items
+
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
@@ -532,8 +617,8 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
             dm = r_m.json()
             vm = float(dm.get("venta") or dm.get("compra") or d_may)
             if vm > 0: d_may = vm
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[Bandas Dolarito Error] {e}")
 
     return {
         "banda_inferior": round(b_inf, 2),
@@ -545,25 +630,25 @@ def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    METALES_BASE = [
-        ("METALES_XAU", "Oro (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
-        ("METALES_XAG", "Plata (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
-        ("METALES_HG00", "Cobre (HG00)", "6,24 US$/lb", "-3.77%", 6.24),
-        ("METALES_XPT", "Platino (XPT)", "1534,00 US$/oz", "+7.35%", 1534.00),
-        ("METALES_XPD", "Paladio (XPD)", "1004,00 US$/oz", "+4.47%", 1004.00),
-        ("METALES_ALU", "Aluminio (ALU)", "10,49 US$/ozt", "-0.19%", 10.49),
-        ("METALES_XRH", "Rodio (XRH)", "9200,00 US$/oz", "+1.10%", 9200.00),
-        ("METALES_ZNC", "Zinc (ZNC)", "8,55 US$/ozt", "+5.23%", 8.55),
-        ("METALES_NI", "Níquel (NI)", "2,00 US$/oz", "-5.31%", 2.00),
-        ("METALES_TIN", "Estaño (TIN)", "1,45 US$/oz", "-5.06%", 1.45),
-        ("METALES_LEAD", "Plomo (LEAD)", "17,31 US$/oz", "+1.78%", 17.31),
-        ("METALES_MO", "Molibdeno (MO)", "2,81 US$/ozt", "+0.72%", 2.81),
-        ("METALES_IRON", "Mineral de hierro (IRON)", "380,52 US$/oz", "-2.15%", 380.52),
-        ("METALES_LI", "Litio (LI)", "2,29 US$/oz", "+0.35%", 2.29),
-        ("METALES_LITH_CAR", "Carbonato de Litio (LITH-CAR)", "2,29 US$/ozt", "+0.23%", 2.29),
-        ("METALES_LCO", "Cobalto (LCO)", "1,04 US$/oz", "+0.04%", 1.04),
-        ("METALES_U", "Uranio (U)", "91,85 US$/lb", "-0.76%", 91.85),
-        ("METALES_VAN", "Vanadio (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
+    METALES_FALLBACK = [
+        ("METALES_XAU", "ORO (XAU)", "4070,10 US$/ozt", "+5.05%", 4070.10),
+        ("METALES_XAG", "PLATA (XAG)", "51,95 US$/oz", "+0.26%", 51.95),
+        ("METALES_HG00", "COBRE (HG00)", "6,24 US$/lb", "-3.77%", 6.24),
+        ("METALES_XPT", "PLATINO (XPT)", "1534,00 US$/oz", "+7.35%", 1534.00),
+        ("METALES_XPD", "PALADIO (XPD)", "1004,00 US$/oz", "+4.47%", 1004.00),
+        ("METALES_ALU", "ALUMINIO (ALU)", "10,49 US$/ozt", "-0.19%", 10.49),
+        ("METALES_XRH", "RODIO (XRH)", "9200,00 US$/oz", "+1.10%", 9200.00),
+        ("METALES_ZNC", "ZINC (ZNC)", "8,55 US$/ozt", "+5.23%", 8.55),
+        ("METALES_NI", "NÍQUEL (NI)", "2,00 US$/oz", "-5.31%", 2.00),
+        ("METALES_TIN", "ESTAÑO (TIN)", "1,45 US$/oz", "-5.06%", 1.45),
+        ("METALES_LEAD", "PLOMO (LEAD)", "17,31 US$/oz", "+1.78%", 17.31),
+        ("METALES_MO", "MOLIBDENO (MO)", "2,81 US$/ozt", "+0.72%", 2.81),
+        ("METALES_IRON", "MINERAL DE HIERRO (IRON)", "380,52 US$/oz", "-2.15%", 380.52),
+        ("METALES_LI", "LITIO (LI)", "2,29 US$/oz", "+0.35%", 2.29),
+        ("METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "2,29 US$/ozt", "+0.23%", 2.29),
+        ("METALES_LCO", "COBALTO (LCO)", "1,04 US$/oz", "+0.04%", 1.04),
+        ("METALES_U", "URANIO (U)", "91,85 US$/lb", "-0.76%", 91.85),
+        ("METALES_VAN", "VANADIO (VAN)", "3,17 US$/ozt", "0.00%", 3.17)
     ]
     PETROLEO_BASE = [
         ("PETROLEO_WTI", "Petróleo Crudo WTI", "90,83 USD/bbl", "+0.34%", 90.83),
@@ -576,7 +661,7 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ThreadPoolExecutor(max_workers=11) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
@@ -585,6 +670,7 @@ def worker_refresco_continuo():
                 f_inf_imp = executor.submit(fetch_inflacion_implicita_sjb)
                 f_bandas = executor.submit(fetch_bandas_dolarito)
                 f_futuro = executor.submit(obtener_datos_dolar_futuro)
+                f_metales = executor.submit(obtener_datos_metales_panorama)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -596,6 +682,7 @@ def worker_refresco_continuo():
                 res_inf_imp = f_inf_imp.result()
                 res_bandas = f_bandas.result()
                 res_futuro = f_futuro.result()
+                res_metales = f_metales.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -616,6 +703,22 @@ def worker_refresco_continuo():
                 if item.get("categoria") == "indices":
                     indices_map[item["variable"]] = item
 
+            # Metales: combinar datos de Panorama Minero en vivo con el catálogo completo
+            metales_map = {}
+            for c, d, f, v, n in METALES_FALLBACK:
+                metales_map[c] = {
+                    "variable": c,
+                    "descripcion": d,
+                    "categoria": "metales",
+                    "valor_formateado": f,
+                    "variacion": v,
+                    "valor": n,
+                    "fecha": fec_hoy
+                }
+            if res_metales and len(res_metales) > 0:
+                for m in res_metales:
+                    metales_map[m["variable"]] = m
+
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
                 "dolar_y_cambiario": [],
@@ -624,7 +727,7 @@ def worker_refresco_continuo():
                 "cotizacion_bonos": res_bonos,
                 "indices": list(indices_map.values()),
                 "inflacion_y_ajuste": [],
-                "metales": [{"variable": c, "descripcion": d, "categoria": "metales", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in METALES_BASE],
+                "metales": list(metales_map.values()),
                 "petroleo": [{"variable": c, "descripcion": d, "categoria": "petroleo", "valor_formateado": f, "variacion": v, "valor": n, "fecha": fec_hoy} for c, d, f, v, n in PETROLEO_BASE],
                 "macro_y_fiscal": [],
                 "micro_y_sectores": [],
