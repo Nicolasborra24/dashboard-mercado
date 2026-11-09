@@ -204,7 +204,7 @@ INDICES_BASE_MEMORIA = [
     {"variable": "SPDR_XLP", "descripcion": "Consumo Básico (XLP)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 78,90", "variacion": "-0,15%", "valor": 78.90, "fecha": "Cierre"},
     {"variable": "SPDR_XLU", "descripcion": "Servicios Públicos (XLU)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 81,42", "variacion": "-0,45%", "valor": 81.42, "fecha": "Cierre"},
     {"variable": "SPDR_XLB", "descripcion": "Materiales (XLB)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 93,65", "variacion": "+0,35%", "valor": 93.65, "fecha": "Cierre"},
-    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0.62%", "valor": 43.10, "fecha": "Cierre"},
+    {"variable": "SPDR_XLRE", "descripcion": "Bienes Raíces (XLRE)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 43,10", "variacion": "-0,62%", "valor": 43.10, "fecha": "Cierre"},
     {"variable": "SPDR_XLC", "descripcion": "Comunicaciones (XLC)", "categoria": "indices", "subcategoria": "sectores", "valor_formateado": "US$ 92,74", "variacion": "+0,48%", "valor": 92.74, "fecha": "Cierre"}
 ]
 
@@ -220,6 +220,11 @@ SJB_CURVAS_URLS = {
 
 CACHE_CURVAS_SJB: Dict[str, Any] = {}
 CACHE_INFLACION_IMPLICITA: Any = None
+CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {
+    "banda_inferior": 703.82,
+    "banda_superior": 1974.20,
+    "dolar_mayorista": 1545.50
+}
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": [],
@@ -462,20 +467,52 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
         if r.status_code == 200:
             return clave, r.json()
     except Exception as e:
-        print(f"[Curva SJB {clave} Error] {e}")
+        print(f"[Curva {clave} Error] {e}")
     return clave, None
 
 def fetch_inflacion_implicita_sjb():
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=6)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
         if r.status_code == 200:
             return r.json()
-    except Exception as e:
-        print(f"[Inflacion Implicita Error] {e}")
+    except Exception:
+        pass
     return None
 
+def fetch_bandas_dolarito() -> Dict[str, Any]:
+    b_inf = 703.82
+    b_sup = 1974.20
+    d_may = 1545.50
+    try:
+        h = {"User-Agent": "Mozilla/5.0"}
+        r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=4)
+        if r1.status_code == 200:
+            d1 = r1.json()
+            v1 = float(d1.get("value") or d1.get("valor") or b_inf)
+            if v1 > 0: b_inf = v1
+
+        r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=4)
+        if r2.status_code == 200:
+            d2 = r2.json()
+            v2 = float(d2.get("value") or d2.get("valor") or b_sup)
+            if v2 > 0: b_sup = v2
+
+        r_m = requests.get("https://dolarapi.com/v1/dolares/mayorista", headers=h, timeout=4)
+        if r_m.status_code == 200:
+            dm = r_m.json()
+            vm = float(dm.get("venta") or dm.get("compra") or d_may)
+            if vm > 0: d_may = vm
+    except Exception as e:
+        print(f"[Bandas Dolarito Error] {e}")
+
+    return {
+        "banda_inferior": round(b_inf, 2),
+        "banda_superior": round(b_sup, 2),
+        "dolar_mayorista": round(d_may, 2)
+    }
+
 def worker_refresco_continuo():
-    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, ULTIMA_ACTUALIZACION
+    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, ULTIMA_ACTUALIZACION
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     METALES_BASE = [
@@ -509,13 +546,14 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=8) as executor:
+            with ThreadPoolExecutor(max_workers=9) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
                 f_usa = executor.submit(obtener_datos_mercado_usa)
                 f_inf_imp = executor.submit(fetch_inflacion_implicita_sjb)
+                f_bandas = executor.submit(fetch_bandas_dolarito)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -525,6 +563,7 @@ def worker_refresco_continuo():
                 res_bonos = f_bonos.result()
                 res_usa = f_usa.result()
                 res_inf_imp = f_inf_imp.result()
+                res_bandas = f_bandas.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -533,6 +572,8 @@ def worker_refresco_continuo():
 
             if res_inf_imp:
                 CACHE_INFLACION_IMPLICITA = res_inf_imp
+            if res_bandas:
+                CACHE_BANDAS_CAMBIARIAS = res_bandas
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
@@ -612,6 +653,11 @@ def ver_curvas_sjb():
 def ver_inflacion_implicita():
     with CACHE_LOCK:
         return CACHE_INFLACION_IMPLICITA or {}
+
+@app.get("/api/dolar/bandas")
+def ver_bandas():
+    with CACHE_LOCK:
+        return CACHE_BANDAS_CAMBIARIAS
 
 @app.get("/dolar")
 def ver_dolar():
