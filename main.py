@@ -75,7 +75,7 @@ def get_db():
         db.close()
 
 def normalizar_valor(texto: str) -> Optional[float]:
-    t = texto.strip().upper().replace("−", "-")
+    t = str(texto).strip().upper().replace("−", "-")
     multiplicador = 1000.0 if ("B" in t or "K" in t) else 1.0
     t_clean = re.sub(r"[^\d,\.\-]", "", t)
     if not t_clean:
@@ -342,7 +342,6 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     return items
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     now = datetime.utcnow()
     nombre_mes = f"{meses_es[now.month - 1]} {now.year}"
@@ -475,7 +474,7 @@ def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
 
 def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     url = "https://api.marketdata.mae.com.ar/api/mercado/licitaciones"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    headers = {"User-Agent": "Mozilla/5.0"}
     try:
         r = requests.get(url, headers=headers, timeout=4.0)
         if r.status_code == 200:
@@ -609,22 +608,51 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
         pass
     return items
 
+def normalizar_respuesta_curva(raw_data: Any) -> Optional[Dict[str, Any]]:
+    if not raw_data:
+        return None
+    if isinstance(raw_data, list):
+        return {"tabla": raw_data}
+    if isinstance(raw_data, dict):
+        tabla = (
+            raw_data.get("tabla")
+            or raw_data.get("data")
+            or raw_data.get("bonos")
+            or raw_data.get("filas")
+            or raw_data.get("items")
+        )
+        if isinstance(tabla, list):
+            res = dict(raw_data)
+            res["tabla"] = tabla
+            return res
+        return raw_data
+    return None
+
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
-            return clave, r.json()
+            norm = normalizar_respuesta_curva(r.json())
+            if norm:
+                return clave, norm
     except Exception as e:
         print(f"[Curva {clave} Error] {e}")
     return clave, None
 
 def fetch_inflacion_implicita_sjb():
-    try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
-        if r.status_code == 200:
-            return r.json()
-    except Exception:
-        pass
+    urls = [
+        "https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita",
+        "https://sjbdashboards.up.railway.app/api/inflacion-implicita"
+    ]
+    for u in urls:
+        try:
+            r = requests.get(u, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
+            if r.status_code == 200:
+                data = r.json()
+                if data:
+                    return data
+        except Exception:
+            pass
     return None
 
 def fetch_bandas_dolarito() -> Dict[str, Any]:
@@ -661,7 +689,6 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
 
 def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, ULTIMA_ACTUALIZACION
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
     while True:
         try:

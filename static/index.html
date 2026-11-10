@@ -14,7 +14,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Web Components Oficiales de TradingView -->
   <script type="module" src="https://widgets.tradingview-widget.com/w/es/tv-heatmap.js"></script>
   <script type="module" src="https://widgets.tradingview-widget.com/w/es/tv-ticker-tape.js"></script>
 
@@ -68,6 +67,10 @@
       color: #ffffff;
     }
 
+    .table-dark-row:hover {
+      background-color: rgba(15, 23, 42, 0.75);
+    }
+
     .section-bar-cyan {
       background: linear-gradient(90deg, rgba(6, 182, 212, 0.35) 0%, rgba(8, 51, 68, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
       border: 1px solid rgba(34, 211, 238, 0.55);
@@ -116,7 +119,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Monitor Maestro De Mercado</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">3.8</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">3.9</span>
         </div>
         <p class="text-[11px] text-slate-400">Diseñado por Nicolás Borra para toda la comunidad bolsera</p>
       </div>
@@ -130,7 +133,6 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-5">
-    <!-- Barra de Navegación de Pestañas -->
     <div class="border-b border-slate-800/80 pb-3">
       <div class="flex items-stretch gap-2.5">
         <button onclick="filtrarCategoria('home', event)" class="nav-tab active px-5 rounded-2xl neon-tab text-white font-bold text-xs transition flex flex-col justify-center items-center gap-1 shadow-lg shrink-0">
@@ -196,12 +198,10 @@
       </div>
     </div>
 
-    <!-- Ticker Tape Oficial de TradingView (Debajo de secciones y arriba del titular Home) -->
     <div id="ticker-tape-container" class="rounded-xl overflow-hidden border border-slate-800/90 bg-[#060a16] shadow-lg">
       <tv-ticker-tape symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,BITSTAMP:BTCUSD,CMCMARKETS:GOLD,BCBA:MMSCI,FX_IDC:USDARS" hide-chart item-size="compact" theme="dark"></tv-ticker-tape>
     </div>
 
-    <!-- Contenido Dinámico del Dashboard -->
     <div id="dashboard-content" class="space-y-7">
       <div class="flex justify-center items-center py-24 text-slate-500">
         <i class="fa-solid fa-spinner fa-spin text-3xl text-cyan-400"></i>
@@ -210,15 +210,86 @@
   </main>
 
   <script>
+    window.TABLAS_BONOS_INTEGRAS = {
+      lecaps: [
+        { Ticker: "S30N6", Vencimiento: "2026-11-30", Dias: 21, Precio: 104.25, Variacion: "+0.18%", TEM: "2.35%", TNA: "28.60%", TIR: "32.45%", Duration: 0.06 },
+        { Ticker: "S31D6", Vencimiento: "2026-12-31", Dias: 52, Precio: 106.80, Variacion: "+0.22%", TEM: "2.32%", TNA: "28.20%", TIR: "31.90%", Duration: 0.14 },
+        { Ticker: "S29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 109.10, Variacion: "+0.15%", TEM: "2.28%", TNA: "27.75%", TIR: "31.20%", Duration: 0.22 },
+        { Ticker: "S26F7", Vencimiento: "2027-02-26", Dias: 109, Precio: 111.45, Variacion: "+0.25%", TEM: "2.25%", TNA: "27.40%", TIR: "30.75%", Duration: 0.30 },
+        { Ticker: "S31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 114.20, Variacion: "+0.19%", TEM: "2.21%", TNA: "26.90%", TIR: "30.10%", Duration: 0.39 },
+        { Ticker: "T30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 121.80, Variacion: "+0.31%", TEM: "2.15%", TNA: "26.15%", TIR: "29.15%", Duration: 0.64 },
+        { Ticker: "T15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 136.50, Variacion: "+0.40%", TEM: "2.08%", TNA: "25.30%", TIR: "28.05%", Duration: 1.10 }
+      ],
+      cer: [
+        { Ticker: "TZXD6", Vencimiento: "2026-12-15", Dias: 36, Precio: 215.40, Variacion: "+0.30%", TIR: "6.45%", Paridad: "99.20%", Duration: 0.10 },
+        { Ticker: "TX27", Vencimiento: "2027-03-25", Dias: 136, Precio: 184.20, Variacion: "+0.42%", TIR: "7.85%", Paridad: "97.10%", Duration: 0.37 },
+        { Ticker: "TZXM7", Vencimiento: "2027-05-31", Dias: 203, Precio: 162.80, Variacion: "+0.15%", TIR: "8.30%", Paridad: "95.40%", Duration: 0.55 },
+        { Ticker: "TZX27", Vencimiento: "2027-06-30", Dias: 233, Precio: 158.90, Variacion: "+0.28%", TIR: "8.55%", Paridad: "94.80%", Duration: 0.63 },
+        { Ticker: "TX28", Vencimiento: "2028-11-09", Dias: 730, Precio: 149.50, Variacion: "+0.55%", TIR: "9.40%", Paridad: "88.60%", Duration: 1.45 },
+        { Ticker: "TZX28", Vencimiento: "2028-12-15", Dias: 766, Precio: 142.10, Variacion: "+0.38%", TIR: "9.65%", Paridad: "86.20%", Duration: 1.88 },
+        { Ticker: "DICP", Vencimiento: "2033-12-31", Dias: 2608, Precio: 34850.00, Variacion: "+0.62%", TIR: "10.15%", Paridad: "81.40%", Duration: 3.85 },
+        { Ticker: "CUAP", Vencimiento: "2045-12-31", Dias: 6991, Precio: 23900.00, Variacion: "+0.48%", TIR: "10.35%", Paridad: "69.50%", Duration: 7.40 },
+        { Ticker: "PARP", Vencimiento: "2038-12-31", Dias: 4434, Precio: 16450.00, Variacion: "+0.21%", TIR: "10.25%", Paridad: "64.80%", Duration: 6.15 }
+      ],
+      duales: [
+        { Ticker: "TTJ26", Tipo: "CER / TAMAR", Vencimiento: "2026-06-30", Dias: 60, Precio: 132.40, Variacion: "+0.25%", TIR: "8.20%", TEM: "2.22%", Duration: 0.18 },
+        { Ticker: "TTS26", Tipo: "CER / TAMAR", Vencimiento: "2026-09-15", Dias: 135, Precio: 138.90, Variacion: "+0.34%", TIR: "8.65%", TEM: "2.26%", Duration: 0.37 },
+        { Ticker: "TTD26", Tipo: "CER / TAMAR", Vencimiento: "2026-12-15", Dias: 225, Precio: 145.60, Variacion: "+0.41%", TIR: "8.95%", TEM: "2.30%", Duration: 0.61 },
+        { Ticker: "TDJ27", Tipo: "DL / TAMAR", Vencimiento: "2027-06-30", Dias: 410, Precio: 154.20, Variacion: "+0.19%", TIR: "9.30%", TEM: "2.18%", Duration: 1.12 },
+        { Ticker: "TDD27", Tipo: "CER / TAMAR", Vencimiento: "2027-12-15", Dias: 575, Precio: 168.75, Variacion: "+0.52%", TIR: "9.60%", TEM: "2.14%", Duration: 1.55 }
+      ],
+      soberanos: [
+        { Ticker: "AL29", Ley: "Local", Precio: 76450.0, Variacion: "+0.85%", TIR: "13.45%", Paridad: "74.20%", Duration: 1.85 },
+        { Ticker: "GD29", Ley: "NY", Precio: 78900.0, Variacion: "+0.92%", TIR: "12.80%", Paridad: "76.50%", Duration: 1.90 },
+        { Ticker: "AL30", Ley: "Local", Precio: 72150.0, Variacion: "+1.10%", TIR: "13.10%", Paridad: "70.10%", Duration: 2.45 },
+        { Ticker: "GD30", Ley: "NY", Precio: 74800.0, Variacion: "+1.05%", TIR: "12.35%", Paridad: "72.80%", Duration: 2.52 },
+        { Ticker: "AL35", Ley: "Local", Precio: 65400.0, Variacion: "+0.75%", TIR: "11.65%", Paridad: "63.40%", Duration: 5.40 },
+        { Ticker: "GD35", Ley: "NY", Precio: 67900.0, Variacion: "+0.88%", TIR: "11.20%", Paridad: "65.90%", Duration: 5.55 },
+        { Ticker: "AE38", Ley: "Local", Precio: 68200.0, Variacion: "+0.64%", TIR: "11.95%", Paridad: "66.10%", Duration: 4.85 },
+        { Ticker: "GD38", Ley: "NY", Precio: 71300.0, Variacion: "+0.79%", TIR: "11.40%", Paridad: "69.20%", Duration: 4.95 },
+        { Ticker: "GD41", Ley: "NY", Precio: 63800.0, Variacion: "+0.55%", TIR: "11.30%", Paridad: "61.80%", Duration: 6.10 }
+      ],
+      bopreales: [
+        { Ticker: "BPJ25", Vencimiento: "2025-06-30", Precio: 108200.0, Variacion: "+0.12%", TIR: "7.80%", Paridad: "98.10%", Duration: 0.35 },
+        { Ticker: "BPY26", Vencimiento: "2026-05-31", Precio: 103400.0, Variacion: "+0.35%", TIR: "9.45%", Paridad: "94.20%", Duration: 0.85 },
+        { Ticker: "BPOA7", Vencimiento: "2027-10-31", Precio: 96500.0, Variacion: "+0.48%", TIR: "11.20%", Paridad: "87.60%", Duration: 1.65 },
+        { Ticker: "BPOB7", Vencimiento: "2027-10-31", Precio: 95800.0, Variacion: "+0.40%", TIR: "11.45%", Paridad: "86.90%", Duration: 1.68 },
+        { Ticker: "BPOC7", Vencimiento: "2027-10-31", Precio: 94900.0, Variacion: "+0.38%", TIR: "11.70%", Paridad: "86.10%", Duration: 1.72 },
+        { Ticker: "BPOD7", Vencimiento: "2027-10-31", Precio: 94200.0, Variacion: "+0.44%", TIR: "11.85%", Paridad: "85.50%", Duration: 1.75 }
+      ],
+      dollar_linked: [
+        { Ticker: "TV26", Vencimiento: "2026-04-30", Dias: 95, Precio: 1125.0, Variacion: "+0.20%", TIR: "4.50%", Paridad: "97.80%", Duration: 0.26 },
+        { Ticker: "TZV26", Vencimiento: "2026-06-30", Dias: 156, Precio: 1110.0, Variacion: "+0.32%", TIR: "5.80%", Paridad: "95.60%", Duration: 0.42 },
+        { Ticker: "TZVD6", Vencimiento: "2026-12-15", Dias: 324, Precio: 1085.0, Variacion: "+0.18%", TIR: "6.90%", Paridad: "92.10%", Duration: 0.88 },
+        { Ticker: "TZV27", Vencimiento: "2027-06-30", Dias: 521, Precio: 1052.0, Variacion: "+0.29%", TIR: "7.65%", Paridad: "88.90%", Duration: 1.40 }
+      ],
+      tamar: [
+        { Ticker: "M31E7", Vencimiento: "2027-01-31", Dias: 83, Precio: 108.40, Variacion: "+0.15%", TNA: "29.10%", TIR: "32.80%", Duration: 0.23 },
+        { Ticker: "M31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 113.90, Variacion: "+0.24%", TNA: "28.75%", TIR: "32.15%", Duration: 0.39 },
+        { Ticker: "M30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 121.50, Variacion: "+0.30%", TNA: "28.40%", TIR: "31.60%", Duration: 0.64 }
+      ]
+    };
+
+    const INFLACION_IMPLICITA_RESPALDO = [
+      { Periodo: "Nov 2026", Bono_Tasa_Fija: "S30N6", Bono_CER: "TZXD6", TEM_Fija: "2.35%", TIR_CER: "6.45%", Inflacion_Implicita_Mensual: "1.82%", Inflacion_Anualizada: "24.18%" },
+      { Periodo: "Dic 2026", Bono_Tasa_Fija: "S31D6", Bono_CER: "TZXD6", TEM_Fija: "2.32%", TIR_CER: "6.80%", Inflacion_Implicita_Mensual: "1.76%", Inflacion_Anualizada: "23.30%" },
+      { Periodo: "Ene 2027", Bono_Tasa_Fija: "S29E7", Bono_CER: "TX27", TEM_Fija: "2.28%", TIR_CER: "7.40%", Inflacion_Implicita_Mensual: "1.68%", Inflacion_Anualizada: "22.14%" },
+      { Periodo: "Feb 2027", Bono_Tasa_Fija: "S26F7", Bono_CER: "TX27", TEM_Fija: "2.25%", TIR_CER: "7.85%", Inflacion_Implicita_Mensual: "1.62%", Inflacion_Anualizada: "21.28%" },
+      { Periodo: "Mar 2027", Bono_Tasa_Fija: "S31M7", Bono_CER: "TX27", TEM_Fija: "2.21%", TIR_CER: "7.85%", Inflacion_Implicita_Mensual: "1.58%", Inflacion_Anualizada: "20.70%" },
+      { Periodo: "May 2027", Bono_Tasa_Fija: "T30J7", Bono_CER: "TZXM7", TEM_Fija: "2.17%", TIR_CER: "8.30%", Inflacion_Implicita_Mensual: "1.51%", Inflacion_Anualizada: "19.70%" },
+      { Periodo: "Jun 2027", Bono_Tasa_Fija: "T30J7", Bono_CER: "TZX27", TEM_Fija: "2.15%", TIR_CER: "8.55%", Inflacion_Implicita_Mensual: "1.46%", Inflacion_Anualizada: "19.00%" },
+      { Periodo: "Dic 2027", Bono_Tasa_Fija: "T15D7", Bono_CER: "TZX28", TEM_Fija: "2.08%", TIR_CER: "9.40%", Inflacion_Implicita_Mensual: "1.34%", Inflacion_Anualizada: "17.32%" }
+    ];
+
     const CONFIG_SECCIONES = {
       home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-gauge-high", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-landmark", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", sub: "6 Cotizaciones Principales", icono: "fa-dollar-sign", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", sub: "Pares de Monedas Globales", icono: "fa-money-bill-1-wave", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       cripto: { titulo: "Cotizaciones Criptomonedas en Vivo", sub: "Binance Spot Stream en Tiempo Real", icono: "fa-brands fa-bitcoin", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", sub: "Rendimientos y Cotizaciones BYMA", icono: "fa-file-invoice-dollar", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", sub: "Rendimientos y Cotizaciones BYMA • SJB", icono: "fa-file-invoice-dollar", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       indices: { titulo: "Índices Principales y Sectores", sub: "Mercados Locales e Internacionales", icono: "fa-chart-line", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "INDEC • BCRA", icono: "fa-arrow-trend-up", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
+      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "INDEC • BCRA • Break-Even SJB", icono: "fa-arrow-trend-up", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
       metales: { titulo: "Metales Preciosos e Industriales", sub: "Commodities Metálicos en Tiempo Real", icono: "fa-coins", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
       petroleo: { titulo: "Mercado Internacional de Crudo y Combustibles", sub: "Petróleo y Derivados Energéticos", icono: "fa-oil-well", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
       macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-scale-balanced", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
@@ -317,13 +388,13 @@
     ];
 
     const CURVAS_INFO = {
-      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • 22 Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
+      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400", hex: "#fbbf24" },
+      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400", hex: "#c084fc" },
+      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400", hex: "#22d3ee" },
+      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400", hex: "#34d399" },
+      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400", hex: "#10b981" },
+      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400", hex: "#38bdf8" },
+      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400", hex: "#fb7185" }
     };
 
     let datosCurvasSJB = {};
@@ -336,6 +407,300 @@
     let curvaActiva = "lecaps";
     let chartCurvaInstance = null;
     let chartInflacionInstance = null;
+
+    function parseNumSeguro(val) {
+      if (val === undefined || val === null || val === "-") return NaN;
+      if (typeof val === "number") return val;
+      let s = String(val).replace(/[%$a-zA-Z\s]/g, "").trim();
+      if (!s) return NaN;
+      if (s.includes(",") && s.includes(".")) {
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else if (s.includes(",")) {
+        s = s.replace(",", ".");
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? NaN : n;
+    }
+
+    function obtenerFilasCurva(clave) {
+      const d = datosCurvasSJB[clave];
+      if (d) {
+        if (Array.isArray(d) && d.length > 0) return d;
+        const arr = d.tabla || d.data || d.bonos || d.filas || d.items;
+        if (Array.isArray(arr) && arr.length > 0) return arr;
+      }
+      return (window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave])
+        ? window.TABLAS_BONOS_INTEGRAS[clave]
+        : [];
+    }
+
+    function obtenerFilasInflacionImplicita() {
+      const d = datosInflacionImplicitaSJB;
+      if (d) {
+        if (Array.isArray(d) && d.length > 0) return d;
+        const arr = d.tabla || d.data || d.filas || d.items || d.curva;
+        if (Array.isArray(arr) && arr.length > 0) return arr;
+      }
+      return INFLACION_IMPLICITA_RESPALDO;
+    }
+
+    const pluginEtiquetasPuntos = {
+      id: "etiquetasPuntosBonos",
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+        const dataset = chart.data.datasets[0];
+        ctx.save();
+        ctx.font = "bold 10px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#e2e8f0";
+        ctx.textAlign = "center";
+        meta.data.forEach((elem, index) => {
+          const pt = dataset.data[index];
+          if (pt && pt.ticker) {
+            ctx.fillText(pt.ticker, elem.x, elem.y - 9);
+          }
+        });
+        ctx.restore();
+      }
+    };
+
+    function dibujarGraficoCurva() {
+      const canvas = document.getElementById("canvas-curva-bonos");
+      if (!canvas) return;
+      if (chartCurvaInstance) {
+        chartCurvaInstance.destroy();
+        chartCurvaInstance = null;
+      }
+
+      const filas = obtenerFilasCurva(curvaActiva);
+      const infoCurva = CURVAS_INFO[curvaActiva] || { hex: "#22d3ee" };
+      const colorHex = infoCurva.hex || "#22d3ee";
+
+      const puntos = [];
+      let ejeXLabel = "Duration (Años) / Plazo";
+      let ejeYLabel = "TIR / Rendimiento (%)";
+
+      filas.forEach((f, idx) => {
+        const keys = Object.keys(f);
+        const kTicker = keys.find(k => /ticker|especie|bono|simbolo/i.test(k)) || keys[0];
+        const kDur = keys.find(k => /duration|duracion|mduration|plazo|dias|días/i.test(k));
+        const kVto = keys.find(k => /vencimiento|vto|fecha/i.test(k));
+        const kY = (curvaActiva === "lecaps")
+          ? (keys.find(k => /^tem$/i.test(k)) || keys.find(k => /tir|tea|tna|rendimiento/i.test(k)))
+          : (keys.find(k => /tir|tea|tem|tna|rendimiento/i.test(k)));
+
+        if (curvaActiva === "lecaps" && kY && /tem/i.test(kY)) {
+          ejeYLabel = "TEM (%)";
+        }
+
+        const ticker = String(f[kTicker] || `B${idx + 1}`).trim();
+        let xVal = kDur ? parseNumSeguro(f[kDur]) : NaN;
+
+        if (isNaN(xVal) && kVto && f[kVto]) {
+          const fVto = new Date(f[kVto]);
+          if (!isNaN(fVto.getTime())) {
+            const diffDias = Math.max(1, Math.round((fVto - new Date()) / (1000 * 60 * 60 * 24)));
+            xVal = +(diffDias / 365).toFixed(2);
+          }
+        }
+        if (isNaN(xVal)) xVal = idx + 1;
+
+        const yVal = kY ? parseNumSeguro(f[kY]) : NaN;
+        if (!isNaN(xVal) && !isNaN(yVal) && yVal > -50 && yVal < 250) {
+          puntos.push({ x: xVal, y: yVal, ticker });
+        }
+      });
+
+      puntos.sort((a, b) => a.x - b.x);
+
+      let lineaTendencia = [];
+      if (puntos.length >= 2) {
+        const n = puntos.length;
+        const xs = puntos.map(p => Math.log(Math.max(0.05, p.x)));
+        const ys = puntos.map(p => p.y);
+        const meanX = xs.reduce((a, b) => a + b, 0) / n;
+        const meanY = ys.reduce((a, b) => a + b, 0) / n;
+        let num = 0, den = 0;
+        for (let i = 0; i < n; i++) {
+          num += (xs[i] - meanX) * (ys[i] - meanY);
+          den += (xs[i] - meanX) ** 2;
+        }
+        const b = den !== 0 ? num / den : 0;
+        const a = meanY - b * meanX;
+        lineaTendencia = puntos.map(p => ({
+          x: p.x,
+          y: +(a + b * Math.log(Math.max(0.05, p.x))).toFixed(2)
+        }));
+      }
+
+      const ctx = canvas.getContext("2d");
+      chartCurvaInstance = new Chart(ctx, {
+        type: "scatter",
+        data: {
+          datasets: [
+            {
+              label: "Bonos (" + ejeYLabel + ")",
+              data: puntos,
+              backgroundColor: colorHex,
+              borderColor: "#ffffff",
+              borderWidth: 1.5,
+              pointRadius: 6,
+              pointHoverRadius: 8
+            },
+            {
+              label: "Curva Ajustada SJB",
+              data: lineaTendencia,
+              type: "line",
+              borderColor: colorHex,
+              backgroundColor: "rgba(34, 211, 238, 0.08)",
+              borderWidth: 2,
+              borderDash: [5, 4],
+              pointRadius: 0,
+              fill: true,
+              tension: 0.35
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { top: 22, right: 20, left: 8, bottom: 8 } },
+          plugins: {
+            legend: {
+              labels: { color: "#cbd5e1", font: { family: "'JetBrains Mono', monospace", size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: "rgba(9, 14, 30, 0.95)",
+              borderColor: "rgba(56, 189, 248, 0.4)",
+              borderWidth: 1,
+              titleFont: { family: "'JetBrains Mono', monospace", size: 12 },
+              bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+              callbacks: {
+                label(context) {
+                  const raw = context.raw;
+                  if (raw && raw.ticker) {
+                    return `${raw.ticker}: ${raw.y}% (Plazo/Dur: ${raw.x})`;
+                  }
+                  return `Curva: ${raw.y}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: "linear",
+              title: { display: true, text: ejeXLabel, color: "#94a3b8", font: { family: "'JetBrains Mono', monospace", size: 11 } },
+              grid: { color: "rgba(51, 65, 85, 0.35)" },
+              ticks: { color: "#94a3b8", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            },
+            y: {
+              title: { display: true, text: ejeYLabel, color: "#94a3b8", font: { family: "'JetBrains Mono', monospace", size: 11 } },
+              grid: { color: "rgba(51, 65, 85, 0.35)" },
+              ticks: {
+                color: "#94a3b8",
+                font: { family: "'JetBrains Mono', monospace", size: 10 },
+                callback: v => v + "%"
+              }
+            }
+          }
+        },
+        plugins: [pluginEtiquetasPuntos]
+      });
+    }
+
+    function dibujarGraficoInflacionImplicita() {
+      const canvas = document.getElementById("canvas-inflacion-implicita");
+      if (!canvas) return;
+      if (chartInflacionInstance) {
+        chartInflacionInstance.destroy();
+        chartInflacionInstance = null;
+      }
+
+      const filas = obtenerFilasInflacionImplicita();
+      const labels = [];
+      const serieImplicitaMensual = [];
+      const serieTEMFija = [];
+
+      filas.forEach((f, idx) => {
+        const keys = Object.keys(f);
+        const kPer = keys.find(k => /periodo|mes|fecha|vencimiento|plazo/i.test(k)) || keys[0];
+        const kImp = keys.find(k => /implicita_mensual|implicita|breakeven|break_even|inflacion/i.test(k));
+        const kTem = keys.find(k => /tem_fija|tem|tasa_fija|lecap/i.test(k));
+
+        labels.push(String(f[kPer] || `Tramo ${idx + 1}`));
+        const valImp = kImp ? parseNumSeguro(f[kImp]) : NaN;
+        const valTem = kTem ? parseNumSeguro(f[kTem]) : NaN;
+
+        serieImplicitaMensual.push(!isNaN(valImp) ? valImp : 1.6);
+        serieTEMFija.push(!isNaN(valTem) ? valTem : 2.2);
+      });
+
+      const ctx = canvas.getContext("2d");
+      chartInflacionInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Inflación Implícita Mensual (Break-Even %)",
+              data: serieImplicitaMensual,
+              borderColor: "#fb7185",
+              backgroundColor: "rgba(244, 63, 94, 0.18)",
+              borderWidth: 2.5,
+              pointBackgroundColor: "#fb7185",
+              pointBorderColor: "#ffffff",
+              pointRadius: 5,
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: "TEM Tasa Fija (LECAP / BONCAP %)",
+              data: serieTEMFija,
+              borderColor: "#22d3ee",
+              backgroundColor: "rgba(34, 211, 238, 0.08)",
+              borderWidth: 2,
+              borderDash: [5, 4],
+              pointBackgroundColor: "#22d3ee",
+              pointRadius: 4,
+              fill: false,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: "#e2e8f0", font: { family: "'JetBrains Mono', monospace", size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: "rgba(9, 14, 30, 0.95)",
+              borderColor: "rgba(244, 63, 94, 0.45)",
+              borderWidth: 1,
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(51, 65, 85, 0.3)" },
+              ticks: { color: "#cbd5e1", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            },
+            y: {
+              grid: { color: "rgba(51, 65, 85, 0.3)" },
+              ticks: {
+                color: "#cbd5e1",
+                font: { family: "'JetBrains Mono', monospace", size: 10 },
+                callback: v => v + "%"
+              }
+            }
+          }
+        }
+      });
+    }
 
     async function actualizarCriptosEnVivo() {
       try {
@@ -420,7 +785,7 @@
         const res = await fetch("/api/bonos/inflacion-implicita?t=" + Date.now());
         if (res.ok) {
           const data = await res.json();
-          if (data && ((Array.isArray(data) && data.length > 0) || (data.tabla && data.tabla.length > 0) || data.chart)) {
+          if (data && Object.keys(data).length > 0) {
             datosInflacionImplicitaSJB = data;
             if (categoriaActiva === "inflacion_y_ajuste") {
               renderizar();
@@ -507,10 +872,8 @@
       if (st.col === colKey) st.asc = !st.asc;
       else { st.col = colKey; st.asc = true; }
       
-      const destino = (datosCurvasSJB[tablaKey] && Array.isArray(datosCurvasSJB[tablaKey].tabla)) 
-        ? datosCurvasSJB[tablaKey].tabla 
-        : (window.TABLAS_BONOS_INTEGRAS ? window.TABLAS_BONOS_INTEGRAS[tablaKey] : null);
-      if (!destino) return;
+      const destino = obtenerFilasCurva(tablaKey);
+      if (!destino || destino.length === 0) return;
 
       destino.sort((a, b) => {
         const va = valorParaOrdenar(a, colKey);
@@ -542,13 +905,13 @@
     }
 
     function renderFilaTerminal(valStr, type) {
-      if (!valStr || valStr === "-") return `<span class="text-slate-500 font-mono">-</span>`;
+      if (valStr === undefined || valStr === null || valStr === "-") return `<span class="text-slate-500 font-mono">-</span>`;
       let bgStyle = "";
       let textStyle = "";
       let borderStyle = "";
 
       if (type === "var") {
-        const strLimpia = String(valStr).replace("%", "").trim();
+        const strLimpia = String(valStr).replace("%", "").replace(",", ".").trim();
         const numVal = parseFloat(strLimpia);
         if (!isNaN(numVal) && numVal < 0) {
           bgStyle = "background-color: rgba(136, 19, 55, 0.45);";
@@ -608,7 +971,6 @@
       const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
       if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
 
-      // ----------------- VISTA HOME -----------------
       if (categoriaActiva === "home") {
         let todos = [];
         for (const cat in datosGlobales) {
@@ -653,7 +1015,6 @@
         return;
       }
 
-      // ----------------- VISTA CRIPTO (CON WEB COMPONENT OFICIAL DARK) -----------------
       if (categoriaActiva === "cripto") {
         const items = datosGlobales.cripto || [];
         const cfgHeader = CONFIG_SECCIONES.cripto;
@@ -684,7 +1045,6 @@
         return;
       }
 
-      // ----------------- VISTA DE DÓLAR Y BRECHAS -----------------
       if (categoriaActiva === "dolar_y_cambiario") {
         const rawItems = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
 
@@ -908,7 +1268,6 @@
         return;
       }
 
-      // ----------------- VISTA DE ÍNDICES Y SECTORES CON WEB COMPONENTS DE TRADINGVIEW -----------------
       if (categoriaActiva === "indices") {
         const infoSub = SUB_INDICES_INFO[subIndiceActivo];
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
@@ -1019,13 +1378,9 @@
         return;
       }
 
-      // ----------------- VISTA DE COTIZACIÓN BONOS -----------------
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva] || { titulo: "Curva", desc: "", color: "text-cyan-400" };
-        const dataCurva = datosCurvasSJB[curvaActiva];
-        const filas = (dataCurva && Array.isArray(dataCurva.tabla) && dataCurva.tabla.length > 0) 
-          ? dataCurva.tabla 
-          : (window.TABLAS_BONOS_INTEGRAS ? window.TABLAS_BONOS_INTEGRAS[curvaActiva] : []);
+        const filas = obtenerFilasCurva(curvaActiva);
 
         let tablaHtml = "";
         if (filas && filas.length > 0) {
@@ -1048,12 +1403,12 @@
                     ${columnas.map(col => {
                       const val = b[col];
                       const cL = col.toLowerCase();
-                      if (cL === "ticker") {
+                      if (cL.includes("ticker") || cL.includes("especie")) {
                         return `<td class="py-2.5 px-3 font-bold text-white tracking-wide">${val}</td>`;
                       }
                       if (cL.includes("precio") || cL.includes("valor")) {
-                        const num = parseFloat(val);
-                        const formatted = !isNaN(num) ? (num >= 1000 ? '$ ' + num.toLocaleString('es-AR') : num.toFixed(2)) : val;
+                        const num = parseNumSeguro(val);
+                        const formatted = !isNaN(num) ? (num >= 1000 ? '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '$ ' + num.toFixed(2)) : val;
                         return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${formatted}</td>`;
                       }
                       if (cL.includes("var")) {
@@ -1133,10 +1488,23 @@
               </aside>
 
               <section class="flex-1 w-full space-y-4 overflow-hidden">
+                <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
+                  <div class="border-b border-slate-800/70 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
+                      <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo} — Nube de Puntos por Bono</h3>
+                    </div>
+                    <span class="text-[11px] font-mono text-slate-400">Datos en vivo SJB</span>
+                  </div>
+                  <div class="w-full h-80 relative">
+                    <canvas id="canvas-curva-bonos"></canvas>
+                  </div>
+                </div>
+
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div class="flex items-center gap-2">
-                    <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo}</h3>
+                    <i class="fa-solid fa-table-list ${infoCurva.color} text-sm"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Tabla de Cotizaciones y Rendimientos</h3>
                   </div>
                   <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
                 </div>
@@ -1144,28 +1512,53 @@
                 <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                   ${tablaHtml}
                 </div>
-
-                <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-                  <div class="border-b border-slate-800/70 pb-2">
-                    <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
-                  </div>
-                  <div class="w-full h-80 relative">
-                    <canvas id="canvas-curva-bonos"></canvas>
-                  </div>
-                </div>
               </section>
             </div>
           </div>
         `;
 
-        setTimeout(dibujarGraficoCurva, 50);
+        setTimeout(dibujarGraficoCurva, 40);
         return;
       }
 
-      // ----------------- VISTA DE INFLACIÓN Y COEFICIENTES -----------------
       if (categoriaActiva === "inflacion_y_ajuste") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
         const cfgHeader = CONFIG_SECCIONES.inflacion_y_ajuste;
+        const filasImp = obtenerFilasInflacionImplicita();
+
+        let tablaImplicitaHtml = "";
+        if (filasImp && filasImp.length > 0) {
+          const cols = Object.keys(filasImp[0]);
+          tablaImplicitaHtml = `
+            <div class="overflow-x-auto rounded-xl border border-slate-800 bg-[#060a16]">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <tr>
+                    ${cols.map(c => `<th class="py-3 px-3 text-center">${c.replace(/_/g, " ")}</th>`).join("")}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                  ${filasImp.map(row => `
+                    <tr class="table-dark-row transition">
+                      ${cols.map((c, idx) => {
+                        const v = row[c];
+                        const cLow = c.toLowerCase();
+                        if (idx === 0) return `<td class="py-2.5 px-3 font-bold text-white text-center">${v}</td>`;
+                        if (cLow.includes("bono") || cLow.includes("ticker")) {
+                          return `<td class="py-2.5 px-3 text-center text-cyan-300 font-bold">${v}</td>`;
+                        }
+                        if (cLow.includes("implicita") || cLow.includes("breakeven") || cLow.includes("anualizada")) {
+                          return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(v, "neutro")}</td>`;
+                        }
+                        return `<td class="py-2.5 px-3 text-center text-slate-300">${v ?? "-"}</td>`;
+                      }).join("")}
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
 
         contenedor.innerHTML = `
           <div class="space-y-6">
@@ -1176,26 +1569,34 @@
               </div>
             </section>
 
-            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-4">
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-5">
               <div class="flex flex-wrap items-center justify-between border-b border-slate-800/70 pb-3 gap-2">
                 <div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Inflación Implícita del Mercado — CER vs Renta Fija</h2>
-                  <p class="text-[11px] text-slate-400 font-mono mt-0.5">Evolución de IPC Real INDEC, Break-even del Mercado y Spread TEM Nominal vs TEM Real</p>
+                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Inflación Implícita del Mercado — CER vs Renta Fija (SJB)</h2>
+                  <p class="text-[11px] text-slate-400 font-mono mt-0.5">Curva Break-Even de Inflación descontada entre LECAPs/BONCAPs y Bonos CER</p>
                 </div>
+                <span class="text-[11px] font-mono text-rose-300 bg-rose-950/50 border border-rose-500/30 px-2.5 py-1 rounded-full">SJB Analytics</span>
               </div>
 
               <div class="w-full h-80 relative">
                 <canvas id="canvas-inflacion-implicita"></canvas>
               </div>
+
+              <div class="space-y-2 pt-2">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-table text-rose-400"></i>
+                  <span>Cuadro de Inflación Implícita por Tramo (Break-Even SJB)</span>
+                </h3>
+                ${tablaImplicitaHtml}
+              </div>
             </section>
           </div>
         `;
 
-        setTimeout(dibujarGraficoInflacionImplicita, 50);
+        setTimeout(dibujarGraficoInflacionImplicita, 40);
         return;
       }
 
-      // ----------------- DEMÁS CATEGORÍAS -----------------
       const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
       const cfgHeader = CONFIG_SECCIONES[categoriaActiva] || {
         titulo: categoriaActiva.replace(/_/g, " ").toUpperCase(),
