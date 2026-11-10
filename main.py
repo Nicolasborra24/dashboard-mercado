@@ -818,6 +818,86 @@ def normalizar_respuesta_curva(raw_data: Any) -> Optional[Dict[str, Any]]:
         return raw_data
     return None
 
+
+US_TREASURIES_BASE = [
+    {"Ticker": "UST 1M", "Instrumento": "T-Bill 1 Mes", "Tramo": "Corto", "Dias": 30, "TIR": "4.52%", "Variacion": "0.00%", "MD": 0.08, "cnbc": "US1M", "yf": None},
+    {"Ticker": "UST 2M", "Instrumento": "T-Bill 2 Meses", "Tramo": "Corto", "Dias": 60, "TIR": "4.48%", "Variacion": "0.00%", "MD": 0.16, "cnbc": "US2M", "yf": None},
+    {"Ticker": "UST 3M", "Instrumento": "T-Bill 3 Meses", "Tramo": "Corto", "Dias": 91, "TIR": "4.42%", "Variacion": "-0.01%", "MD": 0.24, "cnbc": "US3M", "yf": "^IRX"},
+    {"Ticker": "UST 6M", "Instrumento": "T-Bill 6 Meses", "Tramo": "Corto", "Dias": 182, "TIR": "4.31%", "Variacion": "-0.02%", "MD": 0.48, "cnbc": "US6M", "yf": None},
+    {"Ticker": "UST 1Y", "Instrumento": "T-Bill 1 Año", "Tramo": "Corto", "Dias": 365, "TIR": "4.24%", "Variacion": "+0.01%", "MD": 0.95, "cnbc": "US1Y", "yf": None},
+    {"Ticker": "UST 2Y", "Instrumento": "T-Note 2 Años", "Tramo": "Mediano", "Dias": 730, "TIR": "4.18%", "Variacion": "+0.02%", "MD": 1.88, "cnbc": "US2Y", "yf": None},
+    {"Ticker": "UST 3Y", "Instrumento": "T-Note 3 Años", "Tramo": "Mediano", "Dias": 1095, "TIR": "4.15%", "Variacion": "+0.02%", "MD": 2.75, "cnbc": "US3Y", "yf": None},
+    {"Ticker": "UST 5Y", "Instrumento": "T-Note 5 Años", "Tramo": "Mediano", "Dias": 1825, "TIR": "4.17%", "Variacion": "+0.03%", "MD": 4.38, "cnbc": "US5Y", "yf": "^FVX"},
+    {"Ticker": "UST 7Y", "Instrumento": "T-Note 7 Años", "Tramo": "Mediano", "Dias": 2555, "TIR": "4.23%", "Variacion": "+0.03%", "MD": 5.85, "cnbc": "US7Y", "yf": None},
+    {"Ticker": "UST 10Y", "Instrumento": "T-Note 10 Años", "Tramo": "Largo", "Dias": 3650, "TIR": "4.30%", "Variacion": "+0.04%", "MD": 7.85, "cnbc": "US10Y", "yf": "^TNX"},
+    {"Ticker": "UST 20Y", "Instrumento": "T-Bond 20 Años", "Tramo": "Largo", "Dias": 7300, "TIR": "4.58%", "Variacion": "+0.03%", "MD": 12.60, "cnbc": "US20Y", "yf": None},
+    {"Ticker": "UST 30Y", "Instrumento": "T-Bond 30 Años", "Tramo": "Largo", "Dias": 10950, "TIR": "4.51%", "Variacion": "+0.04%", "MD": 15.80, "cnbc": "US30Y", "yf": "^TYX"}
+]
+
+def fetch_curva_us_treasuries() -> Dict[str, Any]:
+    filas = []
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+
+    # 1. Consulta en tiempo real a CNBC Quotes API (devuelve los 12 tramos de US Treasuries en 1 request)
+    cnbc_map = {}
+    try:
+        syms = "|".join([b["cnbc"] for b in US_TREASURIES_BASE])
+        url_cnbc = f"https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={syms}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1"
+        r = requests.get(url_cnbc, headers=headers, timeout=3.5)
+        if r.status_code == 200:
+            q_list = r.json().get("FormattedQuoteResult", {}).get("FormattedQuote", [])
+            if isinstance(q_list, dict):
+                q_list = [q_list]
+            for q in q_list:
+                sym = str(q.get("symbol", "")).upper()
+                last_str = str(q.get("last", "")).replace("%", "").strip()
+                chg_str = str(q.get("change", "")).replace("%", "").strip()
+                val_y = normalizar_valor(last_str)
+                val_c = normalizar_valor(chg_str)
+                if val_y is not None and 0 < val_y < 20:
+                    cnbc_map[sym] = (val_y, val_c if val_c is not None else 0.0)
+    except Exception:
+        pass
+
+    # 2. Respaldo en vivo con Yahoo Finance para nodos clave (^IRX, ^FVX, ^TNX, ^TYX) si CNBC no respondió
+    yf_map = {}
+    if len(cnbc_map) < 4:
+        for b in US_TREASURIES_BASE:
+            if b["yf"]:
+                q_yf = fetch_quote_externa(b["yf"], "")
+                if q_yf and q_yf.get("price"):
+                    yf_map[b["Ticker"]] = (q_yf["price"], q_yf.get("change_pct", 0.0))
+
+    for b in US_TREASURIES_BASE:
+        tk = b["Ticker"]
+        cnbc_sym = b["cnbc"]
+        tir_num = normalizar_valor(b["TIR"]) or 4.25
+        var_str = b["Variacion"]
+
+        if cnbc_sym in cnbc_map:
+            tir_num, chg_val = cnbc_map[cnbc_sym]
+            var_str = f"+{chg_val:.2f}%" if chg_val > 0 else f"{chg_val:.2f}%"
+        elif tk in yf_map:
+            tir_num, chg_val = yf_map[tk]
+            var_str = f"+{chg_val:.2f}%" if chg_val > 0 else f"{chg_val:.2f}%"
+
+        # Precio técnico referencial base 100 para paridad visual en la tabla
+        dur = float(b["MD"])
+        precio_ref = round(100.0 - (tir_num - 4.25) * dur * 0.85, 2)
+
+        filas.append({
+            "Ticker": tk,
+            "Instrumento": b["Instrumento"],
+            "Tramo": b["Tramo"],
+            "Dias": b["Dias"],
+            "Precio": precio_ref,
+            "Variacion": var_str,
+            "TIR": f"{tir_num:.2f}%",
+            "MD": dur
+        })
+
+    return {"tabla": filas}
+
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     try:
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
@@ -950,6 +1030,7 @@ def worker_refresco_continuo():
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
                 f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
                 f_licit = executor.submit(fetch_licitaciones_mae)
+                f_ust = executor.submit(fetch_curva_us_treasuries)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -965,6 +1046,9 @@ def worker_refresco_continuo():
                 res_metales = f_metales.result()
                 res_petroleo = f_petroleo.result()
                 res_licit = f_licit.result()
+                res_ust = f_ust.result()
+                if res_ust:
+                    CACHE_CURVAS_SJB['us_treasuries'] = res_ust
 
                 for fut in futures_curvas:
                     k, data = fut.result()
