@@ -105,28 +105,24 @@ def extraer_mes_corte_legible(texto_fecha: str) -> str:
     if not texto_fecha:
         return ""
     s = str(texto_fecha).strip()
-    # Formato YYYY-MM-DD o YYYY-MM
     m_iso = re.search(r"(20\d{2})[-/](\d{1,2})", s)
     if m_iso:
         anio = m_iso.group(1)
         mes_num = int(m_iso.group(2))
         if 1 <= mes_num <= 12:
             return f"{MESES_CORTOS_ES[mes_num]} {anio}"
-    # Formato DD/MM/YYYY o DD-MM-YYYY
     m_lat = re.search(r"(\d{1,2})[-/](\d{1,2})[-/](20\d{2})", s)
     if m_lat:
         mes_num = int(m_lat.group(2))
         anio = m_lat.group(3)
         if 1 <= mes_num <= 12:
             return f"{MESES_CORTOS_ES[mes_num]} {anio}"
-    # Formato MM/YYYY
     m_my = re.search(r"^(\d{1,2})[-/](20\d{2})$", s)
     if m_my:
         mes_num = int(m_my.group(1))
         anio = m_my.group(2)
         if 1 <= mes_num <= 12:
             return f"{MESES_CORTOS_ES[mes_num]} {anio}"
-    # Si ya contiene nombre de mes en español o inglés
     mapeo_txt = {
         "enero": "Ene", "ene": "Ene", "jan": "Ene",
         "febrero": "Feb", "feb": "Feb",
@@ -158,6 +154,8 @@ MAPEO = {
     "tasa hipotecaria": ("TASA_HIPOTECARIA", "Tasa Hipotecaria", "tasas_y_monetario"),
     "m2 var. interanual": ("M2_VAR_INTERANUAL", "M2 Variacion Interanual", "tasas_y_monetario"),
     "balance cambiario": ("BALANCE_CAMBIARIO", "Balance Cambiario", "tasas_y_monetario"),
+    "tasa call": ("TASA_CALL", "Tasa Call Interbancaria en Pesos", "tasas_y_monetario"),
+    "call interbancario": ("TASA_CALL", "Tasa Call Interbancaria en Pesos", "tasas_y_monetario"),
     "dólar blue": ("DOLAR_BLUE", "Dólar Blue", "dolar_y_cambiario"),
     "dólar mep": ("DOLAR_MEP", "Dólar MEP", "dolar_y_cambiario"),
     "dólar ccl": ("DOLAR_CCL", "Dólar CCL", "dolar_y_cambiario"),
@@ -282,8 +280,81 @@ CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {
 }
 CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
+CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
+    "TASA_CALL": {
+        "variable": "TASA_CALL",
+        "descripcion": "Tasa Call Interbancaria en Pesos",
+        "categoria": "tasas_y_monetario",
+        "valor_formateado": "21,66% TNA",
+        "variacion": "0,0%",
+        "valor": 21.66,
+        "fecha": "Mercado"
+    },
+    "TASA_TM20": {
+        "variable": "TASA_TM20",
+        "descripcion": "Tasa TM20 en Pesos",
+        "categoria": "tasas_y_monetario",
+        "valor_formateado": "22,00% TNA",
+        "variacion": "0,0%",
+        "valor": 22.0,
+        "fecha": "Mercado"
+    },
+    "TASA_PASES": {
+        "variable": "TASA_PASES",
+        "descripcion": "Tasa de Pases Pasivos BCRA",
+        "categoria": "tasas_y_monetario",
+        "valor_formateado": "22,06% TNA",
+        "variacion": "0,0%",
+        "valor": 22.06,
+        "fecha": "Mercado"
+    }
+}
+
+CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
+    "1W": [
+        {"name": "Communication Services", "ticker": "XLC", "perf": 3.55},
+        {"name": "Basic Materials", "ticker": "XLB", "perf": 2.09},
+        {"name": "Healthcare", "ticker": "XLV", "perf": 1.53},
+        {"name": "Real Estate", "ticker": "XLRE", "perf": 1.29},
+        {"name": "Consumer Cyclical", "ticker": "XLY", "perf": 0.89},
+        {"name": "Financial", "ticker": "XLF", "perf": 0.70},
+        {"name": "Consumer Defensive", "ticker": "XLP", "perf": -0.07},
+        {"name": "Utilities", "ticker": "XLU", "perf": -0.28},
+        {"name": "Industrials", "ticker": "XLI", "perf": -2.94},
+        {"name": "Technology", "ticker": "XLK", "perf": -4.78},
+        {"name": "Energy", "ticker": "XLE", "perf": -7.02}
+    ],
+    "1M": [
+        {"name": "Healthcare", "ticker": "XLV", "perf": 8.75},
+        {"name": "Consumer Defensive", "ticker": "XLP", "perf": 8.93},
+        {"name": "Real Estate", "ticker": "XLRE", "perf": 5.84},
+        {"name": "Utilities", "ticker": "XLU", "perf": 3.93},
+        {"name": "Financial", "ticker": "XLF", "perf": 3.50},
+        {"name": "Consumer Cyclical", "ticker": "XLY", "perf": 2.88},
+        {"name": "Basic Materials", "ticker": "XLB", "perf": -1.04},
+        {"name": "Energy", "ticker": "XLE", "perf": -4.84},
+        {"name": "Industrials", "ticker": "XLI", "perf": -5.11},
+        {"name": "Communication Services", "ticker": "XLC", "perf": -10.64},
+        {"name": "Technology", "ticker": "XLK", "perf": -15.18}
+    ],
+    "1Y": [
+        {"name": "Energy", "ticker": "XLE", "perf": 35.70},
+        {"name": "Basic Materials", "ticker": "XLB", "perf": 23.64},
+        {"name": "Healthcare", "ticker": "XLV", "perf": 21.78},
+        {"name": "Consumer Defensive", "ticker": "XLP", "perf": 19.63},
+        {"name": "Financial", "ticker": "XLF", "perf": 12.14},
+        {"name": "Technology", "ticker": "XLK", "perf": 9.62},
+        {"name": "Real Estate", "ticker": "XLRE", "perf": 6.90},
+        {"name": "Industrials", "ticker": "XLI", "perf": 5.85},
+        {"name": "Utilities", "ticker": "XLU", "perf": -2.34},
+        {"name": "Consumer Cyclical", "ticker": "XLY", "perf": -3.71},
+        {"name": "Communication Services", "ticker": "XLC", "perf": -5.16}
+    ],
+    "updated": datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
+}
+
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
-    "tasas_y_monetario": [],
+    "tasas_y_monetario": list(CACHE_TASAS_PERSISTENTE.values()),
     "dolar_y_cambiario": [],
     "monedas": [],
     "cripto": [],
@@ -404,7 +475,6 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
         pass
     return items
 
-# Extrae en vivo desde el BCRA: Inflación Mensual (con mes), Inflación Interanual (con mes de corte) e Inflación Esperada REM 12m
 def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -437,7 +507,6 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
         mes_corte = extraer_mes_corte_legible(str(fecha_raw or desc_raw))
         fmt_pct = f"{v_num:,.1f}%".replace(",", "X").replace(".", ",").replace("X", ".")
 
-        # 1. Inflación Esperada REM (ID 29 en BCRA)
         if id_var == "29" or ("inflacion" in desc_low and ("esperada" in desc_low or "rem" in desc_low)):
             encontrados["INFLACION_REM"] = {
                 "variable": "INFLACION_REM",
@@ -448,7 +517,6 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
                 "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "REM BCRA"
             }
-        # 2. Inflación Mensual Oficial (ID 27 en BCRA)
         elif id_var == "27" or ("inflacion mensual" in desc_low and "esperada" not in desc_low and "rem" not in desc_low):
             encontrados["INFLACION_MENSUAL"] = {
                 "variable": "INFLACION_MENSUAL",
@@ -459,7 +527,6 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
                 "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
             }
-        # 3. Inflación Interanual Oficial (ID 28 en BCRA)
         elif id_var == "28" or ("inflacion interanual" in desc_low or ("inflacion" in desc_low and "i.a." in desc_low)):
             encontrados["INFLACION_INTERANUAL"] = {
                 "variable": "INFLACION_INTERANUAL",
@@ -470,6 +537,16 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
                 "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
             }
+        elif "call" in desc_low or "prestamos entre entidades" in desc_low or id_var == "12":
+            CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {
+                "variable": "TASA_CALL",
+                "descripcion": "Tasa Call Interbancaria en Pesos",
+                "categoria": "tasas_y_monetario",
+                "valor_formateado": f"{v_num:,.2f}% TNA".replace(".", ","),
+                "variacion": "0,0%",
+                "valor": v_num,
+                "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA"
+            }
 
     for url in urls:
         try:
@@ -477,7 +554,6 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
             if r.status_code != 200:
                 continue
 
-            # Intentar como JSON
             try:
                 data = r.json()
                 nodos: List[Dict[str, Any]] = []
@@ -512,15 +588,13 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
                         or row.get("date")
                         or ""
                     )
-                    # Si algún campo de texto en wp-json viene como HTML
                     if "<" in desc_v and ">" in desc_v:
                         desc_v = BeautifulSoup(desc_v, "html.parser").get_text(" ", strip=True)
-                    if desc_v or id_v in ("27", "28", "29"):
+                    if desc_v or id_v in ("27", "28", "29", "12"):
                         clasificar_y_guardar(desc_v, val_v, fec_v, id_v)
             except Exception:
                 pass
 
-            # Intentar también parsear bloques HTML si wp-json o la home del BCRA devuelven HTML
             texto_html = r.text
             if "<" in texto_html:
                 soup = BeautifulSoup(texto_html, "html.parser")
@@ -529,8 +603,7 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
                     if len(celdas) >= 2:
                         txt_bloque = " ".join(c.get_text(" ", strip=True) for c in celdas)
                         txt_low = txt_bloque.lower()
-                        if "inflaci" in txt_low:
-                            # Buscar porcentaje y fecha
+                        if "inflaci" in txt_low or "call" in txt_low:
                             m_pct = re.search(r"(\d{1,3}(?:[\.,]\d{1,2})?)\s*%?", celdas[-1].get_text(strip=True))
                             if not m_pct:
                                 m_pct = re.search(r"(\d{1,3}[\.,]\d{1,2})\s*%", txt_bloque)
@@ -542,7 +615,6 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
         except Exception as e:
             print(f"[BCRA Inflacion Aviso] {url}: {e}")
 
-    # Si por bloqueo de red no llegó REM, usar el valor vigente de la página del BCRA (21,8%)
     if "INFLACION_REM" not in encontrados:
         encontrados["INFLACION_REM"] = {
             "variable": "INFLACION_REM",
@@ -555,6 +627,55 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
         }
 
     return encontrados
+
+def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    try:
+        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
+        if r.status_code == 200:
+            d = r.json()
+            for row in d.get("principales", []):
+                nom_t = str(row.get("Tasa", "")).upper()
+                tna_val = row.get("TNA", "")
+                if "TM20" in nom_t:
+                    v_n = normalizar_valor(tna_val) or 22.0
+                    CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {
+                        "variable": "TASA_TM20",
+                        "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
+                        "categoria": "tasas_y_monetario",
+                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%",
+                        "valor": v_n,
+                        "fecha": fec_hoy
+                    }
+            for row in d.get("otras", []):
+                nom_t = str(row.get("Tasa", "")).lower()
+                tna_val = row.get("TNA", "")
+                v_n = normalizar_valor(tna_val)
+                if "call" in nom_t and v_n is not None:
+                    CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {
+                        "variable": "TASA_CALL",
+                        "descripcion": "Tasa Call Interbancaria en Pesos",
+                        "categoria": "tasas_y_monetario",
+                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%",
+                        "valor": v_n,
+                        "fecha": fec_hoy
+                    }
+                elif "pase" in nom_t and v_n is not None:
+                    CACHE_TASAS_PERSISTENTE["TASA_PASES"] = {
+                        "variable": "TASA_PASES",
+                        "descripcion": "Tasa de Pases Pasivos BCRA",
+                        "categoria": "tasas_y_monetario",
+                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%",
+                        "valor": v_n,
+                        "fecha": fec_hoy
+                    }
+    except Exception as e:
+        print(f"[Tasas SJB Aviso] {e}")
+
+    return list(CACHE_TASAS_PERSISTENTE.values())
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
     meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -701,52 +822,6 @@ def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"[MAE Licitaciones Error] {e}")
     return []
-
-def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
-    items = []
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
-        if r.status_code == 200:
-            d = r.json()
-            for row in d.get("principales", []):
-                if row.get("Tasa", "").upper() == "TM20":
-                    tna_val = row.get("TNA", "")
-                    items.append({
-                        "variable": "TASA_TM20",
-                        "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA",
-                        "variacion": "0,0%",
-                        "valor": normalizar_valor(tna_val) or 22.0,
-                        "fecha": fec_hoy
-                    })
-            for row in d.get("otras", []):
-                nom_t = row.get("Tasa", "").lower()
-                tna_val = row.get("TNA", "")
-                if "call" in nom_t:
-                    items.append({
-                        "variable": "TASA_CALL",
-                        "descripcion": "Tasa Call Interbancaria en Pesos",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA",
-                        "variacion": "0,0%",
-                        "valor": normalizar_valor(tna_val) or 21.66,
-                        "fecha": fec_hoy
-                    })
-                elif "pase" in nom_t:
-                    items.append({
-                        "variable": "TASA_PASES",
-                        "descripcion": "Tasa de Pases Pasivos BCRA",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA",
-                        "variacion": "0,0%",
-                        "valor": normalizar_valor(tna_val) or 22.06,
-                        "fecha": fec_hoy
-                    })
-    except Exception:
-        pass
-    return items
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
@@ -896,12 +971,54 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
         "dolar_mayorista": round(d_may, 2)
     }
 
+def fetch_finviz_sectores() -> Optional[Dict[str, Any]]:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+    url = "https://finviz.com/groups?g=sector&v=210&o=name"
+    tickers_map = {
+        "basic materials": "XLB", "communication services": "XLC", "consumer cyclical": "XLY",
+        "consumer defensive": "XLP", "energy": "XLE", "financial": "XLF", "healthcare": "XLV",
+        "industrials": "XLI", "real estate": "XLRE", "technology": "XLK", "utilities": "XLU"
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=5.0)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            data_res: Dict[str, List[Dict[str, Any]]] = {"1W": [], "1M": [], "1Y": []}
+            for tr in soup.find_all("tr"):
+                tds = tr.find_all("td")
+                if len(tds) >= 8:
+                    nom = tds[1].get_text(strip=True)
+                    nom_low = nom.lower()
+                    if nom_low in tickers_map:
+                        tk = tickers_map[nom_low]
+                        p_w = normalizar_valor(tds[3].get_text(strip=True))
+                        p_m = normalizar_valor(tds[4].get_text(strip=True))
+                        p_y = normalizar_valor(tds[7].get_text(strip=True))
+                        if p_w is not None:
+                            data_res["1W"].append({"name": nom, "ticker": tk, "perf": p_w})
+                        if p_m is not None:
+                            data_res["1M"].append({"name": nom, "ticker": tk, "perf": p_m})
+                        if p_y is not None:
+                            data_res["1Y"].append({"name": nom, "ticker": tk, "perf": p_y})
+
+            if len(data_res["1W"]) >= 8:
+                for k in ["1W", "1M", "1Y"]:
+                    data_res[k].sort(key=lambda x: x["perf"], reverse=True)
+                data_res["updated"] = datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
+                return data_res
+    except Exception as e:
+        print(f"[Finviz Scraper Aviso] {e}")
+    return None
+
 def worker_refresco_continuo():
-    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, ULTIMA_ACTUALIZACION
+    global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, CACHE_FINVIZ_SECTORES, ULTIMA_ACTUALIZACION
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=16) as executor:
+            with ThreadPoolExecutor(max_workers=17) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
@@ -914,6 +1031,7 @@ def worker_refresco_continuo():
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
                 f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
                 f_licit = executor.submit(fetch_licitaciones_mae)
+                f_finviz = executor.submit(fetch_finviz_sectores)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -929,6 +1047,7 @@ def worker_refresco_continuo():
                 res_metales = f_metales.result()
                 res_petroleo = f_petroleo.result()
                 res_licit = f_licit.result()
+                res_finviz = f_finviz.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
@@ -941,6 +1060,8 @@ def worker_refresco_continuo():
                 CACHE_BANDAS_CAMBIARIAS = res_bandas
             if res_licit is not None:
                 CACHE_LICITACIONES_MAE = res_licit
+            if res_finviz:
+                CACHE_FINVIZ_SECTORES = res_finviz
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
 
@@ -954,7 +1075,7 @@ def worker_refresco_continuo():
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
                 "dolar_y_cambiario": [],
-                "monedas": res_monedas,
+                "monedas": [],
                 "cripto": [],
                 "cotizacion_bonos": res_bonos,
                 "indices": list(indices_map.values()),
@@ -966,12 +1087,17 @@ def worker_refresco_continuo():
                 "commodities_agro_energia": []
             }
 
+            for item in res_monedas:
+                if item.get("categoria") == "dolar_y_cambiario":
+                    nuevo_agrupado["dolar_y_cambiario"].append(item)
+                else:
+                    nuevo_agrupado["monedas"].append(item)
+
             for item in res_ind:
                 cat = item.get("categoria", "macro_y_fiscal")
                 if cat != "indices" and cat in nuevo_agrupado:
                     nuevo_agrupado[cat].append(item)
 
-            # Actualizar/inyectar con prioridad oficial BCRA: Inflación Mensual (con mes), Interanual (con mes) y Esperada REM 12m
             if res_bcra_inf:
                 for cod_inf, obj_inf in res_bcra_inf.items():
                     reemplazado = False
@@ -983,14 +1109,20 @@ def worker_refresco_continuo():
                     if not reemplazado:
                         nuevo_agrupado["inflacion_y_ajuste"].append(obj_inf)
 
-            # Orden prolijo de las 6 tarjetas en Inflación / UVA
             orden_inflacion = ["INFLACION_MENSUAL", "INFLACION_INTERANUAL", "INFLACION_REM", "INDICE_CER", "INDICE_UVA", "INDICE_ICL"]
             nuevo_agrupado["inflacion_y_ajuste"].sort(
                 key=lambda x: orden_inflacion.index(x.get("variable")) if x.get("variable") in orden_inflacion else 99
             )
 
-            for item in res_tasas:
-                nuevo_agrupado["tasas_y_monetario"].append(item)
+            mapa_tasas = {t["variable"]: t for t in res_tasas}
+            for k_pers, obj_pers in CACHE_TASAS_PERSISTENTE.items():
+                if k_pers not in mapa_tasas:
+                    mapa_tasas[k_pers] = obj_pers
+
+            existentes_tasas = {x.get("variable") for x in nuevo_agrupado["tasas_y_monetario"]}
+            for k_t, item_t in mapa_tasas.items():
+                if k_t not in existentes_tasas:
+                    nuevo_agrupado["tasas_y_monetario"].append(item_t)
 
             if res_futuro:
                 nuevo_agrupado["dolar_y_cambiario"].append(res_futuro)
@@ -1031,6 +1163,11 @@ def ver_bcra(formato: str = Query("agrupado")):
                 lista_plana.extend(v)
             return lista_plana
         return CACHE_VARIABLES
+
+@app.get("/api/sectores/finviz")
+def ver_sectores_finviz():
+    with CACHE_LOCK:
+        return CACHE_FINVIZ_SECTORES
 
 @app.get("/api/bonos/curvas-sjb")
 def ver_curvas_sjb():
