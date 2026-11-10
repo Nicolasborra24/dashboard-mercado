@@ -831,7 +831,7 @@
             </div>
             <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${cfg.titulo}</h2>
           </div>
-          <div class="z-10 flex items-center gap-2"><span class="text-[11px] font-mono text-slate-300">${cfg.sub || ''}</span></div>
+          
           <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${cfg.flare}"></div>
         </div>`;
     }
@@ -963,7 +963,7 @@
             <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
               <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
                 <div class="flex items-center gap-2"><i class="fa-brands fa-bitcoin text-amber-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor Criptomonedas — Mercado Global</h3></div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
+                
               </div>
               <div class="w-full h-[620px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
                 <tv-heatmap heatmap-type="crypto-coins" data-source="Crypto" block-size="market_cap_calc" block-color="24h_close_change|5" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
@@ -1003,7 +1003,7 @@
                   <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs"><i class="fa-solid fa-gauge-high"></i></div>
                   <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo Oficial de Bandas Cambiarias BCRA</h2>
                 </div>
-                <span class="text-xs font-mono text-slate-300 bg-slate-900/90 border border-slate-700/60 px-3 py-1 rounded-full">Zona de No Intervención</span>
+                
               </div>
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                 <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
@@ -1064,9 +1064,9 @@
 
         let mapaCalorHtml = "";
         if (subIndiceActivo === "argentina") {
-          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (AllAR)</h3></div><span class="text-[11px] font-mono text-slate-400">TradingView Live • Dark Mode</span></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="AllAR" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
+          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (AllAR)</h3></div></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="AllAR" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
         } else if (subIndiceActivo === "estados_unidos") {
-          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3></div><span class="text-[11px] font-mono text-slate-400">TradingView Live • Dark Mode</span></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
+          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3></div></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
         }
 
         contenedor.innerHTML = `
@@ -1082,7 +1082,7 @@
               <section class="flex-1 w-full space-y-4 overflow-hidden">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div class="flex items-center gap-2"><i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h3></div>
-                  <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
+                  
                 </div>
                 <div id="grid-indices-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}</div>
                 <div id="finviz-sectores-wrapper">${subIndiceActivo === "sectores" ? renderizarBloqueFinvizSectores() : ""}</div>
@@ -1146,7 +1146,7 @@
               <section class="flex-1 w-full space-y-5 overflow-hidden">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div class="flex items-center gap-2"><i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo} (${filas.length} Bonos)</h3></div>
-                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc}</span>
+                  
                 </div>
                 <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl">${tablaHtml}</div>
                 <div class="rounded-2xl sjb-chart-box p-6 space-y-4">
