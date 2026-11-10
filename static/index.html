@@ -430,7 +430,7 @@
     let categoriaActiva = "home";
     let subIndiceActivo = "argentina";
     let curvaActiva = "lecaps";
-    let monedaBonosActiva = "USD"; // Predeterminado USD MEP para Soberanos y Bopreales
+    let monedaBonosActiva = "MEP"; // Predeterminado USD MEP para Soberanos y Bopreales
     window.cambiarMonedaBonos = function(mon) { monedaBonosActiva = mon; renderizar(true); };
     let plazoFinvizActivo = "1D";
 
@@ -461,9 +461,26 @@
       }
     }
 
+    
+    window.cambiarMonedaBonos = async function(mon) {
+      monedaBonosActiva = (mon === "ARS") ? "ARS" : "MEP";
+      renderizar(true);
+      const catSjb = curvaActiva === "bopreales" ? "BOPREALES" : "SOBERANOS";
+      const kDestino = curvaActiva + "_" + monedaBonosActiva.toLowerCase();
+      const urlDirecta = "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=" + catSjb + "&moneda=" + monedaBonosActiva;
+      const dVivo = await fetchJsonSeguro(urlDirecta);
+      if (dVivo) {
+        datosCurvasSJB[kDestino] = dVivo;
+        renderizar(true);
+      }
+    };
+
     function cambiarCurva(curvaKey) {
       curvaActiva = curvaKey;
       renderizar(true);
+      if (curvaKey === "soberanos" || curvaKey === "bopreales") {
+        window.cambiarMonedaBonos(monedaBonosActiva);
+      }
     }
 
     function cambiarSubIndice(subKey) {
@@ -472,19 +489,27 @@
     }
 
     function obtenerFilasCurva(clave) {
-      let claveEfectiva = clave;
-      if ((clave === "soberanos" || clave === "bopreales") && monedaBonosActiva === "USD") {
-        claveEfectiva = clave + "_usd";
+      if (clave === "soberanos" || clave === "bopreales") {
+        const mon = (typeof monedaBonosActiva !== "undefined" && monedaBonosActiva === "ARS") ? "ars" : "mep";
+        const kMon = clave + "_" + mon;
+        const dEsp = datosCurvasSJB[kMon] || (mon === "mep" ? datosCurvasSJB[clave + "_usd"] : datosCurvasSJB[clave]);
+        if (dEsp) {
+          if (Array.isArray(dEsp) && dEsp.length > 0) return dEsp;
+          const arr = dEsp.tabla || dEsp.data || dEsp.bonos || dEsp.filas || dEsp.items || dEsp.rows;
+          if (Array.isArray(arr) && arr.length > 0) return arr;
+        }
+        if (mon === "mep" && window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave + "_usd"]) {
+          return window.TABLAS_BONOS_INTEGRAS[clave + "_usd"].map(x => ({ ...x }));
+        }
+        return (window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave])
+          ? window.TABLAS_BONOS_INTEGRAS[clave].map(x => ({ ...x }))
+          : [];
       }
-      const d = datosCurvasSJB[claveEfectiva];
+      const d = datosCurvasSJB[clave];
       if (d) {
         if (Array.isArray(d) && d.length > 0) return d;
         const arr = d.tabla || d.data || d.bonos || d.filas || d.items || d.rows;
         if (Array.isArray(arr) && arr.length > 0) return arr;
-      }
-      // Si está en USD MEP y el endpoint remoto solo devolvió ARS, convertir precio por MEP o usar tabla USD
-      if (claveEfectiva.endsWith("_usd") && window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[claveEfectiva]) {
-        return window.TABLAS_BONOS_INTEGRAS[claveEfectiva].map(x => ({ ...x }));
       }
       return (window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave])
         ? window.TABLAS_BONOS_INTEGRAS[clave].map(x => ({ ...x }))
@@ -814,11 +839,11 @@
     }
 
         window.PUNTAS_DOLAR_VIVO = {
-      DOLAR_OFICIAL: { compra: null, venta: null },
-      DOLAR_BLUE: { compra: null, venta: null },
-      DOLAR_TARJETA: { compra: null, venta: null },
-      DOLAR_CRIPTO: { compra: null, venta: null },
-      DOLAR_MEJOR_PRECIO: { compra: 1542.00, venta: 1555.00, entidad_compra: "Fiwind / Cocos", entidad_venta: "Brubank / BNA" }
+      DOLAR_OFICIAL: { compra: 1530.00, venta: 1570.00 },
+      DOLAR_BLUE: { compra: 1535.00, venta: 1555.00 },
+      DOLAR_TARJETA: { compra: null, venta: 2041.00 },
+      DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00 },
+      DOLAR_MEJOR_PRECIO: { compra: 1530.00, venta: 1565.00, entidad: "brubank" }
     };
 
     async function actualizarPuntasDolarEnVivo() {
@@ -839,40 +864,38 @@
         });
       }
 
-      // Buscar mejor precio por entidad (bancos / billeteras / exchanges en vivo)
       try {
         const rBancos = await fetchJsonSeguro("https://criptoya.com/api/bancostodos");
         if (rBancos && typeof rBancos === "object") {
-          const mapNombres = {
-            bna: "Banco Nación", galicia: "Banco Galicia", santander: "Santander", bbva: "BBVA",
-            macro: "Banco Macro", patagonia: "Patagonia", supervielle: "Supervielle", icbc: "ICBC",
-            ciudad: "Banco Ciudad", provincia: "Banco Provincia", brubank: "Brubank", uala: "Ualá",
-            rebanking: "Reba", reba: "Reba", nx: "Naranja X", cocos: "Cocos", balanz: "Balanz",
-            fiwind: "Fiwind", lemon: "Lemon Cash", belo: "Belo", buenbit: "Buenbit"
+          const mapBancos = {
+            brubank: "brubank", bna: "Banco Nación", galicia: "Galicia", santander: "Santander",
+            bbva: "BBVA", macro: "Macro", patagonia: "Patagonia", supervielle: "Supervielle",
+            icbc: "ICBC", ciudad: "Banco Ciudad", provincia: "Banco Provincia", reba: "Reba",
+            rebanking: "Reba", uala: "Ualá", nx: "Naranja X", cocos: "Cocos", balanz: "Balanz"
           };
-          const listaEnt = [];
+          const candidatos = [];
           Object.keys(rBancos).forEach(k => {
-            const obj = rBancos[k];
-            if (obj && typeof obj === "object") {
-              const ask = parseFloat(obj.ask || obj.totalAsk);
-              const bid = parseFloat(obj.bid || obj.totalBid);
-              if (!isNaN(ask) && ask > 1000 && ask < 2500 && !isNaN(bid) && bid > 1000 && bid < 2500) {
-                listaEnt.push({
-                  entidad: mapNombres[k.toLowerCase()] || k.toUpperCase(),
+            const kLow = k.toLowerCase();
+            if (mapBancos[kLow] && rBancos[k]) {
+              const bid = parseFloat(rBancos[k].bid || rBancos[k].compra);
+              const ask = parseFloat(rBancos[k].ask || rBancos[k].venta);
+              if (!isNaN(bid) && !isNaN(ask) && bid > 1200 && ask >= bid && ask < 2200) {
+                candidatos.push({
+                  entidad: mapBancos[kLow],
                   compra: bid,
-                  venta: ask
+                  venta: ask,
+                  esBrubank: kLow === "brubank" ? 1 : 0
                 });
               }
             }
           });
-          if (listaEnt.length > 0) {
-            const mejorVenta = listaEnt.reduce((min, cur) => cur.venta < min.venta ? cur : min, listaEnt[0]);
-            const mejorCompra = listaEnt.reduce((max, cur) => cur.compra > max.compra ? cur : max, listaEnt[0]);
+          if (candidatos.length > 0) {
+            candidatos.sort((a, b) => (a.venta - b.venta) || (b.esBrubank - a.esBrubank) || (b.compra - a.compra));
+            const ganador = candidatos[0];
             window.PUNTAS_DOLAR_VIVO.DOLAR_MEJOR_PRECIO = {
-              compra: mejorCompra.compra,
-              entidad_compra: mejorCompra.entidad,
-              venta: mejorVenta.venta,
-              entidad_venta: mejorVenta.entidad
+              compra: ganador.compra,
+              venta: ganador.venta,
+              entidad: ganador.entidad
             };
           }
         }
@@ -1001,23 +1024,25 @@
               const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
               if (item.variable === "DOLAR_MEJOR_PRECIO" && vCompra && vVenta) {
-                const entC = item.entidad_compra || pVivo.entidad_compra || "Fiwind / Cocos";
-                const entV = item.entidad_venta || pVivo.entidad_venta || "Brubank / BNA";
+                const entUnica = item.entidad || item.entidad_venta || pVivo.entidad || "brubank";
+                const fmtInt = n => Number(n) % 1 === 0
+                  ? Number(n).toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+                  : Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 return `
-                  <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
-                    <div class="bg-emerald-950/25 border border-emerald-500/40 rounded-xl px-2.5 py-1.5 flex flex-col justify-between">
-                      <div class="flex items-center justify-between gap-1">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Mejor Compra</span>
-                        <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 truncate" title="${entC}">${entC}</span>
-                      </div>
-                      <span class="text-base sm:text-lg font-extrabold text-white font-mono mt-0.5 ${animFlash}">${fmtP(vCompra)}</span>
+                  <div class="mt-2 pt-1.5 border-t border-slate-800/70 flex flex-col items-center">
+                    <div class="flex items-center justify-center gap-1.5 mb-2">
+                      <span class="px-2.5 py-0.5 rounded-full bg-[#6344f5] text-white text-[9px] font-extrabold uppercase tracking-wider shadow-[0_0_10px_rgba(99,68,245,0.5)]">MEJOR PRECIO</span>
+                      <span class="text-base font-black tracking-tight text-[#816bff] lowercase">${entUnica}</span>
                     </div>
-                    <div class="bg-cyan-950/30 border border-cyan-500/40 rounded-xl px-2.5 py-1.5 flex flex-col justify-between">
-                      <div class="flex items-center justify-between gap-1">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-cyan-400">Mejor Venta</span>
-                        <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 truncate" title="${entV}">${entV}</span>
+                    <div class="w-full grid grid-cols-2 divide-x divide-slate-800 bg-slate-950/60 border border-indigo-500/30 rounded-xl py-2 px-2 text-center">
+                      <div class="flex flex-col items-center justify-center px-1">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">VENDÉ A</span>
+                        <span class="text-lg font-extrabold text-white font-mono mt-0.5 ${animFlash}"><span class="text-xs text-slate-400 mr-0.5">$</span>${fmtInt(vCompra)}</span>
                       </div>
-                      <span class="text-base sm:text-lg font-extrabold text-white font-mono mt-0.5 ${animFlash}">${fmtP(vVenta)}</span>
+                      <div class="flex flex-col items-center justify-center px-1">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">COMPRÁ A</span>
+                        <span class="text-lg font-extrabold text-[#816bff] font-mono mt-0.5 ${animFlash}"><span class="text-xs text-[#816bff] mr-0.5">$</span>${fmtInt(vVenta)}</span>
+                      </div>
                     </div>
                   </div>`;
               }
@@ -2050,7 +2075,7 @@
                 }
                 if (cL.includes("precio") || cL.includes("valor")) {
                   const num = parseNumSeguro(val);
-                  const pref = (curvaActiva === "us_treasuries" || ((curvaActiva === "soberanos" || curvaActiva === "bopreales") && monedaBonosActiva === "USD")) ? "US$ " : "$ ";
+                  const pref = (curvaActiva === "us_treasuries" || ((curvaActiva === "soberanos" || curvaActiva === "bopreales") && monedaBonosActiva !== "ARS")) ? "US$ " : "$ ";
                   return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${!isNaN(num) ? (num >= 1000 ? pref + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : pref + num.toFixed(2)) : val}</td>`;
                 }
                 if (cL.includes("var")) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
@@ -2088,7 +2113,7 @@
                   ${(curvaActiva === "soberanos" || curvaActiva === "bopreales") ? `
                     <div class="inline-flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                       <span class="text-[10px] font-mono text-slate-400 px-2">Moneda:</span>
-                      <button onclick="window.cambiarMonedaBonos('USD')" class="px-3 py-1 rounded-lg text-xs font-bold font-mono transition ${monedaBonosActiva === 'USD' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">USD (MEP)</button>
+                      <button onclick="window.cambiarMonedaBonos('MEP')" class="px-3 py-1 rounded-lg text-xs font-bold font-mono transition ${monedaBonosActiva !== 'ARS' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">USD (MEP)</button>
                       <button onclick="window.cambiarMonedaBonos('ARS')" class="px-3 py-1 rounded-lg text-xs font-bold font-mono transition ${monedaBonosActiva === 'ARS' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">ARS ($)</button>
                     </div>` : ""}
                 </div>
