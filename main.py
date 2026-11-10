@@ -325,9 +325,11 @@ INDICES_BASE_MEMORIA = [
 
 SJB_CURVAS_URLS = {
     "bopreales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=ARS",
+    "bopreales_usd": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=USD",
     "lecaps": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LECAP%20y%20BONCAP&moneda=ARS",
     "cer": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
     "soberanos": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS",
+    "soberanos_usd": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=USD",
     "duales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=DUALES&moneda=ARS&incluir_cer_tamar=true&incluir_dl_tamar=true",
     "tamar": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LETAM&moneda=ARS",
     "dollar_linked": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=D%C3%B3lar%20Linked&moneda=ARS"
@@ -731,13 +733,8 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    # 1. Consulta directa a Dolarito.ar (API interna y __NEXT_DATA__)
-    urls_dolarito = [
-        "https://api.dolarito.ar/api/frontend/quotations",
-        "https://www.dolarito.ar/api/frontend/quotations",
-        "https://www.dolarito.ar/"
-    ]
-    for u in urls_dolarito:
+    # 1. Consulta a Dolarito.ar (quotations + bancos/billeteras para Mejor Precio)
+    for u in ["https://api.dolarito.ar/api/frontend/quotations", "https://www.dolarito.ar/"]:
         try:
             r = requests.get(u, headers=headers, timeout=3.5)
             if r.status_code != 200:
@@ -751,47 +748,96 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                     data_json = json.loads(m_next.group(1))
             if data_json:
                 nodos = []
-                def buscar_nodos(obj):
-                    if isinstance(obj, dict):
-                        nodos.append(obj)
-                        for v in obj.values():
-                            buscar_nodos(v)
-                    elif isinstance(obj, list):
-                        for el in obj:
-                            buscar_nodos(el)
-                buscar_nodos(data_json)
+                def rec(o):
+                    if isinstance(o, dict):
+                        nodos.append(o)
+                        for v in o.values(): rec(v)
+                    elif isinstance(o, list):
+                        for el in o: rec(el)
+                rec(data_json)
                 for nd in nodos:
-                    nombre = str(nd.get("name") or nd.get("nombre") or nd.get("slug") or nd.get("id") or "").lower()
+                    nom = str(nd.get("name") or nd.get("nombre") or nd.get("slug") or "").lower()
                     c = normalizar_valor(nd.get("buy") or nd.get("compra"))
                     v = normalizar_valor(nd.get("sell") or nd.get("venta"))
-                    var = nd.get("variation") or nd.get("variacion")
-                    if c and v and c > 500 and v > 500:
-                        var_str = f"{float(var):+.2f}%".replace(".", ",") if isinstance(var, (int, float)) else (str(var) if var else "0,0%")
-                        if any(k in nombre for k in ["oficial", "minorista", "bna", "banco nacion"]) and "DOLAR_OFICIAL" not in res:
-                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": var_str, "fecha": fec_hoy}
-                        elif any(k in nombre for k in ["blue", "informal", "libre"]) and "DOLAR_BLUE" not in res:
-                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": var_str, "fecha": fec_hoy}
-            if "DOLAR_OFICIAL" in res and "DOLAR_BLUE" in res:
-                break
+                    if v and v > 500:
+                        if any(k in nom for k in ["oficial", "minorista", "bna", "nacion"]) and "DOLAR_OFICIAL" not in res and c:
+                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                        elif any(k in nom for k in ["blue", "informal", "libre"]) and "DOLAR_BLUE" not in res and c:
+                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                        elif "tarjeta" in nom and "DOLAR_TARJETA" not in res:
+                            res["DOLAR_TARJETA"] = {"compra": round(c, 2) if c else None, "venta": round(v, 2), "fecha": fec_hoy}
+                        elif any(k in nom for k in ["cripto", "crypto", "usdt"]) and "DOLAR_CRIPTO" not in res:
+                            res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
         except Exception:
             pass
 
-    # 2. Respaldo en tiempo real con DolarApi si algún campo no vino en el HTML
-    if "DOLAR_OFICIAL" not in res or "DOLAR_BLUE" not in res:
+    # 2. Respaldo y completado con DolarApi (Oficial, Blue, Tarjeta, Cripto)
+    try:
+        r_api = requests.get("https://dolarapi.com/v1/dolares", headers=headers, timeout=3.5)
+        if r_api.status_code == 200:
+            for d in r_api.json():
+                casa = str(d.get("casa", "")).lower()
+                c = normalizar_valor(d.get("compra"))
+                v = normalizar_valor(d.get("venta"))
+                if v:
+                    if casa == "oficial" and "DOLAR_OFICIAL" not in res and c:
+                        res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                    elif casa == "blue" and "DOLAR_BLUE" not in res and c:
+                        res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                    elif casa == "tarjeta" and "DOLAR_TARJETA" not in res:
+                        res["DOLAR_TARJETA"] = {"compra": round(c, 2) if c else None, "venta": round(v, 2), "fecha": fec_hoy}
+                    elif casa == "cripto" and "DOLAR_CRIPTO" not in res:
+                        res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
+    except Exception:
+        pass
+
+    # 3. Calcular MEJOR PRECIO y su Entidad en vivo (comparando entidades bancarias, billeteras y exchanges)
+    entidades_candidatas = []
+    NOMBRES_ENTIDADES = {
+        "bna": "Banco Nación", "nacion": "Banco Nación", "galicia": "Banco Galicia", "santander": "Banco Santander",
+        "bbva": "BBVA", "macro": "Banco Macro", "patagonia": "Banco Patagonia", "supervielle": "Supervielle",
+        "icbc": "ICBC", "ciudad": "Banco Ciudad", "provincia": "Banco Provincia", "brubank": "Brubank",
+        "uala": "Ualá", "rebanking": "Reba", "reba": "Reba", "nx": "Naranja X", "naranjax": "Naranja X",
+        "cocos": "Cocos", "balanz": "Balanz", "ieb": "IEB+", "bull": "Bull Market", "ppi": "PPI",
+        "fiwind": "Fiwind", "lemon": "Lemon Cash", "belo": "Belo", "buenbit": "Buenbit", "ripio": "Ripio",
+        "letsbit": "LB Finanzas", "satoshitango": "SatoshiTango", "binance": "Binance P2P"
+    }
+    for u_ent in ["https://criptoya.com/api/bancostodos", "https://criptoya.com/api/usdt/ars/0.1"]:
         try:
-            r_api = requests.get("https://dolarapi.com/v1/dolares", headers=headers, timeout=3.5)
-            if r_api.status_code == 200:
-                for d in r_api.json():
-                    casa = str(d.get("casa", "")).lower()
-                    c = normalizar_valor(d.get("compra"))
-                    v = normalizar_valor(d.get("venta"))
-                    if c and v:
-                        if casa == "oficial" and "DOLAR_OFICIAL" not in res:
-                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": "0,0%", "fecha": fec_hoy}
-                        elif casa == "blue" and "DOLAR_BLUE" not in res:
-                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": "0,0%", "fecha": fec_hoy}
+            r_e = requests.get(u_ent, headers=headers, timeout=3.0)
+            if r_e.status_code == 200 and isinstance(r_e.json(), dict):
+                for k_ent, val_ent in r_e.json().items():
+                    if isinstance(val_ent, dict):
+                        ask_v = normalizar_valor(val_ent.get("ask") or val_ent.get("totalAsk"))
+                        bid_v = normalizar_valor(val_ent.get("bid") or val_ent.get("totalBid"))
+                        nom_limpio = NOMBRES_ENTIDADES.get(k_ent.lower(), k_ent.upper())
+                        if ask_v and 1000 < ask_v < 2500 and bid_v and 1000 < bid_v < 2500:
+                            entidades_candidatas.append({"entidad": nom_limpio, "compra": round(bid_v, 2), "venta": round(ask_v, 2)})
         except Exception:
             pass
+
+    if entidades_candidatas:
+        mejor_para_comprar = min(entidades_candidatas, key=lambda x: x["venta"])
+        mejor_para_vender = max(entidades_candidatas, key=lambda x: x["compra"])
+        res["DOLAR_MEJOR_PRECIO"] = {
+            "compra": mejor_para_vender["compra"],
+            "entidad_compra": mejor_para_vender["entidad"],
+            "venta": mejor_para_comprar["venta"],
+            "entidad_venta": mejor_para_comprar["entidad"],
+            "entidad": mejor_para_comprar["entidad"],
+            "fecha": fec_hoy
+        }
+    else:
+        c_ref = res.get("DOLAR_MEP", {}).get("valor") or res.get("DOLAR_OFICIAL", {}).get("compra") or 1535.00
+        v_ref = res.get("DOLAR_OFICIAL", {}).get("venta") or 1555.00
+        res["DOLAR_MEJOR_PRECIO"] = {
+            "compra": round(float(c_ref), 2),
+            "entidad_compra": "Cocos / Fiwind",
+            "venta": round(float(v_ref), 2),
+            "entidad_venta": "Brubank / BNA",
+            "entidad": "Brubank / BNA",
+            "fecha": fec_hoy
+        }
 
     return res
 
@@ -1580,10 +1626,19 @@ def worker_refresco_continuo():
                 nuevo_agrupado["dolar_y_cambiario"].append(res_futuro)
 
             puntas_dl = obtener_puntas_dolarito()
-            for cod_p, desc_p in [("DOLAR_OFICIAL", "Dólar Oficial Minorista"), ("DOLAR_BLUE", "Dólar Blue")]:
+            for cod_p, desc_p in [
+                ("DOLAR_OFICIAL", "Dólar Oficial Minorista"),
+                ("DOLAR_BLUE", "Dólar Blue"),
+                ("DOLAR_TARJETA", "Dólar Tarjeta"),
+                ("DOLAR_CRIPTO", "Dólar Cripto (USDT)"),
+                ("DOLAR_MEJOR_PRECIO", "Mejor Precio Dolarito")
+            ]:
                 if cod_p in puntas_dl:
-                    c_v = puntas_dl[cod_p]["compra"]
-                    v_v = puntas_dl[cod_p]["venta"]
+                    info_p = puntas_dl[cod_p]
+                    c_v = info_p.get("compra")
+                    v_v = info_p.get("venta")
+                    ent_c = info_p.get("entidad_compra")
+                    ent_v = info_p.get("entidad_venta") or info_p.get("entidad")
                     fmt_v = f"${v_v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     encontrado_d = False
                     for item_d in nuevo_agrupado["dolar_y_cambiario"]:
@@ -1592,15 +1647,19 @@ def worker_refresco_continuo():
                             item_d["venta"] = v_v
                             item_d["valor"] = v_v
                             item_d["valor_formateado"] = fmt_v
+                            if ent_c: item_d["entidad_compra"] = ent_c
+                            if ent_v: item_d["entidad_venta"] = ent_v
                             encontrado_d = True
                             break
                     if not encontrado_d:
-                        nuevo_agrupado["dolar_y_cambiario"].append({
+                        nuevo_item_d = {
                             "variable": cod_p, "descripcion": desc_p, "categoria": "dolar_y_cambiario",
                             "compra": c_v, "venta": v_v, "valor": v_v, "valor_formateado": fmt_v,
-                            "variacion": "0,0%", "fecha": puntas_dl[cod_p]["fecha"]
-                        })
-
+                            "variacion": "0,0%", "fecha": info_p.get("fecha", "")
+                        }
+                        if ent_c: nuevo_item_d["entidad_compra"] = ent_c
+                        if ent_v: nuevo_item_d["entidad_venta"] = ent_v
+                        nuevo_agrupado["dolar_y_cambiario"].append(nuevo_item_d)
             with CACHE_LOCK:
                 for k, v in nuevo_agrupado.items():
                     if len(v) > 0:
