@@ -9,6 +9,7 @@
   <title>Monitor Maestro De Mercado</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/static/datos_base.js?v=4.3"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,9 +28,7 @@
       font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       letter-spacing: -0.011em;
     }
-
     .font-mono { font-family: 'JetBrains Mono', monospace; }
-
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.6); border-radius: 9999px; }
     ::-webkit-scrollbar-thumb { background: rgba(14, 116, 144, 0.5); border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.25); }
@@ -48,7 +47,6 @@
       box-shadow: 0 10px 28px -2px rgba(6, 182, 212, 0.15), inset 0 1px 2px 0 rgba(255, 255, 255, 0.18);
       transform: translateY(-1px);
     }
-
     .neon-tab {
       background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 14, 28, 0.9) 100%);
       border: 1px solid rgba(71, 85, 105, 0.45);
@@ -66,42 +64,14 @@
       box-shadow: 0 0 16px rgba(34, 211, 238, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.25);
       color: #ffffff;
     }
+    .table-dark-row:hover { background-color: rgba(15, 23, 42, 0.75); }
+    .sjb-chart-box { background-color: #14171c; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75); }
 
-    .table-dark-row:hover {
-      background-color: rgba(15, 23, 42, 0.75);
-    }
-
-    .sjb-chart-box {
-      background-color: #14171c;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
-    }
-
-    .section-bar-cyan {
-      background: linear-gradient(90deg, rgba(6, 182, 212, 0.35) 0%, rgba(8, 51, 68, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
-      border: 1px solid rgba(34, 211, 238, 0.55);
-      box-shadow: 0 0 18px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-    .section-bar-purple {
-      background: linear-gradient(90deg, rgba(168, 85, 247, 0.35) 0%, rgba(59, 7, 100, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
-      border: 1px solid rgba(192, 132, 252, 0.55);
-      box-shadow: 0 0 18px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-    .section-bar-amber {
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.35) 0%, rgba(69, 26, 3, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
-      border: 1px solid rgba(251, 191, 36, 0.55);
-      box-shadow: 0 0 18px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-    .section-bar-rose {
-      background: linear-gradient(90deg, rgba(244, 63, 94, 0.35) 0%, rgba(76, 5, 25, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
-      border: 1px solid rgba(251, 113, 133, 0.55);
-      box-shadow: 0 0 18px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-    .section-bar-emerald {
-      background: linear-gradient(90deg, rgba(16, 185, 129, 0.35) 0%, rgba(6, 78, 59, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%);
-      border: 1px solid rgba(52, 211, 153, 0.55);
-      box-shadow: 0 0 18px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
+    .section-bar-cyan { background: linear-gradient(90deg, rgba(6, 182, 212, 0.35) 0%, rgba(8, 51, 68, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%); border: 1px solid rgba(34, 211, 238, 0.55); box-shadow: 0 0 18px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+    .section-bar-purple { background: linear-gradient(90deg, rgba(168, 85, 247, 0.35) 0%, rgba(59, 7, 100, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%); border: 1px solid rgba(192, 132, 252, 0.55); box-shadow: 0 0 18px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+    .section-bar-amber { background: linear-gradient(90deg, rgba(245, 158, 11, 0.35) 0%, rgba(69, 26, 3, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%); border: 1px solid rgba(251, 191, 36, 0.55); box-shadow: 0 0 18px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+    .section-bar-rose { background: linear-gradient(90deg, rgba(244, 63, 94, 0.35) 0%, rgba(76, 5, 25, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%); border: 1px solid rgba(251, 113, 133, 0.55); box-shadow: 0 0 18px rgba(244, 63, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+    .section-bar-emerald { background: linear-gradient(90deg, rgba(16, 185, 129, 0.35) 0%, rgba(6, 78, 59, 0.5) 40%, rgba(3, 7, 18, 0.2) 100%); border: 1px solid rgba(52, 211, 153, 0.55); box-shadow: 0 0 18px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
 
     .glow-flare-cyan { background: linear-gradient(90deg, rgba(34, 211, 238, 0.8) 0%, rgba(6, 182, 212, 0.3) 60%, transparent 100%); }
     .glow-flare-purple { background: linear-gradient(90deg, rgba(192, 132, 252, 0.8) 0%, rgba(168, 85, 247, 0.3) 60%, transparent 100%); }
@@ -125,7 +95,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Monitor Maestro De Mercado</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.2</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.3</span>
         </div>
         <p class="text-[11px] text-slate-400">Diseñado por Nicolás Borra para toda la comunidad bolsera</p>
       </div>
@@ -148,57 +118,20 @@
 
         <div class="flex flex-col gap-1.5 flex-1 w-full text-[11px]">
           <div class="grid grid-cols-6 gap-1.5">
-            <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i>
-              <span class="truncate">Tasas y BCRA</span>
-            </button>
-            <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i>
-              <span class="truncate">Dólar y Brechas</span>
-            </button>
-            <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i>
-              <span class="truncate">Monedas</span>
-            </button>
-            <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-brands fa-bitcoin text-amber-400 text-[11px]"></i>
-              <span class="truncate">Cripto</span>
-            </button>
-            <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i>
-              <span class="truncate">Cotización Bonos</span>
-            </button>
-            <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i>
-              <span class="truncate">Inflación / UVA</span>
-            </button>
+            <button onclick="filtrarCategoria('tasas_y_monetario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-landmark text-sky-400 text-[10px]"></i><span class="truncate">Tasas y BCRA</span></button>
+            <button onclick="filtrarCategoria('dolar_y_cambiario', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-dollar-sign text-emerald-400 text-[10px]"></i><span class="truncate">Dólar y Brechas</span></button>
+            <button onclick="filtrarCategoria('monedas', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-money-bill-1-wave text-teal-400 text-[10px]"></i><span class="truncate">Monedas</span></button>
+            <button onclick="filtrarCategoria('cripto', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-brands fa-bitcoin text-amber-400 text-[11px]"></i><span class="truncate">Cripto</span></button>
+            <button onclick="filtrarCategoria('cotizacion_bonos', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-[10px]"></i><span class="truncate">Cotización Bonos</span></button>
+            <button onclick="filtrarCategoria('inflacion_y_ajuste', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-arrow-trend-up text-rose-400 text-[10px]"></i><span class="truncate">Inflación / UVA</span></button>
           </div>
-
           <div class="grid grid-cols-6 gap-1.5">
-            <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i>
-              <span class="truncate">Índices y Sectores</span>
-            </button>
-            <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-coins text-amber-400 text-[10px]"></i>
-              <span class="truncate">Metales</span>
-            </button>
-            <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i>
-              <span class="truncate">Petróleo</span>
-            </button>
-            <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i>
-              <span class="truncate">Macro & Fiscal</span>
-            </button>
-            <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-industry text-orange-400 text-[10px]"></i>
-              <span class="truncate">Micro / Real</span>
-            </button>
-            <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i>
-              <span class="truncate">Agro & Energía</span>
-            </button>
+            <button onclick="filtrarCategoria('indices', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-line text-purple-400 text-[10px]"></i><span class="truncate">Índices y Sectores</span></button>
+            <button onclick="filtrarCategoria('metales', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-coins text-amber-400 text-[10px]"></i><span class="truncate">Metales</span></button>
+            <button onclick="filtrarCategoria('petroleo', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-oil-well text-amber-500 text-[10px]"></i><span class="truncate">Petróleo</span></button>
+            <button onclick="filtrarCategoria('macro_y_fiscal', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-scale-balanced text-indigo-400 text-[10px]"></i><span class="truncate">Macro & Fiscal</span></button>
+            <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-industry text-orange-400 text-[10px]"></i><span class="truncate">Micro / Real</span></button>
+            <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i><span class="truncate">Agro & Energía</span></button>
           </div>
         </div>
       </div>
@@ -216,229 +149,21 @@
   </main>
 
   <script>
-    window.TABLAS_BONOS_INTEGRAS = {
-      lecaps: [
-        { Ticker: "S13N6", Vencimiento: "2026-11-13", Dias: 4, Precio: 101.85, Variacion: "+0.08%", TIR: "13.35%", TEM: "1.05%", TNA: "12.80%", MD: 0.01 },
-        { Ticker: "S30N6", Vencimiento: "2026-11-30", Dias: 21, Precio: 104.25, Variacion: "+0.18%", TIR: "21.65%", TEM: "1.64%", TNA: "19.95%", MD: 0.06 },
-        { Ticker: "T15E7", Vencimiento: "2027-01-15", Dias: 67, Precio: 108.15, Variacion: "+0.19%", TIR: "25.72%", TEM: "1.92%", TNA: "23.35%", MD: 0.18 },
-        { Ticker: "S29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 109.10, Variacion: "+0.15%", TIR: "25.40%", TEM: "1.90%", TNA: "23.10%", MD: 0.22 },
-        { Ticker: "S26F7", Vencimiento: "2027-02-26", Dias: 109, Precio: 111.45, Variacion: "+0.25%", TIR: "26.08%", TEM: "1.95%", TNA: "23.70%", MD: 0.30 },
-        { Ticker: "T30A7", Vencimiento: "2027-04-30", Dias: 172, Precio: 117.65, Variacion: "+0.32%", TIR: "30.48%", TEM: "2.24%", TNA: "27.20%", MD: 0.47 },
-        { Ticker: "T31Y7", Vencimiento: "2027-05-31", Dias: 203, Precio: 120.40, Variacion: "+0.28%", TIR: "29.72%", TEM: "2.19%", TNA: "26.60%", MD: 0.55 },
-        { Ticker: "T30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 123.10, Variacion: "+0.31%", TIR: "29.35%", TEM: "2.16%", TNA: "26.25%", MD: 0.64 },
-        { Ticker: "TY30P", Vencimiento: "2027-09-30", Dias: 325, Precio: 132.85, Variacion: "+0.42%", TIR: "30.88%", TEM: "2.26%", TNA: "27.50%", MD: 0.89 }
-      ],
-      cer: [
-        { Ticker: "TZXD6", Vencimiento: "2026-12-15", Dias: 36, Precio: 215.40, Variacion: "+0.30%", TIR: "5.20%", TEM: "0.42%", Paridad: "99.45%", MD: 0.10 },
-        { Ticker: "TZXE7", Vencimiento: "2027-01-31", Dias: 83, Precio: 198.60, Variacion: "+0.24%", TIR: "6.15%", TEM: "0.50%", Paridad: "98.60%", MD: 0.23 },
-        { Ticker: "TZXF7", Vencimiento: "2027-02-28", Dias: 111, Precio: 191.10, Variacion: "+0.18%", TIR: "6.65%", TEM: "0.54%", Paridad: "97.90%", MD: 0.30 },
-        { Ticker: "TX27", Vencimiento: "2027-03-25", Dias: 136, Precio: 184.20, Variacion: "+0.42%", TIR: "7.25%", TEM: "0.58%", Paridad: "97.10%", MD: 0.37 },
-        { Ticker: "TZXA7", Vencimiento: "2027-04-30", Dias: 172, Precio: 173.50, Variacion: "+0.29%", TIR: "7.65%", TEM: "0.62%", Paridad: "96.25%", MD: 0.47 },
-        { Ticker: "TZXM7", Vencimiento: "2027-05-31", Dias: 203, Precio: 162.80, Variacion: "+0.15%", TIR: "8.05%", TEM: "0.65%", Paridad: "95.40%", MD: 0.55 },
-        { Ticker: "TZX27", Vencimiento: "2027-06-30", Dias: 233, Precio: 158.90, Variacion: "+0.28%", TIR: "8.35%", TEM: "0.67%", Paridad: "94.80%", MD: 0.63 },
-        { Ticker: "TZXO7", Vencimiento: "2027-10-31", Dias: 356, Precio: 153.40, Variacion: "+0.33%", TIR: "8.75%", TEM: "0.70%", Paridad: "92.15%", MD: 0.96 },
-        { Ticker: "TZXD7", Vencimiento: "2027-12-15", Dias: 401, Precio: 151.10, Variacion: "+0.37%", TIR: "8.95%", TEM: "0.72%", Paridad: "91.05%", MD: 1.08 },
-        { Ticker: "TZXM8", Vencimiento: "2028-03-31", Dias: 508, Precio: 148.20, Variacion: "+0.41%", TIR: "9.15%", TEM: "0.73%", Paridad: "89.70%", MD: 1.35 },
-        { Ticker: "TZXJ8", Vencimiento: "2028-06-30", Dias: 599, Precio: 146.80, Variacion: "+0.22%", TIR: "9.30%", TEM: "0.74%", Paridad: "88.90%", MD: 1.58 },
-        { Ticker: "TX28", Vencimiento: "2028-11-09", Dias: 731, Precio: 149.50, Variacion: "+0.55%", TIR: "9.45%", TEM: "0.75%", Paridad: "88.60%", MD: 1.65 },
-        { Ticker: "TZX28", Vencimiento: "2028-12-15", Dias: 767, Precio: 142.10, Variacion: "+0.38%", TIR: "9.65%", TEM: "0.77%", Paridad: "86.20%", MD: 1.98 },
-        { Ticker: "TX29", Vencimiento: "2029-06-30", Dias: 964, Precio: 138.40, Variacion: "+0.44%", TIR: "9.80%", TEM: "0.78%", Paridad: "84.50%", MD: 2.35 },
-        { Ticker: "TX31", Vencimiento: "2031-11-30", Dias: 1847, Precio: 131.90, Variacion: "+0.51%", TIR: "9.95%", TEM: "0.79%", Paridad: "82.10%", MD: 3.40 },
-        { Ticker: "DICP", Vencimiento: "2033-12-31", Dias: 2609, Precio: 34850.00, Variacion: "+0.62%", TIR: "10.15%", TEM: "0.81%", Paridad: "81.40%", MD: 3.85 },
-        { Ticker: "DIP0", Vencimiento: "2033-12-31", Dias: 2609, Precio: 34620.00, Variacion: "+0.58%", TIR: "10.22%", TEM: "0.81%", Paridad: "80.90%", MD: 3.85 },
-        { Ticker: "PARP", Vencimiento: "2038-12-31", Dias: 4435, Precio: 16450.00, Variacion: "+0.21%", TIR: "10.25%", TEM: "0.82%", Paridad: "64.80%", MD: 6.15 },
-        { Ticker: "PAP0", Vencimiento: "2038-12-31", Dias: 4435, Precio: 16310.00, Variacion: "+0.19%", TIR: "10.30%", TEM: "0.82%", Paridad: "64.20%", MD: 6.15 },
-        { Ticker: "CUAP", Vencimiento: "2045-12-31", Dias: 6992, Precio: 23900.00, Variacion: "+0.48%", TIR: "10.35%", TEM: "0.82%", Paridad: "69.50%", MD: 7.40 }
-      ],
-      duales: [
-        { Ticker: "TTJ26", Tipo: "CER / TAMAR", Vencimiento: "2026-12-30", Dias: 51, Precio: 132.40, Variacion: "+0.25%", TIR: "7.85%", TEM: "2.18%", Paridad: "98.40%", MD: 0.14 },
-        { Ticker: "TTS26", Tipo: "CER / TAMAR", Vencimiento: "2027-03-15", Dias: 126, Precio: 138.90, Variacion: "+0.34%", TIR: "8.45%", TEM: "2.24%", Paridad: "97.10%", MD: 0.34 },
-        { Ticker: "TTD26", Tipo: "CER / TAMAR", Vencimiento: "2027-06-15", Dias: 218, Precio: 145.60, Variacion: "+0.41%", TIR: "8.90%", TEM: "2.28%", Paridad: "95.80%", MD: 0.59 },
-        { Ticker: "TDJ27", Tipo: "DL / TAMAR", Vencimiento: "2027-06-30", Dias: 233, Precio: 154.20, Variacion: "+0.19%", TIR: "9.15%", TEM: "2.31%", Paridad: "95.20%", MD: 0.63 },
-        { Ticker: "TDS27", Tipo: "DL / TAMAR", Vencimiento: "2027-09-30", Dias: 325, Precio: 161.10, Variacion: "+0.36%", TIR: "9.40%", TEM: "2.34%", Paridad: "93.80%", MD: 0.88 },
-        { Ticker: "TDD27", Tipo: "CER / TAMAR", Vencimiento: "2027-12-15", Dias: 401, Precio: 168.75, Variacion: "+0.52%", TIR: "9.65%", TEM: "2.36%", Paridad: "92.50%", MD: 1.09 },
-        { Ticker: "TTJ28", Tipo: "CER / TAMAR", Vencimiento: "2028-06-30", Dias: 599, Precio: 179.40, Variacion: "+0.47%", TIR: "9.90%", TEM: "2.39%", Paridad: "90.10%", MD: 1.62 }
-      ],
-      soberanos: [
-        { Ticker: "AL29", Ley: "Local", Vencimiento: "2029-07-09", Dias: 973, Precio: 76450.0, Variacion: "+0.85%", TIR: "13.45%", Paridad: "74.20%", MD: 1.85 },
-        { Ticker: "GD29", Ley: "NY", Vencimiento: "2029-07-09", Dias: 973, Precio: 78900.0, Variacion: "+0.92%", TIR: "12.80%", Paridad: "76.50%", MD: 1.90 },
-        { Ticker: "AL30", Ley: "Local", Vencimiento: "2030-07-09", Dias: 1338, Precio: 72150.0, Variacion: "+1.10%", TIR: "13.10%", Paridad: "70.10%", MD: 2.45 },
-        { Ticker: "GD30", Ley: "NY", Vencimiento: "2030-07-09", Dias: 1338, Precio: 74800.0, Variacion: "+1.05%", TIR: "12.35%", Paridad: "72.80%", MD: 2.52 },
-        { Ticker: "AL35", Ley: "Local", Vencimiento: "2035-07-09", Dias: 3164, Precio: 65400.0, Variacion: "+0.75%", TIR: "11.65%", Paridad: "63.40%", MD: 5.40 },
-        { Ticker: "GD35", Ley: "NY", Vencimiento: "2035-07-09", Dias: 3164, Precio: 67900.0, Variacion: "+0.88%", TIR: "11.20%", Paridad: "65.90%", MD: 5.55 },
-        { Ticker: "AE38", Ley: "Local", Vencimiento: "2038-01-09", Dias: 4079, Precio: 68200.0, Variacion: "+0.64%", TIR: "11.95%", Paridad: "66.10%", MD: 4.85 },
-        { Ticker: "GD38", Ley: "NY", Vencimiento: "2038-01-09", Dias: 4079, Precio: 71300.0, Variacion: "+0.79%", TIR: "11.40%", Paridad: "69.20%", MD: 4.95 },
-        { Ticker: "AL41", Ley: "Local", Vencimiento: "2041-07-09", Dias: 5356, Precio: 61200.0, Variacion: "+0.50%", TIR: "11.75%", Paridad: "59.40%", MD: 5.95 },
-        { Ticker: "GD41", Ley: "NY", Vencimiento: "2041-07-09", Dias: 5356, Precio: 63800.0, Variacion: "+0.55%", TIR: "11.30%", Paridad: "61.80%", MD: 6.10 },
-        { Ticker: "GD46", Ley: "NY", Vencimiento: "2046-07-09", Dias: 7182, Precio: 64900.0, Variacion: "+0.62%", TIR: "11.25%", Paridad: "62.90%", MD: 6.45 }
-      ],
-      bopreales: [
-        { Ticker: "BPY26", Vencimiento: "2026-11-30", Dias: 21, Precio: 103400.0, Variacion: "+0.35%", TIR: "8.45%", Paridad: "98.20%", MD: 0.06 },
-        { Ticker: "BPOA7", Vencimiento: "2027-10-31", Dias: 356, Precio: 96500.0, Variacion: "+0.48%", TIR: "11.20%", Paridad: "89.60%", MD: 0.95 },
-        { Ticker: "BPOB7", Vencimiento: "2027-10-31", Dias: 356, Precio: 95800.0, Variacion: "+0.40%", TIR: "11.45%", Paridad: "88.90%", MD: 0.95 },
-        { Ticker: "BPOC7", Vencimiento: "2027-10-31", Dias: 356, Precio: 94900.0, Variacion: "+0.38%", TIR: "11.70%", Paridad: "88.10%", MD: 0.95 },
-        { Ticker: "BPOD7", Vencimiento: "2027-10-31", Dias: 356, Precio: 94200.0, Variacion: "+0.44%", TIR: "11.85%", Paridad: "87.50%", MD: 0.95 }
-      ],
-      dollar_linked: [
-        { Ticker: "TZVD6", Vencimiento: "2026-12-15", Dias: 36, Precio: 1125.0, Variacion: "+0.20%", TIR: "4.50%", Paridad: "99.10%", MD: 0.10 },
-        { Ticker: "TZVM7", Vencimiento: "2027-03-31", Dias: 142, Precio: 1110.0, Variacion: "+0.32%", TIR: "5.80%", Paridad: "97.60%", MD: 0.38 },
-        { Ticker: "TZV27", Vencimiento: "2027-06-30", Dias: 233, Precio: 1085.0, Variacion: "+0.18%", TIR: "6.90%", Paridad: "95.40%", MD: 0.62 },
-        { Ticker: "TZVD7", Vencimiento: "2027-12-15", Dias: 401, Precio: 1052.0, Variacion: "+0.29%", TIR: "7.65%", Paridad: "92.20%", MD: 1.07 },
-        { Ticker: "TZV28", Vencimiento: "2028-06-30", Dias: 599, Precio: 1024.0, Variacion: "+0.35%", TIR: "8.15%", Paridad: "89.80%", MD: 1.58 }
-      ],
-      tamar: [
-        { Ticker: "M29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 108.40, Variacion: "+0.15%", TIR: "31.40%", TNA: "28.10%", MD: 0.22 },
-        { Ticker: "M31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 113.90, Variacion: "+0.24%", TIR: "32.15%", TNA: "28.65%", MD: 0.39 },
-        { Ticker: "M30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 121.50, Variacion: "+0.30%", TIR: "32.80%", TNA: "29.10%", MD: 0.64 },
-        { Ticker: "M15S7", Vencimiento: "2027-09-15", Dias: 310, Precio: 128.90, Variacion: "+0.28%", TIR: "33.20%", TNA: "29.40%", MD: 0.85 },
-        { Ticker: "M15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 137.60, Variacion: "+0.33%", TIR: "33.55%", TNA: "29.65%", MD: 1.10 }
-      ]
-    };
-
-    const INDICES_ESTATICOS_BASE = [
-      { variable: "TASA_CALL", descripcion: "TASA CALL INTERBANCARIA EN PESOS", subcategoria: "tasas", valor_formateado: "21,66% TNA", variacion: "0,0%", valor: 21.66, fecha: "Mercado" },
-      { variable: "MERVAL_ARS", descripcion: "S&P MERVAL EN PESOS", subcategoria: "argentina", valor_formateado: "84K", variacion: "+2.313,5%", valor: 84000.0, fecha: "08 Nov 2026" },
-      { variable: "MERVAL_USD", descripcion: "S&P MERVAL EN DÓLARES", subcategoria: "argentina", valor_formateado: "$54", variacion: "+2.292,9%", valor: 54.0, fecha: "08 Nov 2026" },
-      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+59,4%", valor: 939.0, fecha: "08 Nov 2026" },
-      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
-      { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
-      { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
-      { variable: "INDICE_DJI", descripcion: "DOW JONES INDUSTRIAL (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0.59%", valor: 43988.99, fecha: "08 Nov 2026" },
-      { variable: "INDICE_RUSSELL", descripcion: "RUSSELL 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0.71%", valor: 2399.61, fecha: "08 Nov 2026" },
-      { variable: "MONEDA_DXY", descripcion: "ÍNDICE DÓLAR (DXY)", subcategoria: "estados_unidos", valor_formateado: "102,28 pts", variacion: "-0.02%", valor: 102.28, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLK", descripcion: "TECNOLOGÍA (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0.52%", valor: 228.45, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLF", descripcion: "FINANCIERO (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1.15%", valor: 49.32, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLE", descripcion: "ENERGÍA (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0.84%", valor: 91.80, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLV", descripcion: "SALUD (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0.28%", valor: 146.22, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLI", descripcion: "INDUSTRIAL (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0.65%", valor: 139.15, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLY", descripcion: "CONSUMO DISCRECIONAL (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1.40%", valor: 206.88, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLP", descripcion: "CONSUMO BÁSICO (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0.15%", valor: 78.90, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLU", descripcion: "SERVICIOS PÚBLICOS (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0.45%", valor: 81.42, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLB", descripcion: "MATERIALES (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0.35%", valor: 93.65, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
-    ];
-
-    const SERIE_INFLACION_IMPLICITA_SJB = [
-      { mes: "May 2026", tipo: "real", ipc_real: 2.15, inf_implicita: null, tem_nominal: null, tem_cer: null },
-      { mes: "Jun 2026", tipo: "real", ipc_real: 1.89, inf_implicita: null, tem_nominal: null, tem_cer: null },
-      { mes: "Jul 2026", tipo: "real", ipc_real: 2.11, inf_implicita: null, tem_nominal: null, tem_cer: null },
-      { mes: "Aug 2026", tipo: "real", ipc_real: 1.66, inf_implicita: null, tem_nominal: null, tem_cer: null },
-      { mes: "Sep 2026", tipo: "real", ipc_real: 1.93, inf_implicita: null, tem_nominal: null, tem_cer: null },
-      { mes: "Oct 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.71, tem_nominal: 1.83, tem_cer: 0.13 },
-      { mes: "Nov 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.90, tem_nominal: 1.90, tem_cer: 0.01 },
-      { mes: "Dec 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.56, tem_nominal: 1.94, tem_cer: 0.38 },
-      { mes: "Jan 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.84, tem_nominal: 2.08, tem_cer: 0.24 },
-      { mes: "Feb 2027", tipo: "implicita", ipc_real: null, inf_implicita: 2.10, tem_nominal: 2.24, tem_cer: 0.14 },
-      { mes: "Mar 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.87, tem_nominal: 2.19, tem_cer: 0.32 },
-      { mes: "Apr 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.85, tem_nominal: 2.16, tem_cer: 0.31 },
-      { mes: "May 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.69, tem_nominal: 2.23, tem_cer: 0.53 },
-      { mes: "Jun 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.70, tem_nominal: 2.25, tem_cer: 0.55 }
-    ];
-
-    const CONFIG_SECCIONES = {
-      home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-gauge-high", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-landmark", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", sub: "6 Cotizaciones Principales", icono: "fa-dollar-sign", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", sub: "Pares de Monedas Globales", icono: "fa-money-bill-1-wave", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      cripto: { titulo: "Cotizaciones Criptomonedas en Vivo", sub: "Binance Spot Stream en Tiempo Real", icono: "fa-brands fa-bitcoin", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina", sub: "Rendimientos y Cotizaciones BYMA • SJB", icono: "fa-file-invoice-dollar", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      indices: { titulo: "Índices Principales y Sectores", sub: "Mercados Locales e Internacionales", icono: "fa-chart-line", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "INDEC • BCRA • Break-Even SJB", icono: "fa-arrow-trend-up", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
-      metales: { titulo: "Metales Preciosos e Industriales", sub: "Commodities Metálicos en Tiempo Real", icono: "fa-coins", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      petroleo: { titulo: "Mercado Internacional de Crudo y Combustibles", sub: "Petróleo y Derivados Energéticos", icono: "fa-oil-well", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-scale-balanced", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      micro_y_sectores: { titulo: "Economía Real, Crédito y Actividad Productiva", sub: "Construcción, Industria, Consumo y Crédito", icono: "fa-industry", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" }
-    };
-
-    const BLOQUES_HOME = [
-      {
-        id: "mercados_divisas",
-        titulo: "MERCADOS & DIVISAS",
-        estiloBarra: "section-bar-cyan",
-        estiloFlare: "glow-flare-cyan",
-        iconoIzq: "fa-solid fa-chart-line text-cyan-300",
-        badgeBg: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300",
-        iconoDer: "fa-solid fa-globe text-cyan-400/80",
-        variables: ["MONEDA_DXY", "CRIPTO_BTC", "DOLAR_OFICIAL", "DOLAR_MEP", "DOLAR_CCL", "INFLACION_MENSUAL"]
-      },
-      {
-        id: "riesgo_indices",
-        titulo: "RIESGO & ÍNDICES GLOBALES",
-        estiloBarra: "section-bar-purple",
-        estiloFlare: "glow-flare-purple",
-        iconoIzq: "fa-solid fa-shield-halved text-purple-300",
-        badgeBg: "bg-purple-500/20 border-purple-400/40 text-purple-300",
-        iconoDer: "fa-solid fa-chart-simple text-purple-400/80",
-        variables: ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS", "INDICE_VIX", "INDICE_NASDAQ", "INDICE_SP500"]
-      },
-      {
-        id: "tasas_monetario",
-        titulo: "TASAS & MONETARIO (BCRA)",
-        estiloBarra: "section-bar-cyan",
-        estiloFlare: "glow-flare-cyan",
-        iconoIzq: "fa-solid fa-landmark text-sky-300",
-        badgeBg: "bg-sky-500/20 border-sky-400/40 text-sky-300",
-        iconoDer: "fa-solid fa-percent text-sky-400/80",
-        variables: ["TASA_TAMAR", "TASA_BADLAR", "TASA_CALL"]
-      },
-      {
-        id: "commodities_energia",
-        titulo: "COMMODITIES & ENERGÍA",
-        estiloBarra: "section-bar-amber",
-        estiloFlare: "glow-flare-amber",
-        iconoIzq: "fa-solid fa-coins text-amber-300",
-        badgeBg: "bg-amber-500/20 border-amber-400/40 text-amber-300",
-        iconoDer: "fa-solid fa-wheat-awn text-amber-400/80",
-        variables: ["AGRO_SOJA", "METALES_XAU", "PETROLEO_WTI"]
-      }
-    ];
-
-    const CRIPTO_DIRECTAS = [
-      { cod: "CRIPTO_BTC", desc: "BITCOIN (BTC)", sym: "BTCUSDT", defP: 75864.01 },
-      { cod: "CRIPTO_ETH", desc: "ETHEREUM (ETH)", sym: "ETHUSDT", defP: 2485.0 },
-      { cod: "CRIPTO_SOL", desc: "SOLANA (SOL)", sym: "SOLUSDT", defP: 198.50 },
-      { cod: "CRIPTO_PAXG", desc: "PAX GOLD (PAXG)", sym: "PAXGUSDT", defP: 2745.0 },
-      { cod: "CRIPTO_BNB", desc: "BNB CHAIN (BNB)", sym: "BNBUSDT", defP: 588.0 },
-      { cod: "CRIPTO_XRP", desc: "RIPPLE (XRP)", sym: "XRPUSDT", defP: 0.582 },
-      { cod: "CRIPTO_DOGE", desc: "DOGECOIN (DOGE)", sym: "DOGEUSDT", defP: 0.198 },
-      { cod: "CRIPTO_ADA", desc: "CARDANO (ADA)", sym: "ADAUSDT", defP: 0.438 },
-      { cod: "CRIPTO_USDC", desc: "USD COIN (USDC)", sym: "USDCUSDT", defP: 1.00 },
-      { cod: "CRIPTO_USDT", desc: "TETHER (USDT)", sym: null, defP: 1.00 }
-    ];
-
     const PRECIOS_ANTERIORES = {};
     const FLASH_REGISTRO = {};
-
-    let subIndiceActivo = "argentina";
-    let plazoFinvizActivo = "1W";
-    let datosFinvizSectores = null;
-
-    const SUB_INDICES_INFO = {
-      argentina: { titulo: "Mercado Argentino — S&P Merval", desc: "Bolsa de Buenos Aires (BCBA / BYMA) & Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
-      estados_unidos: { titulo: "Mercado Estadounidense — S&P 500", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
-      sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
-    };
-
-    const CURVAS_INFO = {
-      lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
-      cer: { titulo: "Curva de Rendimientos - Bonos CER", desc: "Precios en ARS • Tickers Boncer, Descuento y Par", icono: "fa-arrow-trend-up", color: "text-purple-400" },
-      soberanos: { titulo: "Curva de Rendimientos - Soberanos en Dólares", desc: "Precios en ARS / Rendimiento TIR Anual • Ley Local y NY", icono: "fa-file-invoice-dollar", color: "text-cyan-400" },
-      bopreales: { titulo: "Curva de Rendimientos - BOPREALES (ARS)", desc: "Precios en ARS • Series BCRA en Pesos", icono: "fa-shield-halved", color: "text-emerald-400" },
-      dollar_linked: { titulo: "Curva de Rendimientos - Dollar Linked", desc: "Precios en ARS • Cobertura cambiaria oficial A3500", icono: "fa-link", color: "text-emerald-400" },
-      tamar: { titulo: "Curva de Rendimientos - Tasa TAMAR y Badlar", desc: "Precios en ARS • Títulos LETAM a tasa variable", icono: "fa-chart-simple", color: "text-sky-400" },
-      duales: { titulo: "Curva de Rendimientos - Bonos Duales", desc: "Precios en ARS • Títulos duales e indexados (CER y DL TAMAR)", icono: "fa-arrows-split-up-and-left", color: "text-rose-400" }
-    };
-
-    let datosCurvasSJB = {};
-    let datosInflacionImplicitaSJB = null;
-    let datosBandasCambiarias = { banda_inferior: 703.82, banda_superior: 1974.20, dolar_mayorista: 1545.50 };
     const SORT_STATE = {};
 
     let datosGlobales = {};
+    let datosCurvasSJB = {};
+    let datosInflacionImplicitaSJB = null;
+    let datosBandasCambiarias = { banda_inferior: 703.82, banda_superior: 1974.20, dolar_mayorista: 1545.50 };
+    let datosFinvizSectores = null;
+
     let categoriaActiva = "home";
+    let subIndiceActivo = "argentina";
     let curvaActiva = "lecaps";
+    let plazoFinvizActivo = "1W";
+
     let chartCurvaInstance = null;
     let chartInflacionInstance = null;
 
@@ -447,36 +172,15 @@
       if (typeof val === "number") return val;
       let s = String(val).replace(/[%$a-zA-Z\s]/g, "").trim();
       if (!s) return NaN;
-      if (s.includes(",") && s.includes(".")) {
-        s = s.replace(/\./g, "").replace(",", ".");
-      } else if (s.includes(",")) {
-        s = s.replace(",", ".");
-      }
+      if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
+      else if (s.includes(",")) s = s.replace(",", ".");
       const n = parseFloat(s);
       return isNaN(n) ? NaN : n;
     }
 
-    async function cargarFinvizSectores() {
-      try {
-        const res = await fetch("/api/sectores/finviz?t=" + Date.now());
-        if (res.ok) {
-          const d = await res.json();
-          if (d && (d["1W"] || d["1M"] || d["1Y"])) {
-            datosFinvizSectores = d;
-            if (categoriaActiva === "indices" && subIndiceActivo === "sectores") {
-              renderizar();
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Finviz:", e);
-      }
-    }
-
-    function cambiarPlazoFinviz(plazo) {
-      plazoFinvizActivo = plazo;
-      renderizar();
-    }
+    function cambiarPlazoFinviz(plazo) { plazoFinvizActivo = plazo; renderizar(); }
+    function cambiarCurva(curvaKey) { curvaActiva = curvaKey; renderizar(); }
+    function cambiarSubIndice(subKey) { subIndiceActivo = subKey; renderizar(); }
 
     function obtenerFilasCurva(clave) {
       const d = datosCurvasSJB[clave];
@@ -516,7 +220,7 @@
           });
         }
       }
-      return SERIE_INFLACION_IMPLICITA_SJB;
+      return window.SERIE_INFLACION_IMPLICITA_SJB;
     }
 
     const pluginEtiquetasCurvaSJB = {
@@ -532,9 +236,7 @@
         ctx.textAlign = "center";
         meta.data.forEach((elem, index) => {
           const pt = dataset.data[index];
-          if (pt && pt.ticker) {
-            ctx.fillText(pt.ticker, elem.x, elem.y - 10);
-          }
+          if (pt && pt.ticker) ctx.fillText(pt.ticker, elem.x, elem.y - 10);
         });
         ctx.restore();
       }
@@ -548,7 +250,6 @@
         ctx.font = "600 10px 'Inter', sans-serif";
         ctx.fillStyle = "#cbd5e1";
         ctx.textAlign = "center";
-
         [0, 1].forEach(dsIndex => {
           const meta = chart.getDatasetMeta(dsIndex);
           const ds = chart.data.datasets[dsIndex];
@@ -566,8 +267,7 @@
 
     function extraerTIRParaCurva(fila) {
       const keys = Object.keys(fila);
-      const kTir = keys.find(k => /^tir$|^tea$|tir_anual|tir\s*\(%\)|tea\s*\(%\)|rendimiento/i.test(k.trim()))
-        || keys.find(k => /tir|tea/i.test(k));
+      const kTir = keys.find(k => /^tir$|^tea$|tir_anual|tir\s*\(%\)|tea\s*\(%\)|rendimiento/i.test(k.trim())) || keys.find(k => /tir|tea/i.test(k));
       if (kTir) {
         const v = parseNumSeguro(fila[kTir]);
         if (!isNaN(v) && v !== 0) return v;
@@ -580,9 +280,7 @@
       const kTem = keys.find(k => /tem/i.test(k));
       if (kTem) {
         const vTem = parseNumSeguro(fila[kTem]);
-        if (!isNaN(vTem) && vTem > 0) {
-          return +(((Math.pow(1 + vTem / 100, 12)) - 1) * 100).toFixed(2);
-        }
+        if (!isNaN(vTem) && vTem > 0) return +(((Math.pow(1 + vTem / 100, 12)) - 1) * 100).toFixed(2);
       }
       return NaN;
     }
@@ -590,10 +288,7 @@
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
-      if (chartCurvaInstance) {
-        chartCurvaInstance.destroy();
-        chartCurvaInstance = null;
-      }
+      if (chartCurvaInstance) { chartCurvaInstance.destroy(); chartCurvaInstance = null; }
 
       const filas = obtenerFilasCurva(curvaActiva);
       const puntos = [];
@@ -601,8 +296,7 @@
       filas.forEach((f, idx) => {
         const keys = Object.keys(f);
         const kTicker = keys.find(k => /ticker|especie|bono|simbolo/i.test(k)) || keys[0];
-        const kDias = keys.find(k => /^dias$|^días$|dias_vto|días_al_vencimiento|plazo/i.test(k.trim()))
-          || keys.find(k => /dias|días/i.test(k));
+        const kDias = keys.find(k => /^dias$|^días$|dias_vto|días_al_vencimiento|plazo/i.test(k.trim())) || keys.find(k => /dias|días/i.test(k));
         const kVto = keys.find(k => /vencimiento|vto|fecha/i.test(k));
         const kDur = keys.find(k => /^md$|duration|duracion/i.test(k));
 
@@ -616,9 +310,7 @@
             const p = sVto.split("/");
             fVto = new Date(`${p[2]}-${p[1]}-${p[0]}`);
           }
-          if (!isNaN(fVto.getTime())) {
-            diasVal = Math.max(1, Math.round((fVto - new Date()) / (1000 * 60 * 60 * 24)));
-          }
+          if (!isNaN(fVto.getTime())) diasVal = Math.max(1, Math.round((fVto - new Date()) / 86400000));
         }
         if (isNaN(diasVal) && kDur) {
           const dVal = parseNumSeguro(f[kDur]);
@@ -647,110 +339,40 @@
         }
         const b = den !== 0 ? num / den : 0;
         const a = meanY - b * meanX;
-
         const minX = Math.max(1, puntos[0].x);
         const maxX = puntos[puntos.length - 1].x;
-        const pasos = 100;
-        for (let i = 0; i <= pasos; i++) {
-          const cx = minX + ((maxX - minX) * i) / pasos;
-          const cy = a + b * Math.log(Math.max(1, cx));
-          lineaTendencia.push({ x: +cx.toFixed(2), y: +cy.toFixed(2) });
+        for (let i = 0; i <= 100; i++) {
+          const cx = minX + ((maxX - minX) * i) / 100;
+          lineaTendencia.push({ x: +cx.toFixed(2), y: +(a + b * Math.log(Math.max(1, cx))).toFixed(2) });
         }
       }
 
-      const ctx = canvas.getContext("2d");
-      chartCurvaInstance = new Chart(ctx, {
+      chartCurvaInstance = new Chart(canvas.getContext("2d"), {
         type: "scatter",
         data: {
           datasets: [
-            {
-              label: "Bonos",
-              data: puntos,
-              backgroundColor: "#3b82f6",
-              borderColor: "#3b82f6",
-              borderWidth: 1,
-              pointStyle: "circle",
-              pointRadius: 5,
-              pointHoverRadius: 7,
-              order: 1
-            },
-            {
-              label: "Tendencia",
-              data: lineaTendencia,
-              type: "line",
-              borderColor: "#ef4444",
-              backgroundColor: "transparent",
-              borderWidth: 2,
-              borderDash: [3, 3],
-              pointStyle: "line",
-              pointRadius: 0,
-              pointHoverRadius: 0,
-              fill: false,
-              tension: 0.35,
-              order: 2
-            }
+            { label: "Bonos", data: puntos, backgroundColor: "#3b82f6", borderColor: "#3b82f6", borderWidth: 1, pointStyle: "circle", pointRadius: 5, pointHoverRadius: 7, order: 1 },
+            { label: "Tendencia", data: lineaTendencia, type: "line", borderColor: "#ef4444", backgroundColor: "transparent", borderWidth: 2, borderDash: [3, 3], pointStyle: "line", pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0.35, order: 2 }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           layout: { padding: { top: 24, right: 16, left: 10, bottom: 8 } },
           plugins: {
-            legend: {
-              display: true,
-              position: "right",
-              align: "start",
-              labels: {
-                color: "#94a3b8",
-                usePointStyle: true,
-                boxWidth: 22,
-                padding: 14,
-                font: { family: "'Inter', sans-serif", size: 11 }
-              }
-            },
+            legend: { display: true, position: "right", align: "start", labels: { color: "#94a3b8", usePointStyle: true, boxWidth: 22, padding: 14, font: { family: "'Inter', sans-serif", size: 11 } } },
             tooltip: {
-              backgroundColor: "rgba(20, 23, 28, 0.96)",
-              borderColor: "rgba(255, 255, 255, 0.15)",
-              borderWidth: 1,
+              backgroundColor: "rgba(20, 23, 28, 0.96)", borderColor: "rgba(255, 255, 255, 0.15)", borderWidth: 1,
               callbacks: {
-                label(context) {
-                  const raw = context.raw;
-                  if (raw && raw.ticker) {
-                    return `${raw.ticker} — TIR: ${raw.y.toFixed(2)}% (${raw.x} días)`;
-                  }
-                  return `Tendencia: ${raw.y.toFixed(2)}%`;
+                label(ctx) {
+                  const raw = ctx.raw;
+                  return raw && raw.ticker ? `${raw.ticker} — TIR: ${raw.y.toFixed(2)}% (${raw.x} días)` : `Tendencia: ${raw.y.toFixed(2)}%`;
                 }
               }
             }
           },
           scales: {
-            x: {
-              type: "linear",
-              title: {
-                display: true,
-                text: "Días al Vencimiento",
-                color: "#94a3b8",
-                font: { family: "'Inter', sans-serif", size: 12, weight: "600" },
-                padding: { top: 10 }
-              },
-              grid: { color: "rgba(255, 255, 255, 0.06)" },
-              ticks: { color: "#64748b", font: { family: "'Inter', sans-serif", size: 10 } }
-            },
-            y: {
-              title: {
-                display: true,
-                text: "TIR (%)",
-                color: "#94a3b8",
-                font: { family: "'Inter', sans-serif", size: 12, weight: "600" },
-                padding: { bottom: 8 }
-              },
-              grid: { color: "rgba(255, 255, 255, 0.06)" },
-              ticks: {
-                color: "#64748b",
-                font: { family: "'Inter', sans-serif", size: 10 },
-                callback: v => Number(v).toFixed(2) + "%"
-              }
-            }
+            x: { type: "linear", title: { display: true, text: "Días al Vencimiento", color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 12, weight: "600" }, padding: { top: 10 } }, grid: { color: "rgba(255, 255, 255, 0.06)" }, ticks: { color: "#64748b", font: { family: "'Inter', sans-serif", size: 10 } } },
+            y: { title: { display: true, text: "TIR (%)", color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 12, weight: "600" }, padding: { bottom: 8 } }, grid: { color: "rgba(255, 255, 255, 0.06)" }, ticks: { color: "#64748b", font: { family: "'Inter', sans-serif", size: 10 }, callback: v => Number(v).toFixed(2) + "%" } }
           }
         },
         plugins: [pluginEtiquetasCurvaSJB]
@@ -760,138 +382,33 @@
     function dibujarGraficoInflacionImplicita() {
       const canvas = document.getElementById("canvas-inflacion-implicita");
       if (!canvas) return;
-      if (chartInflacionInstance) {
-        chartInflacionInstance.destroy();
-        chartInflacionInstance = null;
-      }
+      if (chartInflacionInstance) { chartInflacionInstance.destroy(); chartInflacionInstance = null; }
 
       const serie = obtenerSerieInflacionImplicita();
-      const labels = serie.map(s => s.mes);
-      const dataIPCReal = serie.map(s => s.ipc_real);
-      const dataImplicita = serie.map(s => s.inf_implicita);
-      const dataTEMNominal = serie.map(s => s.tem_nominal);
-      const dataTEMCer = serie.map(s => s.tem_cer);
-
-      const ctx = canvas.getContext("2d");
-      chartInflacionInstance = new Chart(ctx, {
+      chartInflacionInstance = new Chart(canvas.getContext("2d"), {
         type: "bar",
         data: {
-          labels,
+          labels: serie.map(s => s.mes),
           datasets: [
-            {
-              type: "bar",
-              label: "IPC Real (INDEC)",
-              data: dataIPCReal,
-              backgroundColor: "#2ecc71",
-              borderColor: "#2ecc71",
-              borderWidth: 0,
-              borderRadius: 2,
-              barPercentage: 0.82,
-              categoryPercentage: 0.85,
-              grouped: false,
-              order: 3
-            },
-            {
-              type: "bar",
-              label: "Inflación Implícita (mercado)",
-              data: dataImplicita,
-              backgroundColor: "#3b82f6",
-              borderColor: "#3b82f6",
-              borderWidth: 0,
-              borderRadius: 2,
-              barPercentage: 0.82,
-              categoryPercentage: 0.85,
-              grouped: false,
-              order: 3
-            },
-            {
-              type: "line",
-              label: "TEM Nominal (LECAP/BONCAP)",
-              data: dataTEMNominal,
-              borderColor: "#f59e0b",
-              backgroundColor: "#f59e0b",
-              borderWidth: 2,
-              borderDash: [4, 4],
-              pointRadius: 3.5,
-              pointHoverRadius: 5,
-              spanGaps: true,
-              tension: 0.15,
-              order: 1
-            },
-            {
-              type: "line",
-              label: "TEM Real (CER)",
-              data: dataTEMCer,
-              borderColor: "#a855f7",
-              backgroundColor: "#a855f7",
-              borderWidth: 2,
-              borderDash: [4, 4],
-              pointRadius: 3.5,
-              pointHoverRadius: 5,
-              spanGaps: true,
-              tension: 0.15,
-              order: 2
-            }
+            { type: "bar", label: "IPC Real (INDEC)", data: serie.map(s => s.ipc_real), backgroundColor: "#2ecc71", borderRadius: 2, barPercentage: 0.82, categoryPercentage: 0.85, grouped: false, order: 3 },
+            { type: "bar", label: "Inflación Implícita (mercado)", data: serie.map(s => s.inf_implicita), backgroundColor: "#3b82f6", borderRadius: 2, barPercentage: 0.82, categoryPercentage: 0.85, grouped: false, order: 3 },
+            { type: "line", label: "TEM Nominal (LECAP/BONCAP)", data: serie.map(s => s.tem_nominal), borderColor: "#f59e0b", backgroundColor: "#f59e0b", borderWidth: 2, borderDash: [4, 4], pointRadius: 3.5, spanGaps: true, tension: 0.15, order: 1 },
+            { type: "line", label: "TEM Real (CER)", data: serie.map(s => s.tem_cer), borderColor: "#a855f7", backgroundColor: "#a855f7", borderWidth: 2, borderDash: [4, 4], pointRadius: 3.5, spanGaps: true, tension: 0.15, order: 2 }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           layout: { padding: { top: 20, right: 16, left: 8, bottom: 6 } },
           plugins: {
-            legend: {
-              display: true,
-              position: "top",
-              align: "start",
-              labels: {
-                color: "#cbd5e1",
-                boxWidth: 14,
-                padding: 18,
-                font: { family: "'Inter', sans-serif", size: 11 }
-              }
-            },
+            legend: { display: true, position: "top", align: "start", labels: { color: "#cbd5e1", boxWidth: 14, padding: 18, font: { family: "'Inter', sans-serif", size: 11 } } },
             tooltip: {
-              backgroundColor: "rgba(20, 23, 28, 0.96)",
-              borderColor: "rgba(255, 255, 255, 0.15)",
-              borderWidth: 1,
-              callbacks: {
-                label(ctx) {
-                  if (ctx.parsed.y === null || ctx.parsed.y === undefined) return null;
-                  return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%`;
-                }
-              }
+              backgroundColor: "rgba(20, 23, 28, 0.96)", borderColor: "rgba(255, 255, 255, 0.15)", borderWidth: 1,
+              callbacks: { label: ctx => (ctx.parsed.y !== null && ctx.parsed.y !== undefined) ? `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` : null }
             }
           },
           scales: {
-            x: {
-              title: {
-                display: true,
-                text: "Mes",
-                color: "#94a3b8",
-                font: { family: "'Inter', sans-serif", size: 12, weight: "600" },
-                padding: { top: 10 }
-              },
-              grid: { color: "rgba(255, 255, 255, 0.05)" },
-              ticks: { color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 10 } }
-            },
-            y: {
-              beginAtZero: true,
-              suggestedMax: 2.5,
-              title: {
-                display: true,
-                text: "Inflación mensual",
-                color: "#94a3b8",
-                font: { family: "'Inter', sans-serif", size: 12, weight: "600" },
-                padding: { bottom: 8 }
-              },
-              grid: { color: "rgba(255, 255, 255, 0.06)" },
-              ticks: {
-                color: "#94a3b8",
-                stepSize: 0.5,
-                font: { family: "'Inter', sans-serif", size: 10 },
-                callback: v => Number(v).toFixed(2) + "%"
-              }
-            }
+            x: { title: { display: true, text: "Mes", color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 12, weight: "600" }, padding: { top: 10 } }, grid: { color: "rgba(255, 255, 255, 0.05)" }, ticks: { color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 10 } } },
+            y: { beginAtZero: true, suggestedMax: 2.5, title: { display: true, text: "Inflación mensual", color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 12, weight: "600" }, padding: { bottom: 8 } }, grid: { color: "rgba(255, 255, 255, 0.06)" }, ticks: { color: "#94a3b8", stepSize: 0.5, font: { family: "'Inter', sans-serif", size: 10 }, callback: v => Number(v).toFixed(2) + "%" } }
           }
         },
         plugins: [pluginValoresBarrasInflacion]
@@ -899,66 +416,13 @@
     }
 
     function renderizarBloqueFinvizSectores() {
-      const plazos = [
-        { id: "1W", label: "1 Semana" },
-        { id: "1M", label: "1 Mes" },
-        { id: "1Y", label: "1 Año" }
-      ];
-      const fallbackData = {
-        "1W": [
-          { name: "Communication Services", ticker: "XLC", perf: 3.55 },
-          { name: "Basic Materials", ticker: "XLB", perf: 2.09 },
-          { name: "Healthcare", ticker: "XLV", perf: 1.53 },
-          { name: "Real Estate", ticker: "XLRE", perf: 1.29 },
-          { name: "Consumer Cyclical", ticker: "XLY", perf: 0.89 },
-          { name: "Financial", ticker: "XLF", perf: 0.70 },
-          { name: "Consumer Defensive", ticker: "XLP", perf: -0.07 },
-          { name: "Utilities", ticker: "XLU", perf: -0.28 },
-          { name: "Industrials", ticker: "XLI", perf: -2.94 },
-          { name: "Technology", ticker: "XLK", perf: -4.78 },
-          { name: "Energy", ticker: "XLE", perf: -7.02 }
-        ],
-        "1M": [
-          { name: "Healthcare", ticker: "XLV", perf: 8.75 },
-          { name: "Consumer Defensive", ticker: "XLP", perf: 8.93 },
-          { name: "Real Estate", ticker: "XLRE", perf: 5.84 },
-          { name: "Utilities", ticker: "XLU", perf: 3.93 },
-          { name: "Financial", ticker: "XLF", perf: 3.50 },
-          { name: "Consumer Cyclical", ticker: "XLY", perf: 2.88 },
-          { name: "Basic Materials", ticker: "XLB", perf: -1.04 },
-          { name: "Energy", ticker: "XLE", perf: -4.84 },
-          { name: "Industrials", ticker: "XLI", perf: -5.11 },
-          { name: "Communication Services", ticker: "XLC", perf: -10.64 },
-          { name: "Technology", ticker: "XLK", perf: -15.18 }
-        ],
-        "1Y": [
-          { name: "Energy", ticker: "XLE", perf: 35.70 },
-          { name: "Basic Materials", ticker: "XLB", perf: 23.64 },
-          { name: "Healthcare", ticker: "XLV", perf: 21.78 },
-          { name: "Consumer Defensive", ticker: "XLP", perf: 19.63 },
-          { name: "Financial", ticker: "XLF", perf: 12.14 },
-          { name: "Technology", ticker: "XLK", perf: 9.62 },
-          { name: "Real Estate", ticker: "XLRE", perf: 6.90 },
-          { name: "Industrials", ticker: "XLI", perf: 5.85 },
-          { name: "Utilities", ticker: "XLU", perf: -2.34 },
-          { name: "Consumer Cyclical", ticker: "XLY", perf: -3.71 },
-          { name: "Communication Services", ticker: "XLC", perf: -5.16 }
-        ]
-      };
-
-      const fuente = (datosFinvizSectores && datosFinvizSectores[plazoFinvizActivo])
-        ? datosFinvizSectores[plazoFinvizActivo]
-        : fallbackData[plazoFinvizActivo];
-
+      const plazos = [{ id: "1W", label: "1 Semana" }, { id: "1M", label: "1 Mes" }, { id: "1Y", label: "1 Año" }];
+      const fuente = (datosFinvizSectores && datosFinvizSectores[plazoFinvizActivo]) ? datosFinvizSectores[plazoFinvizActivo] : window.FINVIZ_FALLBACK[plazoFinvizActivo];
       const maxAbs = Math.max(...fuente.map(s => Math.abs(s.perf)), 10);
 
       const itemsHtml = fuente.map(s => {
         const isPos = s.perf >= 0;
-        const colorBar = isPos ? "bg-emerald-500" : "bg-rose-500";
-        const colorText = isPos ? "text-emerald-400" : "text-rose-400";
         const widthPct = Math.min(100, (Math.abs(s.perf) / maxAbs) * 100);
-        const signo = isPos ? "+" : "";
-
         return `
           <div class="flex items-center gap-3 text-xs font-mono py-1.5 px-3 rounded-lg hover:bg-slate-900/60 transition">
             <div class="w-48 shrink-0 flex items-center justify-between">
@@ -966,192 +430,104 @@
               <span class="text-slate-400 text-[10px] ml-1">(${s.ticker})</span>
             </div>
             <div class="flex-1 flex items-center h-5 bg-slate-950/70 rounded border border-slate-800/80 overflow-hidden relative">
-              <div class="h-full ${colorBar} opacity-85 transition-all duration-500" style="width: ${widthPct}%;"></div>
+              <div class="h-full ${isPos ? 'bg-emerald-500' : 'bg-rose-500'} opacity-85 transition-all duration-500" style="width: ${widthPct}%;"></div>
             </div>
-            <div class="w-20 text-right font-extrabold ${colorText} shrink-0">
-              ${signo}${s.perf.toFixed(2)}%
+            <div class="w-20 text-right font-extrabold ${isPos ? 'text-emerald-400' : 'text-rose-400'} shrink-0">
+              ${isPos ? '+' : ''}${s.perf.toFixed(2)}%
             </div>
-          </div>
-        `;
+          </div>`;
       }).join("");
 
       return `
         <div class="rounded-2xl sjb-chart-box p-5 space-y-4 shadow-2xl backdrop-blur-md">
           <div class="border-b border-slate-800/80 pb-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xs shadow-sm">
-                <i class="fa-solid fa-chart-column"></i>
-              </div>
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xs shadow-sm"><i class="fa-solid fa-chart-column"></i></div>
               <div>
                 <h3 class="text-xs font-bold text-white uppercase tracking-wider">Rendimiento Sectorial de Wall Street (Finviz Groups)</h3>
                 <p class="text-[10px] text-slate-400 font-mono mt-0.5">S&P 500 Sector Performance Barometer</p>
               </div>
             </div>
             <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-              ${plazos.map(p => `
-                <button onclick="cambiarPlazoFinviz('${p.id}')" class="px-3 py-1 rounded-lg text-xs font-semibold font-mono transition ${plazoFinvizActivo === p.id ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">
-                  ${p.label}
-                </button>
-              `).join("")}
+              ${plazos.map(p => `<button onclick="cambiarPlazoFinviz('${p.id}')" class="px-3 py-1 rounded-lg text-xs font-semibold font-mono transition ${plazoFinvizActivo === p.id ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">${p.label}</button>`).join("")}
             </div>
           </div>
+          <div class="space-y-1">${itemsHtml}</div>
+        </div>`;
+    }
 
-          <div class="space-y-1">
-            ${itemsHtml}
-          </div>
-        </div>
-      `;
+    async function fetchJsonSeguro(url) {
+      try {
+        const res = await fetch(url);
+        return res.ok ? await res.json() : null;
+      } catch (e) {
+        return null;
+      }
     }
 
     async function actualizarCriptosEnVivo() {
-      try {
-        const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${syms}`);
-        if (!res.ok) return;
-        const tickers = await res.json();
-        const mapBin = {};
-        tickers.forEach(t => { mapBin[t.symbol] = t; });
+      const syms = '["BTCUSDT","ETHUSDT","SOLUSDT","PAXGUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","ADAUSDT","USDCUSDT"]';
+      const tickers = await fetchJsonSeguro(`https://api.binance.com/api/v3/ticker/24hr?symbols=${syms}`);
+      if (!tickers) return;
+      const mapBin = {};
+      tickers.forEach(t => { mapBin[t.symbol] = t; });
+      const fec = new Date().toLocaleTimeString();
+      if (!datosGlobales.cripto) datosGlobales.cripto = [];
 
-        const fec = new Date().toLocaleTimeString();
-        if (!datosGlobales.cripto) datosGlobales.cripto = [];
-
-        CRIPTO_DIRECTAS.forEach(c => {
-          let p = c.defP;
-          let varStr = "+0.00%";
-          if (c.sym && mapBin[c.sym]) {
-            p = parseFloat(mapBin[c.sym].lastPrice);
-            const chg = parseFloat(mapBin[c.sym].priceChangePercent);
-            varStr = chg >= 0 ? `+${chg.toFixed(2)}%` : `${chg.toFixed(2)}%`;
-          }
-
-          let fmt = "";
-          if (p >= 1000) {
-            fmt = "US$ " + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          } else if (p >= 1) {
-            fmt = "US$ " + p.toFixed(2);
-          } else {
-            fmt = "US$ " + p.toFixed(4);
-          }
-
-          let flashClass = "";
-          if (PRECIOS_ANTERIORES[c.cod] !== undefined) {
-            if (p > PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-green";
-            else if (p < PRECIOS_ANTERIORES[c.cod]) flashClass = "flash-red";
-          }
-          PRECIOS_ANTERIORES[c.cod] = p;
-          FLASH_REGISTRO[c.cod] = flashClass;
-
-          const idx = datosGlobales.cripto.findIndex(it => it.variable === c.cod);
-          const itemObj = {
-            variable: c.cod,
-            descripcion: c.desc,
-            categoria: "cripto",
-            valor_formateado: fmt,
-            variacion: varStr,
-            valor: p,
-            fecha: fec
-          };
-
-          if (idx >= 0) datosGlobales.cripto[idx] = itemObj;
-          else datosGlobales.cripto.push(itemObj);
-        });
-
-        if (categoriaActiva === "cripto" || categoriaActiva === "home") {
-          renderizar();
+      window.CRIPTO_DIRECTAS.forEach(c => {
+        let p = c.defP, varStr = "+0.00%";
+        if (c.sym && mapBin[c.sym]) {
+          p = parseFloat(mapBin[c.sym].lastPrice);
+          const chg = parseFloat(mapBin[c.sym].priceChangePercent);
+          varStr = chg >= 0 ? `+${chg.toFixed(2)}%` : `${chg.toFixed(2)}%`;
         }
-      } catch (err) {
-        console.warn("Binance stream:", err);
-      }
+        const fmt = p >= 1000 ? "US$ " + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (p >= 1 ? "US$ " + p.toFixed(2) : "US$ " + p.toFixed(4));
+        if (PRECIOS_ANTERIORES[c.cod] !== undefined) {
+          FLASH_REGISTRO[c.cod] = p > PRECIOS_ANTERIORES[c.cod] ? "flash-green" : (p < PRECIOS_ANTERIORES[c.cod] ? "flash-red" : "");
+        }
+        PRECIOS_ANTERIORES[c.cod] = p;
+        const itemObj = { variable: c.cod, descripcion: c.desc, categoria: "cripto", valor_formateado: fmt, variacion: varStr, valor: p, fecha: fec };
+        const idx = datosGlobales.cripto.findIndex(it => it.variable === c.cod);
+        if (idx >= 0) datosGlobales.cripto[idx] = itemObj;
+        else datosGlobales.cripto.push(itemObj);
+      });
+
+      if (categoriaActiva === "cripto" || categoriaActiva === "home") renderizar();
     }
 
-    async function cargarCurvasSJB() {
-      try {
-        const res = await fetch("/api/bonos/curvas-sjb?t=" + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          if (data && Object.keys(data).length > 0) {
-            datosCurvasSJB = data;
-            if (categoriaActiva === "cotizacion_bonos") {
-              renderizar();
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Carga de curvas:", err);
-      }
-    }
-
-    async function cargarInflacionImplicita() {
-      try {
-        const res = await fetch("/api/bonos/inflacion-implicita?t=" + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          if (data && Object.keys(data).length > 0) {
-            datosInflacionImplicitaSJB = data;
-            if (categoriaActiva === "inflacion_y_ajuste") {
-              renderizar();
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Carga de inflacion implicita:", err);
-      }
-    }
-
-    async function cargarBandas() {
-      try {
-        const res = await fetch("/api/dolar/bandas?t=" + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.banda_inferior && data.banda_superior) {
-            datosBandasCambiarias = data;
-            if (categoriaActiva === "dolar_y_cambiario") {
-              renderizar();
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Carga de bandas:", err);
-      }
+    async function sincronizarEndpointsSecundarios() {
+      const [curvas, infImp, bandas, finviz] = await Promise.all([
+        fetchJsonSeguro("/api/bonos/curvas-sjb?t=" + Date.now()),
+        fetchJsonSeguro("/api/bonos/inflacion-implicita?t=" + Date.now()),
+        fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now()),
+        fetchJsonSeguro("/api/sectores/finviz?t=" + Date.now())
+      ]);
+      if (curvas && Object.keys(curvas).length > 0) datosCurvasSJB = curvas;
+      if (infImp && Object.keys(infImp).length > 0) datosInflacionImplicitaSJB = infImp;
+      if (bandas && bandas.banda_inferior) datosBandasCambiarias = bandas;
+      if (finviz && (finviz["1W"] || finviz["1M"])) datosFinvizSectores = finviz;
+      if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar();
     }
 
     async function cargarDatos() {
-      try {
-        const res = await fetch("/bcra/variables?formato=agrupado&t=" + Date.now());
-        if (!res.ok) throw new Error("Error HTTP " + res.status);
-        const data = await res.json();
-        
-        for (const cat in data) {
-          if (cat === "cripto") continue;
-          if (Array.isArray(data[cat]) && data[cat].length > 0) {
-            data[cat].forEach(item => {
-              if (item && item.variable && item.valor !== undefined) {
-                const k = item.variable;
-                const v = parseFloat(item.valor);
-                let fClass = "";
-                if (PRECIOS_ANTERIORES[k] !== undefined && !isNaN(v)) {
-                  if (v > PRECIOS_ANTERIORES[k]) fClass = "flash-green";
-                  else if (v < PRECIOS_ANTERIORES[k]) fClass = "flash-red";
-                }
-                PRECIOS_ANTERIORES[k] = v;
-                FLASH_REGISTRO[k] = fClass;
-              }
-            });
-            datosGlobales[cat] = data[cat];
+      const data = await fetchJsonSeguro("/bcra/variables?formato=agrupado&t=" + Date.now());
+      if (!data) return;
+      for (const cat in data) {
+        if (cat === "cripto" || !Array.isArray(data[cat]) || data[cat].length === 0) continue;
+        data[cat].forEach(item => {
+          if (item && item.variable && item.valor !== undefined) {
+            const k = item.variable, v = parseFloat(item.valor);
+            if (PRECIOS_ANTERIORES[k] !== undefined && !isNaN(v)) {
+              FLASH_REGISTRO[k] = v > PRECIOS_ANTERIORES[k] ? "flash-green" : (v < PRECIOS_ANTERIORES[k] ? "flash-red" : "");
+            }
+            PRECIOS_ANTERIORES[k] = v;
           }
-        }
-
-        renderizar();
-        const reloj = document.getElementById("last-update");
-        if (reloj) reloj.innerText = new Date().toLocaleTimeString();
-        const status = document.getElementById("sync-status");
-        if (status) {
-          status.className = "flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]";
-          status.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
-        }
-      } catch (err) {
-        console.error("Error backend:", err);
+        });
+        datosGlobales[cat] = data[cat];
       }
+      renderizar();
+      const reloj = document.getElementById("last-update");
+      if (reloj) reloj.innerText = new Date().toLocaleTimeString();
     }
 
     function valorParaOrdenar(item, col) {
@@ -1161,14 +537,11 @@
       const s = String(val).trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s).getTime();
       const numMatch = s.replace(",", ".").match(/-?\d+(\.\d+)?/);
-      if (numMatch) return parseFloat(numMatch[0]);
-      return s.toLowerCase();
+      return numMatch ? parseFloat(numMatch[0]) : s.toLowerCase();
     }
 
     function ordenarTabla(tablaKey, colKey) {
-      if (!SORT_STATE[tablaKey]) {
-        SORT_STATE[tablaKey] = { col: null, asc: true };
-      }
+      if (!SORT_STATE[tablaKey]) SORT_STATE[tablaKey] = { col: null, asc: true };
       const st = SORT_STATE[tablaKey];
       if (st.col === colKey) st.asc = !st.asc;
       else { st.col = colKey; st.asc = true; }
@@ -1179,59 +552,21 @@
       const st = SORT_STATE[tablaKey] || { col: null, asc: true };
       let sortIcon = '<i class="fa-solid fa-sort text-slate-600 text-[10px] opacity-40 ml-1"></i>';
       if (st.col === colKey) {
-        sortIcon = st.asc 
-          ? '<i class="fa-solid fa-arrow-up text-cyan-400 text-[10px] ml-1 font-bold"></i>' 
-          : '<i class="fa-solid fa-arrow-down text-cyan-400 text-[10px] ml-1 font-bold"></i>';
+        sortIcon = st.asc ? '<i class="fa-solid fa-arrow-up text-cyan-400 text-[10px] ml-1 font-bold"></i>' : '<i class="fa-solid fa-arrow-down text-cyan-400 text-[10px] ml-1 font-bold"></i>';
       }
-      return `
-        <th onclick="ordenarTabla('${tablaKey}', '${colKey}')" class="py-3 px-3 ${align} cursor-pointer select-none hover:text-white hover:bg-slate-800/60 transition group whitespace-nowrap" title="Ordenar por ${label}">
-          <div class="inline-flex items-center gap-1 ${align === 'text-right' ? 'justify-end' : align === 'text-left' ? 'justify-start' : 'justify-center'}">
-            <span class="group-hover:text-cyan-300 transition">${label}</span>
-            ${sortIcon}
-          </div>
-        </th>
-      `;
+      return `<th onclick="ordenarTabla('${tablaKey}', '${colKey}')" class="py-3 px-3 ${align} cursor-pointer select-none hover:text-white hover:bg-slate-800/60 transition group whitespace-nowrap"><div class="inline-flex items-center gap-1 ${align === 'text-right' ? 'justify-end' : align === 'text-left' ? 'justify-start' : 'justify-center'}"><span class="group-hover:text-cyan-300 transition">${label}</span>${sortIcon}</div></th>`;
     }
 
     function renderFilaTerminal(valStr, type) {
       if (valStr === undefined || valStr === null || valStr === "-") return `<span class="text-slate-500 font-mono">-</span>`;
-      let bgStyle = "";
-      let textStyle = "";
-      let borderStyle = "";
-
+      let style = "background-color: rgba(69, 36, 10, 0.45); color: #fde047; border: 1px solid rgba(180, 83, 9, 0.35);";
       if (type === "var") {
-        const strLimpia = String(valStr).replace("%", "").replace(",", ".").trim();
-        const numVal = parseFloat(strLimpia);
-        if (!isNaN(numVal) && numVal < 0) {
-          bgStyle = "background-color: rgba(136, 19, 55, 0.45);";
-          textStyle = "color: #fb7185;";
-          borderStyle = "border: 1px solid rgba(244, 63, 94, 0.4);";
-        } else if (!isNaN(numVal) && numVal > 0) {
-          bgStyle = "background-color: rgba(6, 78, 59, 0.45);";
-          textStyle = "color: #34d399;";
-          borderStyle = "border: 1px solid rgba(52, 211, 153, 0.4);";
-        } else {
-          bgStyle = "background-color: rgba(30, 41, 59, 0.5);";
-          textStyle = "color: #94a3b8;";
-          borderStyle = "border: 1px solid rgba(71, 85, 105, 0.4);";
-        }
-      } else {
-        bgStyle = "background-color: rgba(69, 36, 10, 0.45);";
-        textStyle = "color: #fde047;";
-        borderStyle = "border: 1px solid rgba(180, 83, 9, 0.35);";
+        const numVal = parseFloat(String(valStr).replace("%", "").replace(",", ".").trim());
+        if (!isNaN(numVal) && numVal < 0) style = "background-color: rgba(136, 19, 55, 0.45); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4);";
+        else if (!isNaN(numVal) && numVal > 0) style = "background-color: rgba(6, 78, 59, 0.45); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4);";
+        else style = "background-color: rgba(30, 41, 59, 0.5); color: #94a3b8; border: 1px solid rgba(71, 85, 105, 0.4);";
       }
-
-      return `<span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${bgStyle} ${textStyle} ${borderStyle}">${valStr}</span>`;
-    }
-
-    function cambiarCurva(curvaKey) {
-      curvaActiva = curvaKey;
-      renderizar();
-    }
-
-    function cambiarSubIndice(subKey) {
-      subIndiceActivo = subKey;
-      renderizar();
+      return `<span class="inline-block px-2.5 py-0.5 rounded font-mono font-medium text-[11px]" style="${style}">${valStr}</span>`;
     }
 
     function renderizarBarraSeccion(cfg) {
@@ -1243,661 +578,19 @@
             </div>
             <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${cfg.titulo}</h2>
           </div>
-          <div class="z-10 flex items-center gap-2">
-            <span class="text-[11px] font-mono text-slate-300">${cfg.sub || ''}</span>
-          </div>
+          <div class="z-10 flex items-center gap-2"><span class="text-[11px] font-mono text-slate-300">${cfg.sub || ''}</span></div>
           <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${cfg.flare}"></div>
-        </div>
-      `;
-    }
-
-    function renderizar() {
-      const contenedor = document.getElementById("dashboard-content");
-      if (!contenedor) return;
-
-      let valorOficial = null;
-      const listaDolar = datosGlobales.dolar_y_cambiario || [];
-      const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
-      if (itemOficial && itemOficial.valor > 0) valorOficial = itemOficial.valor;
-
-      if (categoriaActiva === "home") {
-        let todos = [];
-        for (const cat in datosGlobales) {
-          if (Array.isArray(datosGlobales[cat])) {
-            todos = todos.concat(datosGlobales[cat]);
-          }
-        }
-
-        let htmlHome = "";
-        BLOQUES_HOME.forEach(bloque => {
-          const itemsBloque = [];
-          bloque.variables.forEach(cod => {
-            const it = todos.find(x => x && x.variable === cod) || INDICES_ESTATICOS_BASE.find(x => x.variable === cod);
-            if (it && !itemsBloque.some(y => y.variable === it.variable)) {
-              itemsBloque.push(it);
-            }
-          });
-
-          htmlHome += `
-            <section class="space-y-3">
-              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
-                <div class="flex items-center gap-3 z-10">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${bloque.badgeBg}">
-                    <i class="${bloque.iconoIzq}"></i>
-                  </div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${bloque.titulo}</h2>
-                </div>
-                <div class="z-10 flex items-center gap-2">
-                  <i class="${bloque.iconoDer} text-sm"></i>
-                </div>
-                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
-              </div>
-            </section>
-          `;
-        });
-
-        contenedor.innerHTML = htmlHome;
-        return;
-      }
-
-      if (categoriaActiva === "cripto") {
-        const items = datosGlobales.cripto || [];
-        const cfgHeader = CONFIG_SECCIONES.cripto;
-
-        contenedor.innerHTML = `
-          <div class="space-y-6">
-            <section class="space-y-3">
-              ${renderizarBarraSeccion(cfgHeader)}
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${items.map(item => crearTarjeta(item, "cripto", valorOficial)).join("")}
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-              <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-brands fa-bitcoin text-amber-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor Criptomonedas — Mercado Global</h3>
-                </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
-              </div>
-              <div class="w-full h-[620px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap heatmap-type="crypto-coins" data-source="Crypto" block-size="market_cap_calc" block-color="24h_close_change|5" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
-              </div>
-            </section>
-          </div>
-        `;
-        return;
-      }
-
-      if (categoriaActiva === "dolar_y_cambiario") {
-        const rawItems = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
-
-        const orden6 = ["DOLAR_OFICIAL", "DOLAR_A3500", "DOLAR_BLUE", "DOLAR_MEP", "DOLAR_CCL", "DOLAR_FUTURO"];
-        const items = [];
-        orden6.forEach(cod => {
-          const it = rawItems.find(x => x.variable === cod);
-          if (it) items.push(it);
-        });
-        rawItems.forEach(it => {
-          if (!items.some(x => x.variable === it.variable) && items.length < 6) {
-            items.push(it);
-          }
-        });
-
-        const bInf = datosBandasCambiarias.banda_inferior || 703.82;
-        const bSup = datosBandasCambiarias.banda_superior || 1974.20;
-        const dMay = datosBandasCambiarias.dolar_mayorista || (valorOficial || 1545.50);
-        const pMedio = ((bInf + bSup) / 2);
-
-        const anchoBanda = bSup - bInf;
-        let pctBanda = 0;
-        if (anchoBanda > 0) {
-          pctBanda = ((dMay - bInf) / anchoBanda) * 100;
-        }
-        const pctClamped = Math.max(0, Math.min(100, pctBanda));
-        const rotacionAguja = -90 + (pctClamped / 100) * 180;
-
-        const difSubir = Math.max(0, bSup - dMay);
-        const pctSubir = (difSubir / dMay) * 100;
-        const difBajar = Math.max(0, dMay - bInf);
-        const pctBajar = (difBajar / dMay) * 100;
-
-        const rFavorableMin = bInf;
-        const rFavorableMax = bInf + 0.20 * anchoBanda;
-        const rIntermedioMin = rFavorableMax;
-        const rIntermedioMax = bInf + 0.75 * anchoBanda;
-        const rPrecaucionMin = rIntermedioMax;
-        const rPrecaucionMax = bInf + 0.90 * anchoBanda;
-        const rCriticoMin = rPrecaucionMax;
-        const rCriticoMax = bSup;
-
-        const fmt$ = (num) => `$${num.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        const cfgHeader = CONFIG_SECCIONES.dolar_y_cambiario;
-
-        contenedor.innerHTML = `
-          <div class="space-y-6">
-            <section class="space-y-3">
-              ${renderizarBarraSeccion(cfgHeader)}
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${items.map(item => crearTarjeta(item, "dolar_y_cambiario", valorOficial)).join("")}
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-6 shadow-2xl backdrop-blur-md space-y-6">
-              <div class="border-b border-slate-800/70 pb-3 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs">
-                    <i class="fa-solid fa-gauge-high"></i>
-                  </div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo Oficial de Bandas Cambiarias BCRA</h2>
-                </div>
-                <span class="text-xs font-mono text-slate-300 bg-slate-900/90 border border-slate-700/60 px-3 py-1 rounded-full">Zona de No Intervención</span>
-              </div>
-
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
-                  <div class="mb-2">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-xs tracking-wide shadow-md">
-                      <span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}
-                    </span>
-                  </div>
-
-                  <div class="relative w-72 h-40 flex items-end justify-center">
-                    <svg viewBox="0 0 200 115" class="w-full h-full overflow-visible">
-                      <defs>
-                        <filter id="shadowAguja" x="-20%" y="-20%" width="140%" height="140%">
-                          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.7"/>
-                        </filter>
-                      </defs>
-
-                      <path d="M 22 100 A 78 78 0 0 1 36.90 54.16" fill="none" stroke="#22c55e" stroke-width="20" stroke-linecap="round" />
-                      <path d="M 36.90 54.16 A 78 78 0 0 1 155.16 44.85" fill="none" stroke="#eab308" stroke-width="20" />
-                      <path d="M 155.16 44.85 A 78 78 0 0 1 174.18 75.90" fill="none" stroke="#f97316" stroke-width="20" />
-                      <path d="M 174.18 75.90 A 78 78 0 0 1 178 100" fill="none" stroke="#ef4444" stroke-width="20" stroke-linecap="round" />
-
-                      <g transform="translate(100, 100) rotate(${rotacionAguja})" filter="url(#shadowAguja)">
-                        <polygon points="-4,-10 4,-10 1.2,-78 -1.2,-78" fill="#f8fafc" />
-                        <line x1="0" y1="-10" x2="0" y2="-74" stroke="#0f172a" stroke-width="1" />
-                        <circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#020617" stroke-width="3" />
-                        <circle cx="0" cy="0" r="3.5" fill="#38bdf8" />
-                      </g>
-                    </svg>
-                  </div>
-
-                  <div class="w-full flex items-center justify-between px-2 mt-1 font-mono">
-                    <div class="flex flex-col items-start bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-2.5 py-1">
-                      <span class="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">Piso Banda</span>
-                      <span class="text-xs font-extrabold text-white">${fmt$(bInf)}</span>
-                    </div>
-                    <div class="flex flex-col items-end bg-rose-950/40 border border-rose-500/40 rounded-lg px-2.5 py-1">
-                      <span class="text-[9px] uppercase tracking-wider text-rose-400 font-bold">Techo Banda</span>
-                      <span class="text-xs font-extrabold text-white">${fmt$(bSup)}</span>
-                    </div>
-                  </div>
-
-                  <div class="mt-4 flex flex-col items-center gap-2.5 text-center w-full">
-                    <div class="w-full py-2.5 px-4 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 text-amber-300 font-mono font-bold text-sm shadow-[0_0_16px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2">
-                      <i class="fa-solid fa-dollar-sign text-amber-400 text-xs"></i>
-                      <span>Dólar Mayorista:</span>
-                      <span class="text-white text-base font-extrabold">${fmt$(dMay)}</span>
-                    </div>
-                    <div class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-slate-950 text-slate-300 font-mono text-xs">
-                      El dólar está al <strong class="text-amber-300 font-bold text-sm">${pctClamped.toFixed(2)}%</strong> de la banda inferior
-                    </div>
-                  </div>
-                </div>
-
-                <div class="lg:col-span-7 space-y-4">
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <i class="fa-solid fa-sliders text-cyan-400 text-[11px]"></i>
-                      Valores actuales de las bandas cambiarias
-                    </h3>
-                    <table class="w-full text-xs font-mono">
-                      <thead class="text-slate-400 text-[11px] border-b border-slate-800/80">
-                        <tr>
-                          <th class="py-2 text-left font-semibold">Banda cambiaria</th>
-                          <th class="py-2 text-right font-semibold">Valor</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-800/60">
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 text-slate-200 font-medium">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
-                            <span>USD banda inferior</span>
-                          </td>
-                          <td class="py-2.5 text-right font-extrabold text-emerald-400 text-sm">${fmt$(bInf)}</td>
-                        </tr>
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2.5 flex items-center gap-2 text-slate-200 font-medium">
-                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
-                            <span>USD banda superior</span>
-                          </td>
-                          <td class="py-2.5 text-right font-extrabold text-rose-400 text-sm">${fmt$(bSup)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <i class="fa-solid fa-chart-simple text-amber-400 text-[11px]"></i>
-                      Rango de valores
-                    </h3>
-                    <table class="w-full text-xs font-mono">
-                      <thead class="text-slate-400 text-[11px] border-b border-slate-800/80">
-                        <tr>
-                          <th class="py-2 text-left font-semibold">Estado</th>
-                          <th class="py-2 text-center font-semibold">Rango (%)</th>
-                          <th class="py-2 text-right font-semibold">Valor mínimo</th>
-                          <th class="py-2 text-right font-semibold">Valor máximo</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-800/60 text-slate-200 text-xs">
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2 flex items-center gap-2 font-bold text-emerald-300">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Favorable
-                          </td>
-                          <td class="py-2 text-center text-slate-400">0 - 20%</td>
-                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rFavorableMin)}</td>
-                          <td class="py-2 text-right font-bold text-white">${fmt$(rFavorableMax)}</td>
-                        </tr>
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2 flex items-center gap-2 font-bold text-yellow-300">
-                            <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Intermedio
-                          </td>
-                          <td class="py-2 text-center text-slate-400">20 - 75%</td>
-                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rIntermedioMin)}</td>
-                          <td class="py-2 text-right font-bold text-white">${fmt$(rIntermedioMax)}</td>
-                        </tr>
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2 flex items-center gap-2 font-bold text-orange-400">
-                            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Precaución
-                          </td>
-                          <td class="py-2 text-center text-slate-400">75 - 90%</td>
-                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rPrecaucionMin)}</td>
-                          <td class="py-2 text-right font-bold text-white">${fmt$(rPrecaucionMax)}</td>
-                        </tr>
-                        <tr class="hover:bg-slate-900/40 transition">
-                          <td class="py-2 flex items-center gap-2 font-bold text-rose-400">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Crítico
-                          </td>
-                          <td class="py-2 text-center text-slate-400">90 - 100%</td>
-                          <td class="py-2 text-right font-medium text-slate-300">${fmt$(rCriticoMin)}</td>
-                          <td class="py-2 text-right font-bold text-white">${fmt$(rCriticoMax)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2 font-mono text-xs shadow-md">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 font-sans flex items-center gap-1.5">
-                      <i class="fa-solid fa-arrows-up-down text-purple-400 text-[11px]"></i>
-                      Diferencias con las bandas
-                    </h3>
-                    <div class="flex items-center gap-2.5 text-slate-200">
-                      <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">▲</span>
-                      <span>El dólar debería subir <strong class="text-emerald-400 font-extrabold text-sm">${fmt$(difSubir)} (${pctSubir.toFixed(2)}%)</strong> para llegar a la banda superior</span>
-                    </div>
-                    <div class="flex items-center gap-2.5 text-slate-200">
-                      <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">▼</span>
-                      <span>El dólar debería bajar <strong class="text-amber-400 font-extrabold text-sm">${fmt$(difBajar)} (${pctBajar.toFixed(2)}%)</strong> para llegar a la banda inferior</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-        `;
-        return;
-      }
-
-      if (categoriaActiva === "indices") {
-        const infoSub = SUB_INDICES_INFO[subIndiceActivo];
-        const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) 
-          ? datosGlobales.indices 
-          : INDICES_ESTATICOS_BASE;
-
-        const itemsSub = fuenteIndices.filter(item => {
-          if (!item) return false;
-          if (item.variable === "BURCAP" || (item.descripcion && item.descripcion.toLowerCase().includes("burcap"))) return false;
-
-          if (subIndiceActivo === "argentina") {
-            return item.subcategoria === "argentina" || ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS"].includes(item.variable);
-          } else if (subIndiceActivo === "estados_unidos") {
-            return item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL", "MONEDA_DXY"].includes(item.variable);
-          } else if (subIndiceActivo === "sectores") {
-            return item.subcategoria === "sectores" || (item.variable && item.variable.startsWith("SPDR_"));
-          }
-          return false;
-        });
-
-        const cfgHeader = CONFIG_SECCIONES.indices;
-
-        let mapaCalorHtml = "";
-        if (subIndiceActivo === "argentina") {
-          mapaCalorHtml = `
-            <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-              <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (AllAR)</h3>
-                </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
-              </div>
-              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap heatmap-type="stock" data-source="AllAR" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
-              </div>
-            </div>
-          `;
-        } else if (subIndiceActivo === "estados_unidos") {
-          mapaCalorHtml = `
-            <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
-              <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i>
-                  <h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3>
-                </div>
-                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
-              </div>
-              <div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
-                <tv-heatmap exchanges="ADX,AMEX,ASX,BCBA,BCS,BER,BET,BIVA,BVCV,BME,BMFBOVESPA,BSE,BVC,BX,CSECY,DUS,EGX,EURONEXT,FWB,GPW,HAM,HNX,IDX,KRX,KSE,MIL,MUN,NASDAQ,NASDAQDUBAI,NEO,NEWCONNECT,NYSE,OMXCOP,OMXHEX,OMXICE,OMXRSE,OMXSTO,OMXTSE,OMXVSE,OTC,SIX,SSE,TASE,TPEX,TSX,TSXV,UPCOM,XETR" heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
-              </div>
-            </div>
-          `;
-        }
-
-        contenedor.innerHTML = `
-          <div class="space-y-4">
-            ${renderizarBarraSeccion(cfgHeader)}
-            <div class="flex flex-col lg:flex-row gap-5 items-start">
-              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
-                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
-                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
-                </div>
-                
-                <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-landmark-flag text-sky-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Argentina</span>
-                  </div>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'argentina' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">3</span>
-                </button>
-
-                <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-flag-usa text-blue-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Estados Unidos</span>
-                  </div>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">6</span>
-                </button>
-
-                <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-chart-pie text-amber-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Sectores (SPDRs)</span>
-                  </div>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${subIndiceActivo === 'sectores' ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}">11</span>
-                </button>
-              </aside>
-
-              <section class="flex-1 w-full space-y-4 overflow-hidden">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h3>
-                  </div>
-                  <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
-                </div>
-
-                ${(subIndiceActivo === "sectores") ? renderizarBloqueFinvizSectores() : ""}
-
-                ${mapaCalorHtml}
-              </section>
-            </div>
-          </div>
-        `;
-        return;
-      }
-
-      if (categoriaActiva === "cotizacion_bonos") {
-        const infoCurva = CURVAS_INFO[curvaActiva] || { titulo: "Curva", desc: "", color: "text-cyan-400" };
-        let filas = [...obtenerFilasCurva(curvaActiva)];
-
-        const st = SORT_STATE[curvaActiva];
-        if (st && st.col) {
-          filas.sort((a, b) => {
-            const va = valorParaOrdenar(a, st.col);
-            const vb = valorParaOrdenar(b, st.col);
-            if (typeof va === "string" && typeof vb === "string") {
-              return st.asc ? va.localeCompare(vb) : vb.localeCompare(va);
-            }
-            return st.asc ? (va - vb) : (vb - va);
-          });
-        }
-
-        let tablaHtml = "";
-        if (filas && filas.length > 0) {
-          const columnas = Object.keys(filas[0]);
-          tablaHtml = `
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  ${columnas.map(col => {
-                    const cL = col.toLowerCase();
-                    const al = cL.includes("ticker") ? "text-left" : (cL.includes("precio") || cL.includes("valor")) ? "text-right" : "text-center";
-                    return renderTh(curvaActiva, col, col.toUpperCase(), al);
-                  }).join("")}
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${filas.map(b => {
-                  return `
-                  <tr class="table-dark-row transition">
-                    ${columnas.map(col => {
-                      const val = b[col];
-                      const cL = col.toLowerCase();
-                      if (cL.includes("ticker") || cL.includes("especie")) {
-                        return `<td class="py-2.5 px-3 font-bold text-white tracking-wide">${val}</td>`;
-                      }
-                      if (cL.includes("precio") || cL.includes("valor")) {
-                        const num = parseNumSeguro(val);
-                        const formatted = !isNaN(num) ? (num >= 1000 ? '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '$ ' + num.toFixed(2)) : val;
-                        return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${formatted}</td>`;
-                      }
-                      if (cL.includes("var")) {
-                        return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
-                      }
-                      if (cL.includes("tir") || cL.includes("tasa") || cL.includes("tea") || cL.includes("tna") || cL.includes("tem") || cL.includes("cupón") || cL.includes("paridad")) {
-                        return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "neutro")}</td>`;
-                      }
-                      return `<td class="py-2.5 px-3 text-center text-slate-300">${val ?? "-"}</td>`;
-                    }).join("")}
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
-          `;
-        }
-
-        const cfgHeader = CONFIG_SECCIONES.cotizacion_bonos;
-
-        contenedor.innerHTML = `
-          <div class="space-y-4">
-            ${renderizarBarraSeccion(cfgHeader)}
-            <div class="flex flex-col lg:flex-row gap-5 items-start">
-              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl backdrop-blur-md">
-                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
-                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span>
-                </div>
-                
-                <button onclick="cambiarCurva('lecaps')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'lecaps' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-money-bill-trend-up text-amber-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Lecaps y Boncaps</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('cer')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'cer' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-arrow-trend-up text-purple-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Bonos CER</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('soberanos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'soberanos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-file-invoice-dollar text-cyan-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Soberanos en Dólares</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('bopreales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'bopreales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Bopreales BCRA</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('dollar_linked')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'dollar_linked' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-link text-emerald-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Dollar Linked</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('tamar')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'tamar' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-chart-simple text-sky-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Tasa TAMAR / Badlar</span>
-                  </div>
-                </button>
-
-                <button onclick="cambiarCurva('duales')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${curvaActiva === 'duales' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border-slate-800/60'}">
-                  <div class="flex items-center gap-2 truncate">
-                    <i class="fa-solid fa-arrows-split-up-and-left text-rose-400 text-xs"></i>
-                    <span class="text-xs font-semibold truncate">Bonos Duales</span>
-                  </div>
-                </button>
-              </aside>
-
-              <section class="flex-1 w-full space-y-5 overflow-hidden">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo} (${filas.length} Bonos)</h3>
-                  </div>
-                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
-                </div>
-                
-                <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
-                  ${tablaHtml}
-                </div>
-
-                <div class="rounded-2xl sjb-chart-box p-6 space-y-4">
-                  <div>
-                    <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
-                  </div>
-                  <div class="w-full h-[380px] relative">
-                    <canvas id="canvas-curva-bonos"></canvas>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-        `;
-
-        setTimeout(dibujarGraficoCurva, 40);
-        return;
-      }
-
-      if (categoriaActiva === "inflacion_y_ajuste") {
-        const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
-        const cfgHeader = CONFIG_SECCIONES.inflacion_y_ajuste;
-
-        contenedor.innerHTML = `
-          <div class="space-y-6">
-            <section class="space-y-3">
-              ${renderizarBarraSeccion(cfgHeader)}
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${items.map(item => crearTarjeta(item, "inflacion_y_ajuste", valorOficial)).join("")}
-              </div>
-            </section>
-
-            <section class="rounded-2xl sjb-chart-box p-6 space-y-5">
-              <div>
-                <h2 class="text-sm font-bold text-white tracking-wide">Inflación Implícita del Mercado — CER vs Renta Fija</h2>
-              </div>
-
-              <div class="w-full h-[400px] relative">
-                <canvas id="canvas-inflacion-implicita"></canvas>
-              </div>
-            </section>
-          </div>
-        `;
-
-        setTimeout(dibujarGraficoInflacionImplicita, 40);
-        return;
-      }
-
-      const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
-      const cfgHeader = CONFIG_SECCIONES[categoriaActiva] || {
-        titulo: categoriaActiva.replace(/_/g, " ").toUpperCase(),
-        sub: "Mercado en Tiempo Real",
-        icono: "fa-circle-dot",
-        barra: "section-bar-cyan",
-        flare: "glow-flare-cyan",
-        badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300"
-      };
-
-      if (items.length === 0) {
-        contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Actualizando cotizaciones en tiempo real...</div>';
-        return;
-      }
-
-      contenedor.innerHTML = `
-        <section class="space-y-3">
-          ${renderizarBarraSeccion(cfgHeader)}
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            ${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}
-          </div>
-        </section>
-      `;
+        </div>`;
     }
 
     function crearTarjeta(item, categoria, valorOficial) {
       if (!item) return "";
-
       const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
-      let varBadge = "";
-      
+      let varBadge = `<span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">${variacion || "0,0%"}</span>`;
       if (variacion.includes("+")) {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]">
-            <span>↑</span><span>${variacion}</span>
-          </span>
-        `;
+        varBadge = `<span class="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.15)]"><span>↑</span><span>${variacion}</span></span>`;
       } else if (variacion.includes("-") || variacion.includes("−")) {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]">
-            <span>↓</span><span>${variacion}</span>
-          </span>
-        `;
-      } else {
-        varBadge = `
-          <span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">
-            ${variacion || "0,0%"}
-          </span>
-        `;
+        varBadge = `<span class="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-300 font-mono text-[10px] font-semibold flex items-center gap-1 shadow-[0_0_8px_rgba(244,63,94,0.15)]"><span>↓</span><span>${variacion}</span></span>`;
       }
 
       let badgeBrecha = "";
@@ -1906,8 +599,7 @@
           badgeBrecha = '<span class="text-[9px] uppercase font-bold text-sky-300 bg-sky-950/60 border border-sky-500/40 px-1.5 py-0.5 rounded tracking-wide shadow-sm">REF</span>';
         } else if (valorOficial && item.valor > 0) {
           const spread = ((item.valor / valorOficial) - 1) * 100;
-          const signo = spread >= 0 ? "+" : "";
-          badgeBrecha = `<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border border-amber-500/50 bg-amber-950/40 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)]">Brecha: ${signo}${spread.toFixed(1)}%</span>`;
+          badgeBrecha = `<span class="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border border-amber-500/50 bg-amber-950/40 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.2)]">Brecha: ${spread >= 0 ? "+" : ""}${spread.toFixed(1)}%</span>`;
         }
       }
 
@@ -1916,21 +608,9 @@
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
-      if (item.variable && item.variable.startsWith("TASA_")) {
-        if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
-      }
-
-      const variablesPesos = [
-        "RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO",
-        "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"
-      ];
-      if (variablesPesos.includes(item.variable)) {
-        if (!valFmt.startsWith("$")) valFmt = `$${valFmt}`;
-      }
-
-      if (item.variable === "RIESGO_PAIS") {
-        if (!valFmt.toLowerCase().includes("puntos") && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
-      }
+      if (item.variable && item.variable.startsWith("TASA_") && !valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
+      if (["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"].includes(item.variable) && !valFmt.startsWith("$")) valFmt = `$${valFmt}`;
+      if (item.variable === "RIESGO_PAIS" && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
 
       return `
         <div class="neon-card rounded-2xl p-4 flex flex-col justify-between">
@@ -1939,43 +619,297 @@
               <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
               ${badgeBrecha}
             </div>
-            <div class="mt-2">
-              <span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span>
-            </div>
+            <div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span></div>
           </div>
           <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
             ${varBadge}
             <span class="text-slate-400 text-[10px] font-mono">${fecha}</span>
           </div>
-        </div>
-      `;
+        </div>`;
+    }
+
+    function renderizar() {
+      const contenedor = document.getElementById("dashboard-content");
+      if (!contenedor) return;
+
+      const listaDolar = datosGlobales.dolar_y_cambiario || [];
+      const itemOficial = listaDolar.find(d => d && d.variable === "DOLAR_OFICIAL");
+      const valorOficial = (itemOficial && itemOficial.valor > 0) ? itemOficial.valor : null;
+
+      if (categoriaActiva === "home") {
+        const todos = Object.values(datosGlobales).flat();
+        contenedor.innerHTML = window.BLOQUES_HOME.map(bloque => {
+          const itemsBloque = [];
+          bloque.variables.forEach(cod => {
+            const it = todos.find(x => x && x.variable === cod) || window.INDICES_ESTATICOS_BASE.find(x => x.variable === cod);
+            if (it && !itemsBloque.some(y => y.variable === it.variable)) itemsBloque.push(it);
+          });
+          return `
+            <section class="space-y-3">
+              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
+                <div class="flex items-center gap-3 z-10">
+                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${bloque.badgeBg}"><i class="${bloque.iconoIzq}"></i></div>
+                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${bloque.titulo}</h2>
+                </div>
+                <div class="z-10 flex items-center gap-2"><i class="${bloque.iconoDer} text-sm"></i></div>
+                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
+              </div>
+            </section>`;
+        }).join("");
+        return;
+      }
+
+      if (categoriaActiva === "cripto") {
+        const items = datosGlobales.cripto || [];
+        contenedor.innerHTML = `
+          <div class="space-y-6">
+            <section class="space-y-3">
+              ${renderizarBarraSeccion(window.CONFIG_SECCIONES.cripto)}
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, "cripto", valorOficial)).join("")}</div>
+            </section>
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl backdrop-blur-md space-y-3">
+              <div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between">
+                <div class="flex items-center gap-2"><i class="fa-brands fa-bitcoin text-amber-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor Criptomonedas — Mercado Global</h3></div>
+                <span class="text-[11px] font-mono text-slate-400">TradingView Live Web Component • Dark Mode</span>
+              </div>
+              <div class="w-full h-[620px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712] relative">
+                <tv-heatmap heatmap-type="crypto-coins" data-source="Crypto" block-size="market_cap_calc" block-color="24h_close_change|5" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap>
+              </div>
+            </section>
+          </div>`;
+        return;
+      }
+
+      if (categoriaActiva === "dolar_y_cambiario") {
+        const rawItems = (datosGlobales.dolar_y_cambiario || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
+        const orden6 = ["DOLAR_OFICIAL", "DOLAR_A3500", "DOLAR_BLUE", "DOLAR_MEP", "DOLAR_CCL", "DOLAR_FUTURO"];
+        const items = [];
+        orden6.forEach(cod => { const it = rawItems.find(x => x.variable === cod); if (it) items.push(it); });
+        rawItems.forEach(it => { if (!items.some(x => x.variable === it.variable) && items.length < 6) items.push(it); });
+
+        const bInf = datosBandasCambiarias.banda_inferior || 703.82;
+        const bSup = datosBandasCambiarias.banda_superior || 1974.20;
+        const dMay = datosBandasCambiarias.dolar_mayorista || (valorOficial || 1545.50);
+        const pMedio = (bInf + bSup) / 2;
+        const ancho = bSup - bInf;
+        const pctClamped = Math.max(0, Math.min(100, ancho > 0 ? ((dMay - bInf) / ancho) * 100 : 0));
+        const rotAguja = -90 + (pctClamped / 100) * 180;
+        const difSubir = Math.max(0, bSup - dMay), pctSubir = (difSubir / dMay) * 100;
+        const difBajar = Math.max(0, dMay - bInf), pctBajar = (difBajar / dMay) * 100;
+        const fmt$ = n => `$${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        contenedor.innerHTML = `
+          <div class="space-y-6">
+            <section class="space-y-3">
+              ${renderizarBarraSeccion(window.CONFIG_SECCIONES.dolar_y_cambiario)}
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, "dolar_y_cambiario", valorOficial)).join("")}</div>
+            </section>
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-6 shadow-2xl backdrop-blur-md space-y-6">
+              <div class="border-b border-slate-800/70 pb-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs"><i class="fa-solid fa-gauge-high"></i></div>
+                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo Oficial de Bandas Cambiarias BCRA</h2>
+                </div>
+                <span class="text-xs font-mono text-slate-300 bg-slate-900/90 border border-slate-700/60 px-3 py-1 rounded-full">Zona de No Intervención</span>
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
+                  <div class="mb-2"><span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-xs"><span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}</span></div>
+                  <div class="relative w-72 h-40 flex items-end justify-center">
+                    <svg viewBox="0 0 200 115" class="w-full h-full overflow-visible">
+                      <path d="M 22 100 A 78 78 0 0 1 36.90 54.16" fill="none" stroke="#22c55e" stroke-width="20" stroke-linecap="round" />
+                      <path d="M 36.90 54.16 A 78 78 0 0 1 155.16 44.85" fill="none" stroke="#eab308" stroke-width="20" />
+                      <path d="M 155.16 44.85 A 78 78 0 0 1 174.18 75.90" fill="none" stroke="#f97316" stroke-width="20" />
+                      <path d="M 174.18 75.90 A 78 78 0 0 1 178 100" fill="none" stroke="#ef4444" stroke-width="20" stroke-linecap="round" />
+                      <g transform="translate(100, 100) rotate(${rotAguja})">
+                        <polygon points="-4,-10 4,-10 1.2,-78 -1.2,-78" fill="#f8fafc" />
+                        <circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#020617" stroke-width="3" />
+                        <circle cx="0" cy="0" r="3.5" fill="#38bdf8" />
+                      </g>
+                    </svg>
+                  </div>
+                  <div class="w-full flex items-center justify-between px-2 mt-1 font-mono">
+                    <div class="flex flex-col items-start bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-2.5 py-1"><span class="text-[9px] uppercase text-emerald-400 font-bold">Piso Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bInf)}</span></div>
+                    <div class="flex flex-col items-end bg-rose-950/40 border border-rose-500/40 rounded-lg px-2.5 py-1"><span class="text-[9px] uppercase text-rose-400 font-bold">Techo Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bSup)}</span></div>
+                  </div>
+                  <div class="mt-4 flex flex-col items-center gap-2.5 text-center w-full">
+                    <div class="w-full py-2.5 px-4 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 text-amber-300 font-mono font-bold text-sm flex items-center justify-center gap-2"><span>Dólar Mayorista:</span><span class="text-white text-base font-extrabold">${fmt$(dMay)}</span></div>
+                    <div class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-slate-950 text-slate-300 font-mono text-xs">El dólar está al <strong class="text-amber-300 font-bold text-sm">${pctClamped.toFixed(2)}%</strong> de la banda inferior</div>
+                  </div>
+                </div>
+                <div class="lg:col-span-7 space-y-4">
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-sliders text-cyan-400 text-[11px]"></i> Valores actuales de las bandas cambiarias</h3>
+                    <table class="w-full text-xs font-mono">
+                      <tbody class="divide-y divide-slate-800/60">
+                        <tr><td class="py-2 flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>USD banda inferior</td><td class="py-2 text-right font-extrabold text-emerald-400 text-sm">${fmt$(bInf)}</td></tr>
+                        <tr><td class="py-2 flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>USD banda superior</td><td class="py-2 text-right font-extrabold text-rose-400 text-sm">${fmt$(bSup)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2 font-mono text-xs shadow-md">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 font-sans flex items-center gap-1.5"><i class="fa-solid fa-arrows-up-down text-purple-400 text-[11px]"></i> Diferencias con las bandas</h3>
+                    <div class="flex items-center gap-2.5 text-slate-200"><span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">▲</span><span>El dólar debería subir <strong class="text-emerald-400 font-extrabold text-sm">${fmt$(difSubir)} (${pctSubir.toFixed(2)}%)</strong> para llegar a la banda superior</span></div>
+                    <div class="flex items-center gap-2.5 text-slate-200"><span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">▼</span><span>El dólar debería bajar <strong class="text-amber-400 font-extrabold text-sm">${fmt$(difBajar)} (${pctBajar.toFixed(2)}%)</strong> para llegar a la banda inferior</span></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>`;
+        return;
+      }
+
+      if (categoriaActiva === "indices") {
+        const infoSub = window.SUB_INDICES_INFO[subIndiceActivo];
+        const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) ? datosGlobales.indices : window.INDICES_ESTATICOS_BASE;
+        const itemsSub = fuenteIndices.filter(item => {
+          if (!item || item.variable === "BURCAP") return false;
+          if (subIndiceActivo === "argentina") return item.subcategoria === "argentina" || ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS"].includes(item.variable);
+          if (subIndiceActivo === "estados_unidos") return item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL", "MONEDA_DXY"].includes(item.variable);
+          return item.subcategoria === "sectores" || (item.variable && item.variable.startsWith("SPDR_"));
+        });
+
+        let mapaCalorHtml = "";
+        if (subIndiceActivo === "argentina") {
+          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (AllAR)</h3></div><span class="text-[11px] font-mono text-slate-400">TradingView Live • Dark Mode</span></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="AllAR" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
+        } else if (subIndiceActivo === "estados_unidos") {
+          mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3></div><span class="text-[11px] font-mono text-slate-400">TradingView Live • Dark Mode</span></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
+        }
+
+        contenedor.innerHTML = `
+          <div class="space-y-4">
+            ${renderizarBarraSeccion(window.CONFIG_SECCIONES.indices)}
+            <div class="flex flex-col lg:flex-row gap-5 items-start">
+              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl">
+                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2"><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span></div>
+                <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-landmark-flag text-sky-400 mr-2"></i>Argentina</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">3</span></button>
+                <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-flag-usa text-blue-400 mr-2"></i>Estados Unidos</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">6</span></button>
+                <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-chart-pie text-amber-400 mr-2"></i>Sectores (SPDRs)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">11</span></button>
+              </aside>
+              <section class="flex-1 w-full space-y-4 overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div class="flex items-center gap-2"><i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h3></div>
+                  <span class="text-[11px] font-mono text-slate-400">${infoSub.desc}</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}</div>
+                ${subIndiceActivo === "sectores" ? renderizarBloqueFinvizSectores() : ""}
+                ${mapaCalorHtml}
+              </section>
+            </div>
+          </div>`;
+        return;
+      }
+
+      if (categoriaActiva === "cotizacion_bonos") {
+        const infoCurva = window.CURVAS_INFO[curvaActiva] || { titulo: "Curva", desc: "", color: "text-cyan-400" };
+        let filas = [...obtenerFilasCurva(curvaActiva)];
+        const st = SORT_STATE[curvaActiva];
+        if (st && st.col) {
+          filas.sort((a, b) => {
+            const va = valorParaOrdenar(a, st.col), vb = valorParaOrdenar(b, st.col);
+            return (typeof va === "string" && typeof vb === "string") ? (st.asc ? va.localeCompare(vb) : vb.localeCompare(va)) : (st.asc ? va - vb : vb - va);
+          });
+        }
+
+        const columnas = filas.length > 0 ? Object.keys(filas[0]) : [];
+        const tablaHtml = filas.length > 0 ? `
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+              <tr>${columnas.map(col => renderTh(curvaActiva, col, col.toUpperCase(), /ticker/i.test(col) ? "text-left" : (/precio|valor/i.test(col) ? "text-right" : "text-center"))).join("")}</tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-200">
+              ${filas.map(b => `<tr class="table-dark-row transition">${columnas.map(col => {
+                const val = b[col], cL = col.toLowerCase();
+                if (cL.includes("ticker") || cL.includes("especie")) return `<td class="py-2.5 px-3 font-bold text-white">${val}</td>`;
+                if (cL.includes("precio") || cL.includes("valor")) {
+                  const num = parseNumSeguro(val);
+                  return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${!isNaN(num) ? (num >= 1000 ? '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '$ ' + num.toFixed(2)) : val}</td>`;
+                }
+                if (cL.includes("var")) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
+                if (/tir|tasa|tea|tna|tem|cupón|paridad/.test(cL)) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "neutro")}</td>`;
+                return `<td class="py-2.5 px-3 text-center text-slate-300">${val ?? "-"}</td>`;
+              }).join("")}</tr>`).join("")}
+            </tbody>
+          </table>` : "";
+
+        const menuCurvas = [
+          ["lecaps", "fa-money-bill-trend-up text-amber-400", "Lecaps y Boncaps"],
+          ["cer", "fa-arrow-trend-up text-purple-400", "Bonos CER"],
+          ["soberanos", "fa-file-invoice-dollar text-cyan-400", "Soberanos en Dólares"],
+          ["bopreales", "fa-shield-halved text-emerald-400", "Bopreales BCRA"],
+          ["dollar_linked", "fa-link text-emerald-400", "Dollar Linked"],
+          ["tamar", "fa-chart-simple text-sky-400", "Tasa TAMAR / Badlar"],
+          ["duales", "fa-arrows-split-up-and-left text-rose-400", "Bonos Duales"]
+        ];
+
+        contenedor.innerHTML = `
+          <div class="space-y-4">
+            ${renderizarBarraSeccion(window.CONFIG_SECCIONES.cotizacion_bonos)}
+            <div class="flex flex-col lg:flex-row gap-5 items-start">
+              <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl">
+                <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2"><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación de Curvas</span></div>
+                ${menuCurvas.map(([k, ic, lbl]) => `<button onclick="cambiarCurva('${k}')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center gap-2 border ${curvaActiva === k ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><i class="fa-solid ${ic} text-xs"></i><span class="text-xs font-semibold truncate">${lbl}</span></button>`).join("")}
+              </aside>
+              <section class="flex-1 w-full space-y-5 overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div class="flex items-center gap-2"><i class="fa-solid ${infoCurva.icono} ${infoCurva.color} text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoCurva.titulo} (${filas.length} Bonos)</h3></div>
+                  <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc}</span>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl">${tablaHtml}</div>
+                <div class="rounded-2xl sjb-chart-box p-6 space-y-4">
+                  <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
+                  <div class="w-full h-[380px] relative"><canvas id="canvas-curva-bonos"></canvas></div>
+                </div>
+              </section>
+            </div>
+          </div>`;
+        setTimeout(dibujarGraficoCurva, 40);
+        return;
+      }
+
+      if (categoriaActiva === "inflacion_y_ajuste") {
+        const items = (datosGlobales.inflacion_y_ajuste || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
+        contenedor.innerHTML = `
+          <div class="space-y-6">
+            <section class="space-y-3">
+              ${renderizarBarraSeccion(window.CONFIG_SECCIONES.inflacion_y_ajuste)}
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, "inflacion_y_ajuste", valorOficial)).join("")}</div>
+            </section>
+            <section class="rounded-2xl sjb-chart-box p-6 space-y-5">
+              <h2 class="text-sm font-bold text-white tracking-wide">Inflación Implícita del Mercado — CER vs Renta Fija</h2>
+              <div class="w-full h-[400px] relative"><canvas id="canvas-inflacion-implicita"></canvas></div>
+            </section>
+          </div>`;
+        setTimeout(dibujarGraficoInflacionImplicita, 40);
+        return;
+      }
+
+      const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
+      const cfgHeader = window.CONFIG_SECCIONES[categoriaActiva] || window.CONFIG_SECCIONES.home;
+      if (items.length === 0) {
+        contenedor.innerHTML = '<div class="py-20 text-center text-slate-500 text-xs">Actualizando cotizaciones en tiempo real...</div>';
+        return;
+      }
+      contenedor.innerHTML = `<section class="space-y-3">${renderizarBarraSeccion(cfgHeader)}<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}</div></section>`;
     }
 
     function filtrarCategoria(cat, ev) {
       categoriaActiva = cat;
-      document.querySelectorAll(".nav-tab").forEach(b => {
-        b.classList.remove("active");
-      });
-
-      if (ev && ev.currentTarget) {
-        ev.currentTarget.classList.add("active");
-      }
+      document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
+      if (ev && ev.currentTarget) ev.currentTarget.classList.add("active");
       renderizar();
     }
 
     cargarDatos();
     actualizarCriptosEnVivo();
-    cargarCurvasSJB();
-    cargarInflacionImplicita();
-    cargarBandas();
-    cargarFinvizSectores();
+    sincronizarEndpointsSecundarios();
 
     setInterval(actualizarCriptosEnVivo, 5000);
     setInterval(cargarDatos, 8000);
-    setInterval(cargarCurvasSJB, 15000);
-    setInterval(cargarInflacionImplicita, 15000);
-    setInterval(cargarBandas, 15000);
-    setInterval(cargarFinvizSectores, 20000);
+    setInterval(sincronizarEndpointsSecundarios, 15000);
   </script>
 </body>
 </html>
