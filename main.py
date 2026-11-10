@@ -614,23 +614,17 @@ def normalizar_respuesta_curva(raw_data: Any) -> Optional[Dict[str, Any]]:
     if isinstance(raw_data, list):
         return {"tabla": raw_data}
     if isinstance(raw_data, dict):
-        tabla = (
-            raw_data.get("tabla")
-            or raw_data.get("data")
-            or raw_data.get("bonos")
-            or raw_data.get("filas")
-            or raw_data.get("items")
-        )
-        if isinstance(tabla, list):
-            res = dict(raw_data)
-            res["tabla"] = tabla
-            return res
+        for k in ["tabla", "data", "bonos", "filas", "items", "rows", "resultados"]:
+            if isinstance(raw_data.get(k), list) and len(raw_data.get(k)) > 0:
+                res = dict(raw_data)
+                res["tabla"] = raw_data.get(k)
+                return res
         return raw_data
     return None
 
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
         if r.status_code == 200:
             norm = normalizar_respuesta_curva(r.json())
             if norm:
@@ -646,7 +640,7 @@ def fetch_inflacion_implicita_sjb():
     ]
     for u in urls:
         try:
-            r = requests.get(u, headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
+            r = requests.get(u, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
             if r.status_code == 200:
                 data = r.json()
                 if data:
