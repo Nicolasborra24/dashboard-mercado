@@ -125,7 +125,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Monitor Maestro De Mercado</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.1</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.2</span>
         </div>
         <p class="text-[11px] text-slate-400">Diseñado por Nicolás Borra para toda la comunidad bolsera</p>
       </div>
@@ -216,7 +216,6 @@
   </main>
 
   <script>
-    // Catálogo de respaldo SJB (Se usa sólo si la API de SJB aún no respondió)
     window.TABLAS_BONOS_INTEGRAS = {
       lecaps: [
         { Ticker: "S13N6", Vencimiento: "2026-11-13", Dias: 4, Precio: 101.85, Variacion: "+0.08%", TIR: "13.35%", TEM: "1.05%", TNA: "12.80%", MD: 0.01 },
@@ -295,6 +294,30 @@
         { Ticker: "M15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 137.60, Variacion: "+0.33%", TIR: "33.55%", TNA: "29.65%", MD: 1.10 }
       ]
     };
+
+    const INDICES_ESTATICOS_BASE = [
+      { variable: "TASA_CALL", descripcion: "TASA CALL INTERBANCARIA EN PESOS", subcategoria: "tasas", valor_formateado: "21,66% TNA", variacion: "0,0%", valor: 21.66, fecha: "Mercado" },
+      { variable: "MERVAL_ARS", descripcion: "S&P MERVAL EN PESOS", subcategoria: "argentina", valor_formateado: "84K", variacion: "+2.313,5%", valor: 84000.0, fecha: "08 Nov 2026" },
+      { variable: "MERVAL_USD", descripcion: "S&P MERVAL EN DÓLARES", subcategoria: "argentina", valor_formateado: "$54", variacion: "+2.292,9%", valor: 54.0, fecha: "08 Nov 2026" },
+      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+59,4%", valor: 939.0, fecha: "08 Nov 2026" },
+      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
+      { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
+      { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
+      { variable: "INDICE_DJI", descripcion: "DOW JONES INDUSTRIAL (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0.59%", valor: 43988.99, fecha: "08 Nov 2026" },
+      { variable: "INDICE_RUSSELL", descripcion: "RUSSELL 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0.71%", valor: 2399.61, fecha: "08 Nov 2026" },
+      { variable: "MONEDA_DXY", descripcion: "ÍNDICE DÓLAR (DXY)", subcategoria: "estados_unidos", valor_formateado: "102,28 pts", variacion: "-0.02%", valor: 102.28, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLK", descripcion: "TECNOLOGÍA (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0.52%", valor: 228.45, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLF", descripcion: "FINANCIERO (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1.15%", valor: 49.32, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLE", descripcion: "ENERGÍA (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0.84%", valor: 91.80, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLV", descripcion: "SALUD (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0.28%", valor: 146.22, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLI", descripcion: "INDUSTRIAL (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0.65%", valor: 139.15, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLY", descripcion: "CONSUMO DISCRECIONAL (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1.40%", valor: 206.88, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLP", descripcion: "CONSUMO BÁSICO (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0.15%", valor: 78.90, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLU", descripcion: "SERVICIOS PÚBLICOS (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0.45%", valor: 81.42, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLB", descripcion: "MATERIALES (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0.35%", valor: 93.65, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
+      { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
+    ];
 
     const SERIE_INFLACION_IMPLICITA_SJB = [
       { mes: "May 2026", tipo: "real", ipc_real: 2.15, inf_implicita: null, tem_nominal: null, tem_cer: null },
@@ -389,36 +412,14 @@
     const FLASH_REGISTRO = {};
 
     let subIndiceActivo = "argentina";
+    let plazoFinvizActivo = "1W";
+    let datosFinvizSectores = null;
 
     const SUB_INDICES_INFO = {
       argentina: { titulo: "Mercado Argentino — S&P Merval", desc: "Bolsa de Buenos Aires (BCBA / BYMA) & Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
       estados_unidos: { titulo: "Mercado Estadounidense — S&P 500", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
       sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
     };
-
-    const INDICES_ESTATICOS_BASE = [
-      { variable: "TASA_CALL", descripcion: "TASA CALL INTERBANCARIA EN PESOS", subcategoria: "tasas", valor_formateado: "21,66% TNA", variacion: "0,0%", valor: 21.66, fecha: "Mercado" },
-      { variable: "MERVAL_ARS", descripcion: "S&P MERVAL EN PESOS", subcategoria: "argentina", valor_formateado: "84K", variacion: "+2.313,5%", valor: 84000.0, fecha: "08 Nov 2026" },
-      { variable: "MERVAL_USD", descripcion: "S&P MERVAL EN DÓLARES", subcategoria: "argentina", valor_formateado: "$54", variacion: "+2.292,9%", valor: 54.0, fecha: "08 Nov 2026" },
-      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+59,4%", valor: 939.0, fecha: "08 Nov 2026" },
-      { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
-      { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
-      { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
-      { variable: "INDICE_DJI", descripcion: "DOW JONES INDUSTRIAL (DJI)", subcategoria: "estados_unidos", valor_formateado: "43.988,99 pts", variacion: "+0.59%", valor: 43988.99, fecha: "08 Nov 2026" },
-      { variable: "INDICE_RUSSELL", descripcion: "RUSSELL 2000 (RUT)", subcategoria: "estados_unidos", valor_formateado: "2.399,61 pts", variacion: "+0.71%", valor: 2399.61, fecha: "08 Nov 2026" },
-      { variable: "MONEDA_DXY", descripcion: "ÍNDICE DÓLAR (DXY)", subcategoria: "estados_unidos", valor_formateado: "102,28 pts", variacion: "-0.02%", valor: 102.28, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLK", descripcion: "TECNOLOGÍA (XLK)", subcategoria: "sectores", valor_formateado: "US$ 228,45", variacion: "+0.52%", valor: 228.45, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLF", descripcion: "FINANCIERO (XLF)", subcategoria: "sectores", valor_formateado: "US$ 49,32", variacion: "+1.15%", valor: 49.32, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLE", descripcion: "ENERGÍA (XLE)", subcategoria: "sectores", valor_formateado: "US$ 91,80", variacion: "+0.84%", valor: 91.80, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLV", descripcion: "SALUD (XLV)", subcategoria: "sectores", valor_formateado: "US$ 146,22", variacion: "-0.28%", valor: 146.22, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLI", descripcion: "INDUSTRIAL (XLI)", subcategoria: "sectores", valor_formateado: "US$ 139,15", variacion: "+0.65%", valor: 139.15, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLY", descripcion: "CONSUMO DISCRECIONAL (XLY)", subcategoria: "sectores", valor_formateado: "US$ 206,88", variacion: "+1.40%", valor: 206.88, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLP", descripcion: "CONSUMO BÁSICO (XLP)", subcategoria: "sectores", valor_formateado: "US$ 78,90", variacion: "-0.15%", valor: 78.90, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLU", descripcion: "SERVICIOS PÚBLICOS (XLU)", subcategoria: "sectores", valor_formateado: "US$ 81,42", variacion: "-0.45%", valor: 81.42, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLB", descripcion: "MATERIALES (XLB)", subcategoria: "sectores", valor_formateado: "US$ 93,65", variacion: "+0.35%", valor: 93.65, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLRE", descripcion: "BIENES RAÍCES (XLRE)", subcategoria: "sectores", valor_formateado: "US$ 43,10", variacion: "-0.62%", valor: 43.10, fecha: "08 Nov 2026" },
-      { variable: "SPDR_XLC", descripcion: "COMUNICACIONES (XLC)", subcategoria: "sectores", valor_formateado: "US$ 92,74", variacion: "+0.48%", valor: 92.74, fecha: "08 Nov 2026" }
-    ];
 
     const CURVAS_INFO = {
       lecaps: { titulo: "Curva de Rendimientos - LECAP y BONCAP", desc: "Precios por 100 VN • Letras y Bonos Capitalizables en ARS", icono: "fa-money-bill-trend-up", color: "text-amber-400" },
@@ -455,7 +456,28 @@
       return isNaN(n) ? NaN : n;
     }
 
-    // Prioriza los datos en vivo de SJB para no mezclar bonos viejos o columnas distintas
+    async function cargarFinvizSectores() {
+      try {
+        const res = await fetch("/api/sectores/finviz?t=" + Date.now());
+        if (res.ok) {
+          const d = await res.json();
+          if (d && (d["1W"] || d["1M"] || d["1Y"])) {
+            datosFinvizSectores = d;
+            if (categoriaActiva === "indices" && subIndiceActivo === "sectores") {
+              renderizar();
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Finviz:", e);
+      }
+    }
+
+    function cambiarPlazoFinviz(plazo) {
+      plazoFinvizActivo = plazo;
+      renderizar();
+    }
+
     function obtenerFilasCurva(clave) {
       const d = datosCurvasSJB[clave];
       if (d) {
@@ -542,23 +564,19 @@
       }
     };
 
-    // Extrae siempre la TIR Anualizada para que todos los puntos queden exactamente sobre la misma escala en la curva
     function extraerTIRParaCurva(fila) {
       const keys = Object.keys(fila);
-      // 1. Prioridad absoluta: TIR o TEA
       const kTir = keys.find(k => /^tir$|^tea$|tir_anual|tir\s*\(%\)|tea\s*\(%\)|rendimiento/i.test(k.trim()))
         || keys.find(k => /tir|tea/i.test(k));
       if (kTir) {
         const v = parseNumSeguro(fila[kTir]);
         if (!isNaN(v) && v !== 0) return v;
       }
-      // 2. Segunda opción: TNA
       const kTna = keys.find(k => /tna/i.test(k));
       if (kTna) {
         const vTna = parseNumSeguro(fila[kTna]);
         if (!isNaN(vTna) && vTna !== 0) return vTna;
       }
-      // 3. Si sólo viene TEM mensual, anualizarla a TIR efectiva anual: ((1 + TEM/100)^12 - 1) * 100
       const kTem = keys.find(k => /tem/i.test(k));
       if (kTem) {
         const vTem = parseNumSeguro(fila[kTem]);
@@ -615,7 +633,6 @@
 
       puntos.sort((a, b) => a.x - b.x);
 
-      // Regresión logarítmica y = a + b * ln(x) calculada sobre los puntos limpios
       const lineaTendencia = [];
       if (puntos.length >= 2) {
         const n = puntos.length;
@@ -879,6 +896,111 @@
         },
         plugins: [pluginValoresBarrasInflacion]
       });
+    }
+
+    function renderizarBloqueFinvizSectores() {
+      const plazos = [
+        { id: "1W", label: "1 Semana" },
+        { id: "1M", label: "1 Mes" },
+        { id: "1Y", label: "1 Año" }
+      ];
+      const fallbackData = {
+        "1W": [
+          { name: "Communication Services", ticker: "XLC", perf: 3.55 },
+          { name: "Basic Materials", ticker: "XLB", perf: 2.09 },
+          { name: "Healthcare", ticker: "XLV", perf: 1.53 },
+          { name: "Real Estate", ticker: "XLRE", perf: 1.29 },
+          { name: "Consumer Cyclical", ticker: "XLY", perf: 0.89 },
+          { name: "Financial", ticker: "XLF", perf: 0.70 },
+          { name: "Consumer Defensive", ticker: "XLP", perf: -0.07 },
+          { name: "Utilities", ticker: "XLU", perf: -0.28 },
+          { name: "Industrials", ticker: "XLI", perf: -2.94 },
+          { name: "Technology", ticker: "XLK", perf: -4.78 },
+          { name: "Energy", ticker: "XLE", perf: -7.02 }
+        ],
+        "1M": [
+          { name: "Healthcare", ticker: "XLV", perf: 8.75 },
+          { name: "Consumer Defensive", ticker: "XLP", perf: 8.93 },
+          { name: "Real Estate", ticker: "XLRE", perf: 5.84 },
+          { name: "Utilities", ticker: "XLU", perf: 3.93 },
+          { name: "Financial", ticker: "XLF", perf: 3.50 },
+          { name: "Consumer Cyclical", ticker: "XLY", perf: 2.88 },
+          { name: "Basic Materials", ticker: "XLB", perf: -1.04 },
+          { name: "Energy", ticker: "XLE", perf: -4.84 },
+          { name: "Industrials", ticker: "XLI", perf: -5.11 },
+          { name: "Communication Services", ticker: "XLC", perf: -10.64 },
+          { name: "Technology", ticker: "XLK", perf: -15.18 }
+        ],
+        "1Y": [
+          { name: "Energy", ticker: "XLE", perf: 35.70 },
+          { name: "Basic Materials", ticker: "XLB", perf: 23.64 },
+          { name: "Healthcare", ticker: "XLV", perf: 21.78 },
+          { name: "Consumer Defensive", ticker: "XLP", perf: 19.63 },
+          { name: "Financial", ticker: "XLF", perf: 12.14 },
+          { name: "Technology", ticker: "XLK", perf: 9.62 },
+          { name: "Real Estate", ticker: "XLRE", perf: 6.90 },
+          { name: "Industrials", ticker: "XLI", perf: 5.85 },
+          { name: "Utilities", ticker: "XLU", perf: -2.34 },
+          { name: "Consumer Cyclical", ticker: "XLY", perf: -3.71 },
+          { name: "Communication Services", ticker: "XLC", perf: -5.16 }
+        ]
+      };
+
+      const fuente = (datosFinvizSectores && datosFinvizSectores[plazoFinvizActivo])
+        ? datosFinvizSectores[plazoFinvizActivo]
+        : fallbackData[plazoFinvizActivo];
+
+      const maxAbs = Math.max(...fuente.map(s => Math.abs(s.perf)), 10);
+
+      const itemsHtml = fuente.map(s => {
+        const isPos = s.perf >= 0;
+        const colorBar = isPos ? "bg-emerald-500" : "bg-rose-500";
+        const colorText = isPos ? "text-emerald-400" : "text-rose-400";
+        const widthPct = Math.min(100, (Math.abs(s.perf) / maxAbs) * 100);
+        const signo = isPos ? "+" : "";
+
+        return `
+          <div class="flex items-center gap-3 text-xs font-mono py-1.5 px-3 rounded-lg hover:bg-slate-900/60 transition">
+            <div class="w-48 shrink-0 flex items-center justify-between">
+              <span class="text-slate-200 font-semibold truncate">${s.name}</span>
+              <span class="text-slate-400 text-[10px] ml-1">(${s.ticker})</span>
+            </div>
+            <div class="flex-1 flex items-center h-5 bg-slate-950/70 rounded border border-slate-800/80 overflow-hidden relative">
+              <div class="h-full ${colorBar} opacity-85 transition-all duration-500" style="width: ${widthPct}%;"></div>
+            </div>
+            <div class="w-20 text-right font-extrabold ${colorText} shrink-0">
+              ${signo}${s.perf.toFixed(2)}%
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <div class="rounded-2xl sjb-chart-box p-5 space-y-4 shadow-2xl backdrop-blur-md">
+          <div class="border-b border-slate-800/80 pb-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xs shadow-sm">
+                <i class="fa-solid fa-chart-column"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Rendimiento Sectorial de Wall Street (Finviz Groups)</h3>
+                <p class="text-[10px] text-slate-400 font-mono mt-0.5">S&P 500 Sector Performance Barometer</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              ${plazos.map(p => `
+                <button onclick="cambiarPlazoFinviz('${p.id}')" class="px-3 py-1 rounded-lg text-xs font-semibold font-mono transition ${plazoFinvizActivo === p.id ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">
+                  ${p.label}
+                </button>
+              `).join("")}
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
     }
 
     async function actualizarCriptosEnVivo() {
@@ -1537,6 +1659,8 @@
                   ${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}
                 </div>
 
+                ${(subIndiceActivo === "sectores") ? renderizarBloqueFinvizSectores() : ""}
+
                 ${mapaCalorHtml}
               </section>
             </div>
@@ -1696,7 +1820,6 @@
         return;
       }
 
-      // VISTA DE INFLACIÓN Y COEFICIENTES (Sin el detalle por tramos debajo)
       if (categoriaActiva === "inflacion_y_ajuste") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
         const cfgHeader = CONFIG_SECCIONES.inflacion_y_ajuste;
@@ -1793,8 +1916,6 @@
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
-
-
       if (item.variable && item.variable.startsWith("TASA_")) {
         if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;
       }
@@ -1847,12 +1968,14 @@
     cargarCurvasSJB();
     cargarInflacionImplicita();
     cargarBandas();
+    cargarFinvizSectores();
 
     setInterval(actualizarCriptosEnVivo, 5000);
     setInterval(cargarDatos, 8000);
     setInterval(cargarCurvasSJB, 15000);
     setInterval(cargarInflacionImplicita, 15000);
     setInterval(cargarBandas, 15000);
+    setInterval(cargarFinvizSectores, 20000);
   </script>
 </body>
 </html>
