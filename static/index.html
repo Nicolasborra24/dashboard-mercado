@@ -2001,6 +2001,207 @@
       contenedor.innerHTML = `<section class="space-y-3">${renderizarBarraSeccion(cfgHeader)}<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, categoriaActiva, valorOficial)).join("")}</div></section>`;
     }
 
+    
+    // === EXTRACTOR EN VIVO DE CALENDARIOFULL.JS (INDEC) Y AWS/INVESTING (EE.UU.) ===
+    window.CALENDARIO_INDEC_MULTIMES = [
+      // SEPTIEMBRE 2026
+      { fecha: "2026-09-10", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-15", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-16", hora: "16:00hs", publicacion: "Informe de avance del nivel de actividad (PIB). Segundo trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-17", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-18", hora: "16:00hs", publicacion: "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Segundo trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-24", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Julio de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-26", hora: "16:00hs", publicacion: "Incidencia de la pobreza y la indigencia en 31 aglomerados urbanos. Primer semestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-09-30", hora: "16:00hs", publicacion: "Índice de salarios. Julio de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      // OCTUBRE 2026
+      { fecha: "2026-10-07", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI manufacturero). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-07", hora: "16:00hs", publicacion: "Indicadores de coyuntura de la actividad de la construcción (ISAC). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-14", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-15", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-15", hora: "16:00hs", publicacion: "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-16", hora: "16:00hs", publicacion: "Utilización de la capacidad instalada en la industria. Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-21", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-23", hora: "16:00hs", publicacion: "Encuesta de supermercados y autoservicios mayoristas. Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-23", hora: "16:00hs", publicacion: "Encuesta de centros de compras. Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-28", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-10-30", hora: "16:00hs", publicacion: "Índice de salarios. Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      // NOVIEMBRE 2026
+      { fecha: "2026-11-03", hora: "16:00hs", publicacion: "Índices de precios y cantidades del comercio exterior. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Indicadores de condiciones de vida de los hogares (EPH). Primer semestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Bases de microdatos de la Encuesta Permanente de Hogares. Segundo trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-05", hora: "16:00hs", publicacion: "Encuesta Nacional de Empresas (ENE). Resultados preliminares 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial minero (IPI minero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Indicadores de coyuntura de la actividad de la construcción (ISAC). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI manufacturero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-11", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Utilización de la capacidad instalada en la industria. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Índice de salarios. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-16", hora: "16:00hs", publicacion: "Encuesta de turismo internacional (ETI). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-17", hora: "16:00hs", publicacion: "Valorización mensual de la canasta de crianza. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-18", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-19", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de supermercados y autoservicios mayoristas. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de centros de compras. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-25", hora: "16:00hs", publicacion: "Generación de energía eléctrica. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-27", hora: "16:00hs", publicacion: "Dotación de personal de la administración pública nacional, empresas y sociedades. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-30", hora: "16:00hs", publicacion: "Cuentas internacionales de la Argentina. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      // DICIEMBRE 2026
+      { fecha: "2026-12-03", hora: "16:00hs", publicacion: "Índice de producción industrial minero (IPI minero). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-04", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI manufacturero). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-04", hora: "16:00hs", publicacion: "Indicadores de coyuntura de la actividad de la construcción (ISAC). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-10", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-11", hora: "16:00hs", publicacion: "Utilización de la capacidad instalada en la industria. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-15", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-15", hora: "16:00hs", publicacion: "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-16", hora: "16:00hs", publicacion: "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-17", hora: "16:00hs", publicacion: "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-18", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-22", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-23", hora: "16:00hs", publicacion: "Encuesta de supermercados y centros de compras. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-29", hora: "16:00hs", publicacion: "Índice de salarios. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      // ENERO 2027
+      { fecha: "2027-01-07", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI) e ISAC (Construcción). Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2027-01-13", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Diciembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2027-01-15", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM) e ICC. Diciembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2027-01-20", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Diciembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2027-01-26", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2027-01-29", hora: "16:00hs", publicacion: "Índice de salarios. Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" }
+    ];
+
+    // Fusionar de inmediato los meses pasados y futuros en CALENDARIO_INDEC_DATA
+    (function() {
+      const mapInit = {};
+      [...(window.CALENDARIO_INDEC_DATA || []), ...window.CALENDARIO_INDEC_MULTIMES].forEach(it => {
+        if (it && it.fecha && it.publicacion) mapInit[it.fecha + "|" + it.publicacion] = it;
+      });
+      window.CALENDARIO_INDEC_DATA = Object.values(mapInit).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    })();
+
+    window.parsearCalendarioFullJSCliente = function(jsText) {
+      const extraidos = [];
+      if (!jsText || jsText.length < 50) return extraidos;
+      const bloques = jsText.match(/\{[^{}]+\}/g) || [];
+      bloques.forEach(b => {
+        let fIso = "";
+        const mND = b.match(/new\s+Date\s*\(\s*(20\d{2})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
+        if (mND) {
+          const yr = parseInt(mND[1], 10);
+          const mo = parseInt(mND[2], 10) + 1;
+          const dy = parseInt(mND[3], 10);
+          if (mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31) {
+            fIso = yr + "-" + String(mo).padStart(2, "0") + "-" + String(dy).padStart(2, "0");
+          }
+        }
+        if (!fIso) {
+          const mIso = b.match(/(?:start|fecha|date|dia)\s*[:=]\s*['"](20\d{2})[-/](\d{1,2})[-/](\d{1,2})/i);
+          if (mIso) fIso = mIso[1] + "-" + String(mIso[2]).padStart(2, "0") + "-" + String(mIso[3]).padStart(2, "0");
+        }
+        if (!fIso) {
+          const mLat = b.match(/(?:start|fecha|date|dia)\s*[:=]\s*['"](\d{1,2})[-/](\d{1,2})[-/](20\d{2})/i);
+          if (mLat) fIso = mLat[3] + "-" + String(mLat[2]).padStart(2, "0") + "-" + String(mLat[1]).padStart(2, "0");
+        }
+        const mTit = b.match(/(?:title|titulo|descripcion|nombre|text)\s*[:=]\s*['"]([^'"]{6,})['"]/i);
+        if (fIso && mTit) {
+          const tmp = document.createElement("div");
+          tmp.innerHTML = mTit[1];
+          const limpio = (tmp.textContent || tmp.innerText || "").trim();
+          if (limpio.length > 5) {
+            extraidos.push({ fecha: fIso, hora: "16:00hs", publicacion: limpio, url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" });
+          }
+        }
+      });
+      return extraidos;
+    };
+
+    window.sincronizarCalendarioEconomico = async function() {
+      // 1. Backend FastAPI
+      const resp = await fetchJsonSeguro("/api/calendario/economico?t=" + Date.now());
+      if (resp) {
+        if (Array.isArray(resp.argentina) && resp.argentina.length > 0) {
+          const mapArg = {};
+          [...window.CALENDARIO_INDEC_MULTIMES, ...window.CALENDARIO_INDEC_DATA, ...resp.argentina].forEach(it => {
+            if (it && it.fecha && it.publicacion) mapArg[it.fecha + "|" + it.publicacion] = it;
+          });
+          window.CALENDARIO_INDEC_DATA = Object.values(mapArg).sort((a, b) => a.fecha.localeCompare(b.fecha));
+        }
+        if (Array.isArray(resp.estados_unidos) && resp.estados_unidos.length > 0) {
+          const mapUsa = {};
+          [...window.CALENDARIO_USA_DATA, ...resp.estados_unidos].forEach(it => {
+            if (it && it.fecha && it.evento) mapUsa[it.fecha + "|" + it.evento] = it;
+          });
+          window.CALENDARIO_USA_DATA = Object.values(mapUsa).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+        }
+      }
+
+      // 2. Extracción directa en vivo de https://www.indec.gob.ar/Scripts/CalendarioFull.js desde el navegador
+      const urlIndecJS = "https://www.indec.gob.ar/Scripts/CalendarioFull.js";
+      const proxiesIndec = [
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlIndecJS),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(urlIndecJS),
+        "https://corsproxy.io/?" + encodeURIComponent(urlIndecJS)
+      ];
+      for (const pUrl of proxiesIndec) {
+        try {
+          const rJs = await fetch(pUrl);
+          if (rJs.ok) {
+            const txtJs = await rJs.text();
+            const evsIndec = window.parsearCalendarioFullJSCliente(txtJs);
+            if (evsIndec.length > 0) {
+              const mapA = {};
+              [...window.CALENDARIO_INDEC_DATA, ...evsIndec].forEach(it => {
+                mapA[it.fecha + "|" + it.publicacion] = it;
+              });
+              window.CALENDARIO_INDEC_DATA = Object.values(mapA).sort((a, b) => a.fecha.localeCompare(b.fecha));
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Extracción directa en vivo de Investing / AWS ECS para EE.UU.
+      const urlAws = "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no";
+      const proxiesUsa = [
+        urlAws,
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlAws),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(urlAws)
+      ];
+      for (const u of proxiesUsa) {
+        try {
+          const rAws = await fetch(u);
+          if (rAws.ok) {
+            const dAws = await rAws.json();
+            const arr = Array.isArray(dAws) ? dAws : (dAws.events || dAws.data || []);
+            if (Array.isArray(arr) && arr.length > 0) {
+              const mapU = {};
+              window.CALENDARIO_USA_DATA.forEach(x => { mapU[x.fecha + "|" + x.evento] = x; });
+              arr.forEach(ev => {
+                const nom = String(ev.event || ev.title || ev.name || "").trim();
+                const fRaw = String(ev.date || ev.fecha || ev.datetime || "").slice(0, 10);
+                if (nom && fRaw.length === 10 && fRaw.startsWith("202")) {
+                  mapU[fRaw + "|" + nom] = {
+                    fecha: fRaw,
+                    hora: String(ev.time || ev.hora || "10:30").slice(0, 5),
+                    div: "US",
+                    evento: nom,
+                    importancia: Number(ev.importance || 2),
+                    actual: String(ev.actual || "-"),
+                    prevision: String(ev.forecast || "-"),
+                    anterior: String(ev.previous || "-")
+                  };
+                }
+              });
+              window.CALENDARIO_USA_DATA = Object.values(mapU).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (categoriaActiva === "calendario_economico") renderizar(true);
+    };
+
     function filtrarCategoria(cat, ev) {
       categoriaActiva = cat;
       document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
@@ -2019,6 +2220,8 @@
     setInterval(cargarDatos, 8000);
     setInterval(actualizarPuntasDolarEnVivo, 10000);
     setInterval(sincronizarEndpointsSecundarios, 15000);
+    setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 30000);
+    setTimeout(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 800);
   </script>
 </body>
 </html>

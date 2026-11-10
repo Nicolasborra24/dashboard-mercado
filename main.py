@@ -1195,6 +1195,109 @@ def fetch_licitaciones_mae_rango(desde: Optional[str] = None, hasta: Optional[st
     return resultado
 
 
+
+CALENDARIO_INDEC_ANUAL = [
+    # SEPTIEMBRE 2026
+    {"fecha": "2026-09-10", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-15", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-16", "hora": "16:00hs", "publicacion": "Informe de avance del nivel de actividad (PIB). Segundo trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-17", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-18", "hora": "16:00hs", "publicacion": "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Segundo trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-24", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Julio de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-26", "hora": "16:00hs", "publicacion": "Incidencia de la pobreza y la indigencia en 31 aglomerados urbanos. Primer semestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-09-30", "hora": "16:00hs", "publicacion": "Índice de salarios. Julio de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    # OCTUBRE 2026
+    {"fecha": "2026-10-07", "hora": "16:00hs", "publicacion": "Índice de producción industrial manufacturero (IPI manufacturero). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-07", "hora": "16:00hs", "publicacion": "Indicadores de coyuntura de la actividad de la construcción (ISAC). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-14", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-15", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-15", "hora": "16:00hs", "publicacion": "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-16", "hora": "16:00hs", "publicacion": "Utilización de la capacidad instalada en la industria. Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-21", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-23", "hora": "16:00hs", "publicacion": "Encuesta de supermercados y autoservicios mayoristas. Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-23", "hora": "16:00hs", "publicacion": "Encuesta de centros de compras. Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-28", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-10-30", "hora": "16:00hs", "publicacion": "Índice de salarios. Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    # NOVIEMBRE 2026
+    {"fecha": "2026-11-03", "hora": "16:00hs", "publicacion": "Índices de precios y cantidades del comercio exterior. Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-04", "hora": "16:00hs", "publicacion": "Indicadores de condiciones de vida de los hogares (EPH). Primer semestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-04", "hora": "16:00hs", "publicacion": "Bases de microdatos de la Encuesta Permanente de Hogares. Segundo trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-05", "hora": "16:00hs", "publicacion": "Encuesta Nacional de Empresas (ENE). Resultados preliminares 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Índice de producción industrial minero (IPI minero). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Indicadores de coyuntura de la actividad de la construcción (ISAC). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Índice de producción industrial manufacturero (IPI manufacturero). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-11", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-12", "hora": "16:00hs", "publicacion": "Utilización de la capacidad instalada en la industria. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-12", "hora": "16:00hs", "publicacion": "Índice de salarios. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-13", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-13", "hora": "16:00hs", "publicacion": "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-16", "hora": "16:00hs", "publicacion": "Encuesta de turismo internacional (ETI). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-17", "hora": "16:00hs", "publicacion": "Valorización mensual de la canasta de crianza. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-18", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-19", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-24", "hora": "16:00hs", "publicacion": "Encuesta de supermercados y autoservicios mayoristas. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-24", "hora": "16:00hs", "publicacion": "Encuesta de centros de compras. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-25", "hora": "16:00hs", "publicacion": "Generación de energía eléctrica. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-27", "hora": "16:00hs", "publicacion": "Dotación de personal de la administración pública nacional, empresas y sociedades. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-30", "hora": "16:00hs", "publicacion": "Cuentas internacionales de la Argentina. Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    # DICIEMBRE 2026
+    {"fecha": "2026-12-03", "hora": "16:00hs", "publicacion": "Índice de producción industrial minero (IPI minero). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-04", "hora": "16:00hs", "publicacion": "Índice de producción industrial manufacturero (IPI manufacturero). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-04", "hora": "16:00hs", "publicacion": "Indicadores de coyuntura de la actividad de la construcción (ISAC). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-10", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-11", "hora": "16:00hs", "publicacion": "Utilización de la capacidad instalada en la industria. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-15", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM). Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-15", "hora": "16:00hs", "publicacion": "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-16", "hora": "16:00hs", "publicacion": "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-17", "hora": "16:00hs", "publicacion": "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-18", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-22", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-23", "hora": "16:00hs", "publicacion": "Encuesta de supermercados y centros de compras. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-29", "hora": "16:00hs", "publicacion": "Índice de salarios. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    # ENERO 2027
+    {"fecha": "2027-01-07", "hora": "16:00hs", "publicacion": "Índice de producción industrial manufacturero (IPI) e ISAC (Construcción). Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2027-01-13", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Diciembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2027-01-15", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM) e ICC. Diciembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2027-01-20", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Diciembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2027-01-26", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2027-01-29", "hora": "16:00hs", "publicacion": "Índice de salarios. Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"}
+]
+
+def parsear_js_indec_completo(js_text: str) -> List[Dict[str, Any]]:
+    eventos = []
+    # Captura bloques de objetos JS en CalendarioFull.js aunque tengan new Date(y, m, d) o saltos de línea
+    bloques = re.findall(r"\{[^{}]*?\}", js_text, re.DOTALL)
+    for b in bloques:
+        f_iso = None
+        # Caso 1: new Date(2026, 10, 11) -> mes en JS es 0-indexed (0=Ene, 10=Nov, 11=Dic)
+        m_newdate = re.search(r"new\s+Date\s*\(\s*(20\d{2})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})", b)
+        if m_newdate:
+            yr = int(m_newdate.group(1))
+            mo = int(m_newdate.group(2)) + 1
+            dy = int(m_newdate.group(3))
+            if 1 <= mo <= 12 and 1 <= dy <= 31:
+                f_iso = f"{yr}-{mo:02d}-{dy:02d}"
+        if not f_iso:
+            # Caso 2: YYYY-MM-DD o YYYY/MM/DD
+            m_iso = re.search(r"(?:start|fecha|date|dia|f)\s*[:=]\s*['\"](20\d{2})[-/](\d{1,2})[-/](\d{1,2})", b, re.IGNORECASE)
+            if m_iso:
+                f_iso = f"{int(m_iso.group(1))}-{int(m_iso.group(2)):02d}-{int(m_iso.group(3)):02d}"
+        if not f_iso:
+            # Caso 3: DD/MM/YYYY o DD-MM-YYYY
+            m_lat = re.search(r"(?:start|fecha|date|dia|f)\s*[:=]\s*['\"](\d{1,2})[-/](\d{1,2})[-/](20\d{2})", b, re.IGNORECASE)
+            if m_lat:
+                f_iso = f"{int(m_lat.group(3))}-{int(m_lat.group(2)):02d}-{int(m_lat.group(1)):02d}"
+
+        m_tit = re.search(r"(?:title|titulo|descripcion|nombre|text|t)\s*[:=]\s*['\"]([^'\"]{6,})['\"]", b, re.IGNORECASE)
+        if f_iso and m_tit:
+            pub = BeautifulSoup(m_tit.group(1), "html.parser").get_text(" ", strip=True)
+            m_url = re.search(r"(?:url|link|href)\s*[:=]\s*['\"]([^'\"]+)['\"]", b, re.IGNORECASE)
+            url_ev = m_url.group(1) if m_url else "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"
+            if url_ev.startswith("/"):
+                url_ev = "https://www.indec.gob.ar" + url_ev
+            eventos.append({"fecha": f_iso, "hora": "16:00hs", "publicacion": pub, "url": url_ev})
+    return eventos
+
 CALENDARIO_INDEC_BASE = [
     {"fecha": "2026-10-14", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31"},
     {"fecha": "2026-10-21", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Nivel3-Tema-3-2"},
@@ -1261,36 +1364,30 @@ CACHE_CALENDARIO_USA: List[Dict[str, Any]] = list(CALENDARIO_USA_BASE)
 def extraer_calendario_indec() -> List[Dict[str, Any]]:
     global CACHE_CALENDARIO_INDEC
     url_js = "https://www.indec.gob.ar/Scripts/CalendarioFull.js"
-    candidatos = [
+    extraidos = []
+    sess = requests.Session()
+    sess.mount("https://", MAEAdapter())
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Referer": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"
+    }
+    for u in [
         url_js,
         f"https://api.allorigins.win/raw?url={quote(url_js, safe='')}",
-        f"https://api.codetabs.com/v1/proxy?quest={quote(url_js, safe='')}"
-    ]
-    extraidos = []
-    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", "Referer": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"}
-    for u in candidatos:
+        f"https://api.codetabs.com/v1/proxy?quest={quote(url_js, safe='')}",
+        f"https://corsproxy.io/?{quote(url_js, safe='')}"
+    ]:
         try:
-            r = requests.get(u, headers=hdrs, timeout=4.5, verify=False)
+            r = sess.get(u, headers=hdrs, timeout=5.0, verify=False)
             if r.status_code == 200 and len(r.text) > 100:
-                txt = r.text
-                bloques = re.findall(r"\{[^{}]*?(?:title|titulo|descripcion|start|fecha)[^{}]*?\}", txt, re.IGNORECASE | re.DOTALL)
-                for b in bloques:
-                    m_f = re.search(r"(?:start|fecha|date)\s*[:=]\s*['\"](20\d{2}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]20\d{2})", b, re.IGNORECASE)
-                    m_t = re.search(r"(?:title|titulo|descripcion)\s*[:=]\s*['\"]([^'\"]+)['\"]", b, re.IGNORECASE)
-                    if m_f and m_t:
-                        f_str = m_f.group(1).replace("/", "-")
-                        partes = f_str.split("-")
-                        f_iso = f"{partes[0]}-{int(partes[1]):02d}-{int(partes[2]):02d}" if len(partes[0]) == 4 else f"{partes[2]}-{int(partes[1]):02d}-{int(partes[0]):02d}"
-                        pub = BeautifulSoup(m_t.group(1), "html.parser").get_text(" ", strip=True)
-                        if len(pub) > 5:
-                            extraidos.append({"fecha": f_iso, "hora": "16:00hs", "publicacion": pub, "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"})
-                if extraidos:
+                extraidos = parsear_js_indec_completo(r.text)
+                if len(extraidos) > 5:
                     break
         except Exception:
             pass
 
     mapa = {}
-    for item in CALENDARIO_INDEC_BASE + CACHE_CALENDARIO_INDEC + extraidos:
+    for item in CALENDARIO_INDEC_ANUAL + CALENDARIO_INDEC_BASE + CACHE_CALENDARIO_INDEC + extraidos:
         if item.get("fecha") and item.get("publicacion"):
             mapa[f"{item['fecha']}|{item['publicacion']}"] = item
     res = sorted(list(mapa.values()), key=lambda x: x["fecha"])
@@ -1572,7 +1669,7 @@ def ver_estado_mae():
 
 
 @app.get("/api/calendario/economico")
-def ver_calendario_economico():
+def ver_calendario_economico(desde: Optional[str] = Query(None), hasta: Optional[str] = Query(None)):
     indec = extraer_calendario_indec()
     usa = extraer_calendario_usa()
     return {"argentina": indec, "estados_unidos": usa, "updated": ULTIMA_ACTUALIZACION}
