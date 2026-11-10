@@ -762,6 +762,29 @@
       if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar(false);
     }
 
+        window.PUNTAS_DOLAR_VIVO = {
+      DOLAR_OFICIAL: { compra: null, venta: null },
+      DOLAR_BLUE: { compra: null, venta: null }
+    };
+
+    async function actualizarPuntasDolarEnVivo() {
+      const data = await fetchJsonSeguro("https://dolarapi.com/v1/dolares");
+      if (Array.isArray(data)) {
+        data.forEach(d => {
+          const casa = String(d.casa || "").toLowerCase();
+          const c = parseFloat(d.compra), v = parseFloat(d.venta);
+          if (casa === "oficial" && !isNaN(c) && !isNaN(v)) {
+            window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL = { compra: c, venta: v };
+          } else if (casa === "blue" && !isNaN(c) && !isNaN(v)) {
+            window.PUNTAS_DOLAR_VIVO.DOLAR_BLUE = { compra: c, venta: v };
+          }
+        });
+        if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
+          renderizar(false);
+        }
+      }
+    }
+
     async function cargarDatos() {
       const data = await fetchJsonSeguro("/bcra/variables?formato=agrupado&t=" + Date.now());
       if (!data) return;
@@ -872,7 +895,26 @@
               <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
               ${badgeBrecha}
             </div>
-            <div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span></div>
+            ${(() => {
+              const pVivo = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO[item.variable]) || {};
+              const vCompra = item.compra || pVivo.compra;
+              const vVenta = item.venta || pVivo.venta || ((item.variable === "DOLAR_OFICIAL" || item.variable === "DOLAR_BLUE") && vCompra ? item.valor : null);
+              if ((item.variable === "DOLAR_OFICIAL" || item.variable === "DOLAR_BLUE") && vCompra && vVenta) {
+                const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return `
+                  <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
+                    <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Compra</span>
+                      <span class="text-base sm:text-lg font-bold text-slate-200 font-mono ${animFlash}">${fmtP(vCompra)}</span>
+                    </div>
+                    <div class="bg-cyan-950/30 border border-cyan-500/40 rounded-xl px-2.5 py-1.5 flex flex-col">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-cyan-400">Venta</span>
+                      <span class="text-base sm:text-lg font-extrabold text-white font-mono ${animFlash}">${fmtP(vVenta)}</span>
+                    </div>
+                  </div>`;
+              }
+              return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span></div>`;
+            })()}
           </div>
           <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
             ${varBadge}
@@ -1193,12 +1235,14 @@
       renderizar(true);
     }
 
+    actualizarPuntasDolarEnVivo();
     cargarDatos();
     actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
 
     setInterval(actualizarCriptosEnVivo, 5000);
     setInterval(cargarDatos, 8000);
+    setInterval(actualizarPuntasDolarEnVivo, 10000);
     setInterval(sincronizarEndpointsSecundarios, 15000);
   </script>
 </body>

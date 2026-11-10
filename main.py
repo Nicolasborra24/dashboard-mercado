@@ -1046,6 +1046,28 @@ def worker_refresco_continuo():
             if res_futuro:
                 nuevo_agrupado["dolar_y_cambiario"].append(res_futuro)
 
+            puntas_dl = obtener_puntas_dolarito()
+            for cod_p, desc_p in [("DOLAR_OFICIAL", "Dólar Oficial Minorista"), ("DOLAR_BLUE", "Dólar Blue")]:
+                if cod_p in puntas_dl:
+                    c_v = puntas_dl[cod_p]["compra"]
+                    v_v = puntas_dl[cod_p]["venta"]
+                    fmt_v = f"${v_v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    encontrado_d = False
+                    for item_d in nuevo_agrupado["dolar_y_cambiario"]:
+                        if item_d.get("variable") == cod_p:
+                            item_d["compra"] = c_v
+                            item_d["venta"] = v_v
+                            item_d["valor"] = v_v
+                            item_d["valor_formateado"] = fmt_v
+                            encontrado_d = True
+                            break
+                    if not encontrado_d:
+                        nuevo_agrupado["dolar_y_cambiario"].append({
+                            "variable": cod_p, "descripcion": desc_p, "categoria": "dolar_y_cambiario",
+                            "compra": c_v, "venta": v_v, "valor": v_v, "valor_formateado": fmt_v,
+                            "variacion": "0,0%", "fecha": puntas_dl[cod_p]["fecha"]
+                        })
+
             with CACHE_LOCK:
                 for k, v in nuevo_agrupado.items():
                     if len(v) > 0:
