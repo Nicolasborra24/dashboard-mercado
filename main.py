@@ -650,6 +650,75 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
         "variacion": "-0,19%", "valor": precio_fut, "fecha": f"Vto. {nombre_mes}"
     }
 
+def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
+    res: Dict[str, Dict[str, Any]] = {}
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+
+    # 1. Consulta directa a Dolarito.ar (API interna y __NEXT_DATA__)
+    urls_dolarito = [
+        "https://api.dolarito.ar/api/frontend/quotations",
+        "https://www.dolarito.ar/api/frontend/quotations",
+        "https://www.dolarito.ar/"
+    ]
+    for u in urls_dolarito:
+        try:
+            r = requests.get(u, headers=headers, timeout=3.5)
+            if r.status_code != 200:
+                continue
+            data_json = None
+            if "application/json" in r.headers.get("Content-Type", ""):
+                data_json = r.json()
+            else:
+                m_next = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text, re.DOTALL)
+                if m_next:
+                    data_json = json.loads(m_next.group(1))
+            if data_json:
+                nodos = []
+                def buscar_nodos(obj):
+                    if isinstance(obj, dict):
+                        nodos.append(obj)
+                        for v in obj.values():
+                            buscar_nodos(v)
+                    elif isinstance(obj, list):
+                        for el in obj:
+                            buscar_nodos(el)
+                buscar_nodos(data_json)
+                for nd in nodos:
+                    nombre = str(nd.get("name") or nd.get("nombre") or nd.get("slug") or nd.get("id") or "").lower()
+                    c = normalizar_valor(nd.get("buy") or nd.get("compra"))
+                    v = normalizar_valor(nd.get("sell") or nd.get("venta"))
+                    var = nd.get("variation") or nd.get("variacion")
+                    if c and v and c > 500 and v > 500:
+                        var_str = f"{float(var):+.2f}%".replace(".", ",") if isinstance(var, (int, float)) else (str(var) if var else "0,0%")
+                        if any(k in nombre for k in ["oficial", "minorista", "bna", "banco nacion"]) and "DOLAR_OFICIAL" not in res:
+                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": var_str, "fecha": fec_hoy}
+                        elif any(k in nombre for k in ["blue", "informal", "libre"]) and "DOLAR_BLUE" not in res:
+                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": var_str, "fecha": fec_hoy}
+            if "DOLAR_OFICIAL" in res and "DOLAR_BLUE" in res:
+                break
+        except Exception:
+            pass
+
+    # 2. Respaldo en tiempo real con DolarApi si algún campo no vino en el HTML
+    if "DOLAR_OFICIAL" not in res or "DOLAR_BLUE" not in res:
+        try:
+            r_api = requests.get("https://dolarapi.com/v1/dolares", headers=headers, timeout=3.5)
+            if r_api.status_code == 200:
+                for d in r_api.json():
+                    casa = str(d.get("casa", "")).lower()
+                    c = normalizar_valor(d.get("compra"))
+                    v = normalizar_valor(d.get("venta"))
+                    if c and v:
+                        if casa == "oficial" and "DOLAR_OFICIAL" not in res:
+                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": "0,0%", "fecha": fec_hoy}
+                        elif casa == "blue" and "DOLAR_BLUE" not in res:
+                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "variacion": "0,0%", "fecha": fec_hoy}
+        except Exception:
+            pass
+
+    return res
+
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
@@ -692,6 +761,25 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     ]
     for cod, desc, fmt, var_str, val_n in MONEDAS:
         items.append({"variable": cod, "descripcion": desc, "categoria": "monedas", "valor_formateado": fmt, "variacion": var_str, "valor": val_n, "fecha": fec_hoy})
+
+    puntas = obtener_puntas_dolarito()
+    for cod_d, desc_d in [("DOLAR_OFICIAL", "Dólar Oficial Minorista"), ("DOLAR_BLUE", "Dólar Blue")]:
+        if cod_d in puntas:
+            p_info = puntas[cod_d]
+            c_val = p_info["compra"]
+            v_val = p_info["venta"]
+            fmt_v = f"${v_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            items.append({
+                "variable": cod_d,
+                "descripcion": desc_d,
+                "categoria": "dolar_y_cambiario",
+                "compra": c_val,
+                "venta": v_val,
+                "valor_formateado": fmt_v,
+                "variacion": p_info.get("variacion", "0,0%"),
+                "valor": v_val,
+                "fecha": p_info.get("fecha", fec_hoy)
+            })
     return items
 
 def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
@@ -921,7 +1009,13 @@ def worker_refresco_continuo():
             for item in res_ind:
                 cat = item.get("categoria", "macro_y_fiscal")
                 if cat != "indices" and cat in nuevo_agrupado:
-                    nuevo_agrupado[cat].append(item)
+                    idx_exist = next((i for i, x in enumerate(nuevo_agrupado[cat]) if x.get("variable") == item.get("variable")), None)
+                    if idx_exist is not None:
+                        existente = nuevo_agrupado[cat][idx_exist]
+                        if item.get("variacion") and existente.get("variacion") in ("0,0%", "0.0%", None):
+                            existente["variacion"] = item["variacion"]
+                    else:
+                        nuevo_agrupado[cat].append(item)
 
             if res_bcra_inf:
                 for cod_inf, obj_inf in res_bcra_inf.items():
