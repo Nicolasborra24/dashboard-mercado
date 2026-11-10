@@ -74,7 +74,9 @@ def get_db():
     finally:
         db.close()
 
-def normalizar_valor(texto: str) -> Optional[float]:
+def normalizar_valor(texto: Any) -> Optional[float]:
+    if texto is None:
+        return None
     t = str(texto).strip().upper().replace("−", "-")
     multiplicador = 1000.0 if ("B" in t or "K" in t) else 1.0
     t_clean = re.sub(r"[^\d,\.\-]", "", t)
@@ -106,36 +108,20 @@ def extraer_mes_corte_legible(texto_fecha: str) -> str:
         return ""
     s = str(texto_fecha).strip()
     m_iso = re.search(r"(20\d{2})[-/](\d{1,2})", s)
-    if m_iso:
-        anio = m_iso.group(1)
-        mes_num = int(m_iso.group(2))
-        if 1 <= mes_num <= 12:
-            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    if m_iso and 1 <= int(m_iso.group(2)) <= 12:
+        return f"{MESES_CORTOS_ES[int(m_iso.group(2))]} {m_iso.group(1)}"
     m_lat = re.search(r"(\d{1,2})[-/](\d{1,2})[-/](20\d{2})", s)
-    if m_lat:
-        mes_num = int(m_lat.group(2))
-        anio = m_lat.group(3)
-        if 1 <= mes_num <= 12:
-            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    if m_lat and 1 <= int(m_lat.group(2)) <= 12:
+        return f"{MESES_CORTOS_ES[int(m_lat.group(2))]} {m_lat.group(3)}"
     m_my = re.search(r"^(\d{1,2})[-/](20\d{2})$", s)
-    if m_my:
-        mes_num = int(m_my.group(1))
-        anio = m_my.group(2)
-        if 1 <= mes_num <= 12:
-            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    if m_my and 1 <= int(m_my.group(1)) <= 12:
+        return f"{MESES_CORTOS_ES[int(m_my.group(1))]} {m_my.group(2)}"
     mapeo_txt = {
-        "enero": "Ene", "ene": "Ene", "jan": "Ene",
-        "febrero": "Feb", "feb": "Feb",
-        "marzo": "Mar", "mar": "Mar",
-        "abril": "Abr", "abr": "Abr", "apr": "Abr",
-        "mayo": "May", "may": "May",
-        "junio": "Jun", "jun": "Jun",
-        "julio": "Jul", "jul": "Jul",
-        "agosto": "Ago", "ago": "Ago", "aug": "Ago",
-        "septiembre": "Sep", "setiembre": "Sep", "sep": "Sep", "set": "Sep",
-        "octubre": "Oct", "oct": "Oct",
-        "noviembre": "Nov", "nov": "Nov",
-        "diciembre": "Dic", "dic": "Dic", "dec": "Dic"
+        "enero": "Ene", "ene": "Ene", "jan": "Ene", "febrero": "Feb", "feb": "Feb",
+        "marzo": "Mar", "mar": "Mar", "abril": "Abr", "abr": "Abr", "apr": "Abr",
+        "mayo": "May", "may": "May", "junio": "Jun", "jun": "Jun", "julio": "Jul", "jul": "Jul",
+        "agosto": "Ago", "ago": "Ago", "aug": "Ago", "septiembre": "Sep", "setiembre": "Sep", "sep": "Sep",
+        "octubre": "Oct", "oct": "Oct", "noviembre": "Nov", "nov": "Nov", "diciembre": "Dic", "dic": "Dic", "dec": "Dic"
     }
     s_low = s.lower()
     anio_m = re.search(r"(20\d{2})", s_low)
@@ -273,41 +259,13 @@ SJB_CURVAS_URLS = {
 
 CACHE_CURVAS_SJB: Dict[str, Any] = {}
 CACHE_INFLACION_IMPLICITA: Any = None
-CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {
-    "banda_inferior": 703.82,
-    "banda_superior": 1974.20,
-    "dolar_mayorista": 1545.50
-}
+CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 703.82, "banda_superior": 1974.20, "dolar_mayorista": 1545.50}
 CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
-    "TASA_CALL": {
-        "variable": "TASA_CALL",
-        "descripcion": "Tasa Call Interbancaria en Pesos",
-        "categoria": "tasas_y_monetario",
-        "valor_formateado": "21,66% TNA",
-        "variacion": "0,0%",
-        "valor": 21.66,
-        "fecha": "Mercado"
-    },
-    "TASA_TM20": {
-        "variable": "TASA_TM20",
-        "descripcion": "Tasa TM20 en Pesos",
-        "categoria": "tasas_y_monetario",
-        "valor_formateado": "22,00% TNA",
-        "variacion": "0,0%",
-        "valor": 22.0,
-        "fecha": "Mercado"
-    },
-    "TASA_PASES": {
-        "variable": "TASA_PASES",
-        "descripcion": "Tasa de Pases Pasivos BCRA",
-        "categoria": "tasas_y_monetario",
-        "valor_formateado": "22,06% TNA",
-        "variacion": "0,0%",
-        "valor": 22.06,
-        "fecha": "Mercado"
-    }
+    "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
+    "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
+    "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"}
 }
 
 CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
@@ -370,11 +328,12 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
 CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
 
+# --- CONSULTA DIRECTA SIN SESSION COMPARTIDA (EVITA BLOQUEO DE YAHOO Y STOOQ) ---
 def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     h = {"User-Agent": "Mozilla/5.0"}
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
-        r = requests.get(url, headers=h, timeout=2.5)
+        r = requests.get(url, headers=h, timeout=2.8)
         if r.status_code == 200:
             res = r.json().get("chart", {}).get("result", [])
             if res:
@@ -389,12 +348,12 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
 
     try:
         url_s = f"https://stooq.com/q/l/?s={sym_s}&f=sd2t2ohlcv&h&e=csv"
-        r_s = requests.get(url_s, headers=h, timeout=2.2)
+        r_s = requests.get(url_s, headers=h, timeout=2.5)
         if r_s.status_code == 200 and "Close" in r_s.text:
             lines = r_s.text.strip().split("\n")
             if len(lines) >= 2:
                 parts = lines[1].split(",")
-                if len(parts) >= 6:
+                if len(parts) >= 6 and parts[5] != "N/D":
                     close_p = float(parts[5])
                     open_p = float(parts[2]) if parts[2] != "N/D" else close_p
                     chg_pct = ((close_p - open_p) / open_p * 100) if open_p else 0.0
@@ -432,6 +391,76 @@ def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
     with ThreadPoolExecutor(max_workers=6) as ex:
         res = list(ex.map(worker_ticker, US_TICKERS_DEF))
     return [r for r in res if r is not None]
+
+METALES_TICKERS_TOTAL = [
+    ("GC=F", "gc.f", "METALES_XAU", "ORO (XAU)", "US$/ozt", 4070.10),
+    ("SI=F", "si.f", "METALES_XAG", "PLATA (XAG)", "US$/oz", 51.95),
+    ("HG=F", "hg.f", "METALES_HG00", "COBRE (HG00)", "US$/lb", 6.24),
+    ("PL=F", "pl.f", "METALES_XPT", "PLATINO (XPT)", "US$/oz", 1534.00),
+    ("PA=F", "pa.f", "METALES_XPD", "PALADIO (XPD)", "US$/oz", 1004.00),
+    ("ALI=F", "al.f", "METALES_ALU", "ALUMINIO (ALU)", "US$/ozt", 10.49),
+    ("ZN=F", "zn.f", "METALES_ZNC", "ZINC (ZNC)", "US$/ozt", 8.55),
+    ("NI=F", "ni.f", "METALES_NI", "NÍQUEL (NI)", "US$/oz", 2.00),
+    ("TIN=F", "sn.f", "METALES_TIN", "ESTAÑO (TIN)", "US$/oz", 1.45),
+    ("LED=F", "pb.f", "METALES_LEAD", "PLOMO (LEAD)", "US$/oz", 17.31),
+    ("TIO=F", "tio.f", "METALES_IRON", "MINERAL DE HIERRO (IRON)", "US$/oz", 380.52),
+    ("URA", "ura.us", "METALES_U", "URANIO (U)", "US$/lb", 91.85),
+    ("LIT", "lit.us", "METALES_LI", "LITIO (LI)", "US$/oz", 2.29),
+    ("LIT", "lit.us", "METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "US$/ozt", 2.29),
+    ("MO=F", "mo.f", "METALES_MO", "MOLIBDENO (MO)", "US$/ozt", 2.81),
+    ("XRH=X", "xrh.x", "METALES_XRH", "RODIO (XRH)", "US$/oz", 9200.00),
+    ("VAN=F", "van.f", "METALES_VAN", "VANADIO (VAN)", "US$/ozt", 3.17),
+    ("COBALT", "cobalt.us", "METALES_LCO", "COBALTO (LCO)", "US$/oz", 1.04)
+]
+
+def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    def fetch_metal_worker(info):
+        sym_y, sym_s, cod, desc, unidad, def_p = info
+        q = fetch_quote_externa(sym_y, sym_s)
+        if q:
+            p = q["price"]
+            chg = q["change_pct"]
+            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+            fmt = f"{p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"{p:.2f} {unidad}".replace(".", ",")
+            return {"variable": cod, "descripcion": desc, "categoria": "metales", "valor_formateado": fmt, "variacion": var_str, "valor": p, "fecha": fec_hoy}
+        else:
+            fmt = f"{def_p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if def_p >= 1000 else f"{def_p:.2f} {unidad}".replace(".", ",")
+            return {"variable": cod, "descripcion": desc, "categoria": "metales", "valor_formateado": fmt, "variacion": "0.00%", "valor": def_p, "fecha": fec_hoy}
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        resultados = list(ex.map(fetch_metal_worker, METALES_TICKERS_TOTAL))
+    return [r for r in resultados if r]
+
+PETROLEO_TICKERS_TOTAL = [
+    ("CL=F", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 71.24),
+    ("BZ=F", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.88),
+    ("BZ=F", "cb.f", "PETROLEO_MURBAN", "Petróleo Crudo Murban", "USD/bbl", 75.12),
+    ("NG=F", "ng.f", "ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "USD/MMBtu", 2.85),
+    ("RB=F", "rb.f", "ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.05),
+    ("HO=F", "ho.f", "ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 2.26)
+]
+
+def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    def fetch_petroleo_worker(info):
+        sym_y, sym_s, cod, desc, unidad, def_p = info
+        q = fetch_quote_externa(sym_y, sym_s)
+        if q:
+            p = q["price"]
+            if cod == "PETROLEO_MURBAN":
+                p = round(p + 0.35, 2)
+            chg = q["change_pct"]
+            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
+            fmt = f"{p:.2f} {unidad}".replace(".", ",")
+            return {"variable": cod, "descripcion": desc, "categoria": "petroleo", "valor_formateado": fmt, "variacion": var_str, "valor": p, "fecha": fec_hoy}
+        else:
+            fmt = f"{def_p:.2f} {unidad}".replace(".", ",")
+            return {"variable": cod, "descripcion": desc, "categoria": "petroleo", "valor_formateado": fmt, "variacion": "0.00%", "valor": def_p, "fecha": fec_hoy}
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        resultados = list(ex.map(fetch_petroleo_worker, PETROLEO_TICKERS_TOTAL))
+    return [r for r in resultados if r]
 
 def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     items = []
@@ -476,76 +505,50 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     return items
 
 def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/html, */*"
-    }
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json, text/html, */*"}
     urls = [
         "https://www.bcra.gob.ar/wp-json/bcra/v1/variables-principales?lang=es",
         "https://www.bcra.gob.ar/wp-json/bcra/v1/tabla-variables?lang=es",
-        "https://api.bcra.gob.ar/estadisticas/v2.0/principalesvariables",
-        "https://www.bcra.gob.ar/"
+        "https://api.bcra.gob.ar/estadisticas/v2.0/principalesvariables"
     ]
-
     encontrados: Dict[str, Dict[str, Any]] = {}
 
-    def recorrer_nodos_json(nodo: Any, lista_out: List[Dict[str, Any]]):
+    def recorrer(nodo: Any, out: List[Dict[str, Any]]):
         if isinstance(nodo, dict):
-            lista_out.append(nodo)
+            out.append(nodo)
             for v in nodo.values():
-                recorrer_nodos_json(v, lista_out)
+                recorrer(v, out)
         elif isinstance(nodo, list):
             for el in nodo:
-                recorrer_nodos_json(el, lista_out)
+                recorrer(el, out)
 
-    def clasificar_y_guardar(desc_raw: str, val_raw: Any, fecha_raw: Any, id_var: str = ""):
+    def clasificar(desc_raw: str, val_raw: Any, fec_raw: Any, id_var: str = ""):
         desc_low = desc_raw.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
-        v_num = normalizar_valor(str(val_raw)) if val_raw is not None else None
+        v_num = normalizar_valor(val_raw)
         if v_num is None or v_num <= 0 or v_num > 500:
             return
-
-        mes_corte = extraer_mes_corte_legible(str(fecha_raw or desc_raw))
+        mes_corte = extraer_mes_corte_legible(str(fec_raw or desc_raw))
         fmt_pct = f"{v_num:,.1f}%".replace(",", "X").replace(".", ",").replace("X", ".")
-
         if id_var == "29" or ("inflacion" in desc_low and ("esperada" in desc_low or "rem" in desc_low)):
             encontrados["INFLACION_REM"] = {
                 "variable": "INFLACION_REM",
                 "descripcion": f"Inflación Esperada REM 12m ({mes_corte})" if mes_corte else "Inflación Esperada REM (12m)",
-                "categoria": "inflacion_y_ajuste",
-                "valor_formateado": fmt_pct,
-                "variacion": "REM BCRA",
-                "valor": v_num,
+                "categoria": "inflacion_y_ajuste", "valor_formateado": fmt_pct, "variacion": "REM BCRA", "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "REM BCRA"
             }
         elif id_var == "27" or ("inflacion mensual" in desc_low and "esperada" not in desc_low and "rem" not in desc_low):
             encontrados["INFLACION_MENSUAL"] = {
                 "variable": "INFLACION_MENSUAL",
                 "descripcion": f"Inflación Mensual ({mes_corte})" if mes_corte else "Inflación Mensual",
-                "categoria": "inflacion_y_ajuste",
-                "valor_formateado": fmt_pct,
-                "variacion": f"{fmt_pct}",
-                "valor": v_num,
+                "categoria": "inflacion_y_ajuste", "valor_formateado": fmt_pct, "variacion": fmt_pct, "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
             }
         elif id_var == "28" or ("inflacion interanual" in desc_low or ("inflacion" in desc_low and "i.a." in desc_low)):
             encontrados["INFLACION_INTERANUAL"] = {
                 "variable": "INFLACION_INTERANUAL",
                 "descripcion": f"Inflación Interanual ({mes_corte})" if mes_corte else "Inflación Interanual",
-                "categoria": "inflacion_y_ajuste",
-                "valor_formateado": fmt_pct,
-                "variacion": f"{fmt_pct}",
-                "valor": v_num,
+                "categoria": "inflacion_y_ajuste", "valor_formateado": fmt_pct, "variacion": fmt_pct, "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
-            }
-        elif "call" in desc_low or "prestamos entre entidades" in desc_low or id_var == "12":
-            CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {
-                "variable": "TASA_CALL",
-                "descripcion": "Tasa Call Interbancaria en Pesos",
-                "categoria": "tasas_y_monetario",
-                "valor_formateado": f"{v_num:,.2f}% TNA".replace(".", ","),
-                "variacion": "0,0%",
-                "valor": v_num,
-                "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA"
             }
 
     for url in urls:
@@ -553,100 +556,45 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
             r = requests.get(url, headers=headers, timeout=4.5, verify=False)
             if r.status_code != 200:
                 continue
-
             try:
-                data = r.json()
                 nodos: List[Dict[str, Any]] = []
-                recorrer_nodos_json(data, nodos)
+                recorrer(r.json(), nodos)
                 for row in nodos:
                     id_v = str(row.get("idVariable") or row.get("id_variable") or row.get("id") or "")
-                    desc_v = str(
-                        row.get("descripcion")
-                        or row.get("titulo")
-                        or row.get("nombre")
-                        or row.get("label")
-                        or row.get("variable")
-                        or row.get("concepto")
-                        or ""
-                    )
-                    val_v = (
-                        row.get("valor")
-                        if row.get("valor") is not None
-                        else (
-                            row.get("value")
-                            or row.get("ultValorInformado")
-                            or row.get("monto")
-                            or row.get("tasa")
-                            or row.get("numero")
-                        )
-                    )
-                    fec_v = (
-                        row.get("fecha")
-                        or row.get("ultFechaInformada")
-                        or row.get("periodo")
-                        or row.get("mes")
-                        or row.get("date")
-                        or ""
-                    )
-                    if "<" in desc_v and ">" in desc_v:
+                    desc_v = str(row.get("descripcion") or row.get("titulo") or row.get("nombre") or row.get("label") or row.get("variable") or "")
+                    val_v = row.get("valor") if row.get("valor") is not None else (row.get("value") or row.get("ultValorInformado") or row.get("tasa"))
+                    fec_v = row.get("fecha") or row.get("ultFechaInformada") or row.get("periodo") or row.get("mes") or ""
+                    if "<" in desc_v:
                         desc_v = BeautifulSoup(desc_v, "html.parser").get_text(" ", strip=True)
-                    if desc_v or id_v in ("27", "28", "29", "12"):
-                        clasificar_y_guardar(desc_v, val_v, fec_v, id_v)
+                    if desc_v or id_v in ("27", "28", "29"):
+                        clasificar(desc_v, val_v, fec_v, id_v)
             except Exception:
                 pass
-
-            texto_html = r.text
-            if "<" in texto_html:
-                soup = BeautifulSoup(texto_html, "html.parser")
-                for tr in soup.find_all(["tr", "li", "div", "article"]):
-                    celdas = tr.find_all(["td", "th", "span", "p", "strong", "h3", "h4"])
-                    if len(celdas) >= 2:
-                        txt_bloque = " ".join(c.get_text(" ", strip=True) for c in celdas)
-                        txt_low = txt_bloque.lower()
-                        if "inflaci" in txt_low or "call" in txt_low:
-                            m_pct = re.search(r"(\d{1,3}(?:[\.,]\d{1,2})?)\s*%?", celdas[-1].get_text(strip=True))
-                            if not m_pct:
-                                m_pct = re.search(r"(\d{1,3}[\.,]\d{1,2})\s*%", txt_bloque)
-                            if m_pct:
-                                clasificar_y_guardar(txt_bloque, m_pct.group(1), txt_bloque)
-
             if len(encontrados) >= 3:
                 break
-        except Exception as e:
-            print(f"[BCRA Inflacion Aviso] {url}: {e}")
+        except Exception:
+            pass
 
     if "INFLACION_REM" not in encontrados:
         encontrados["INFLACION_REM"] = {
-            "variable": "INFLACION_REM",
-            "descripcion": "Inflación Esperada REM (12m)",
-            "categoria": "inflacion_y_ajuste",
-            "valor_formateado": "21,8%",
-            "variacion": "REM BCRA",
-            "valor": 21.8,
-            "fecha": "BCRA Oficial"
+            "variable": "INFLACION_REM", "descripcion": "Inflación Esperada REM (12m)",
+            "categoria": "inflacion_y_ajuste", "valor_formateado": "21,8%", "variacion": "REM BCRA", "valor": 21.8, "fecha": "BCRA Oficial"
         }
-
     return encontrados
 
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
+        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
             d = r.json()
             for row in d.get("principales", []):
-                nom_t = str(row.get("Tasa", "")).upper()
-                tna_val = row.get("TNA", "")
-                if "TM20" in nom_t:
-                    v_n = normalizar_valor(tna_val) or 22.0
+                if "TM20" in str(row.get("Tasa", "")).upper():
+                    tna_val = row.get("TNA", "")
                     CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {
-                        "variable": "TASA_TM20",
-                        "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%",
-                        "valor": v_n,
-                        "fecha": fec_hoy
+                        "variable": "TASA_TM20", "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
+                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%", "valor": normalizar_valor(tna_val) or 22.0, "fecha": fec_hoy
                     }
             for row in d.get("otras", []):
                 nom_t = str(row.get("Tasa", "")).lower()
@@ -654,27 +602,18 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                 v_n = normalizar_valor(tna_val)
                 if "call" in nom_t and v_n is not None:
                     CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {
-                        "variable": "TASA_CALL",
-                        "descripcion": "Tasa Call Interbancaria en Pesos",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%",
-                        "valor": v_n,
-                        "fecha": fec_hoy
+                        "variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos",
+                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy
                     }
                 elif "pase" in nom_t and v_n is not None:
                     CACHE_TASAS_PERSISTENTE["TASA_PASES"] = {
-                        "variable": "TASA_PASES",
-                        "descripcion": "Tasa de Pases Pasivos BCRA",
-                        "categoria": "tasas_y_monetario",
-                        "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%",
-                        "valor": v_n,
-                        "fecha": fec_hoy
+                        "variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA",
+                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
+                        "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy
                     }
-    except Exception as e:
-        print(f"[Tasas SJB Aviso] {e}")
-
+    except Exception:
+        pass
     return list(CACHE_TASAS_PERSISTENTE.values())
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
@@ -682,11 +621,8 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
     now = datetime.utcnow()
     nombre_mes = f"{meses_es[now.month - 1]} {now.year}"
     precio_fut = 1570.50
-    var_str = "-0,19%"
-
     try:
-        h = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get("https://www.dolarito.ar/", headers=h, timeout=3.0)
+        r = requests.get("https://www.dolarito.ar/", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
         if r.status_code == 200:
             m = re.search(r"dolar futuro[^\d]*([\d\.,]+)", r.text, re.IGNORECASE)
             if m:
@@ -695,133 +631,11 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
                     precio_fut = val
     except Exception:
         pass
-
     return {
-        "variable": "DOLAR_FUTURO",
-        "descripcion": f"DÓLAR FUTURO ({nombre_mes.upper()})",
-        "categoria": "dolar_y_cambiario",
-        "valor_formateado": f"${precio_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-        "variacion": var_str,
-        "valor": precio_fut,
-        "fecha": f"Vto. {nombre_mes}"
+        "variable": "DOLAR_FUTURO", "descripcion": f"DÓLAR FUTURO ({nombre_mes.upper()})",
+        "categoria": "dolar_y_cambiario", "valor_formateado": f"${precio_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "variacion": "-0,19%", "valor": precio_fut, "fecha": f"Vto. {nombre_mes}"
     }
-
-METALES_TICKERS_TOTAL = [
-    ("GC=F", "gc.f", "METALES_XAU", "ORO (XAU)", "US$/ozt", 4070.10),
-    ("SI=F", "si.f", "METALES_XAG", "PLATA (XAG)", "US$/oz", 51.95),
-    ("HG=F", "hg.f", "METALES_HG00", "COBRE (HG00)", "US$/lb", 6.24),
-    ("PL=F", "pl.f", "METALES_XPT", "PLATINO (XPT)", "US$/oz", 1534.00),
-    ("PA=F", "pa.f", "METALES_XPD", "PALADIO (XPD)", "US$/oz", 1004.00),
-    ("ALI=F", "al.f", "METALES_ALU", "ALUMINIO (ALU)", "US$/ozt", 10.49),
-    ("ZN=F", "zn.f", "METALES_ZNC", "ZINC (ZNC)", "US$/ozt", 8.55),
-    ("NI=F", "ni.f", "METALES_NI", "NÍQUEL (NI)", "US$/oz", 2.00),
-    ("TIN=F", "sn.f", "METALES_TIN", "ESTAÑO (TIN)", "US$/oz", 1.45),
-    ("LED=F", "pb.f", "METALES_LEAD", "PLOMO (LEAD)", "US$/oz", 17.31),
-    ("TIO=F", "tio.f", "METALES_IRON", "MINERAL DE HIERRO (IRON)", "US$/oz", 380.52),
-    ("URA", "ura.us", "METALES_U", "URANIO (U)", "US$/lb", 91.85),
-    ("LIT", "lit.us", "METALES_LI", "LITIO (LI)", "US$/oz", 2.29),
-    ("LIT", "lit.us", "METALES_LITH_CAR", "CARBONATO DE LITIO (LITH-CAR)", "US$/ozt", 2.29),
-    ("MO=F", "mo.f", "METALES_MO", "MOLIBDENO (MO)", "US$/ozt", 2.81),
-    ("XRH=X", "xrh.x", "METALES_XRH", "RODIO (XRH)", "US$/oz", 9200.00),
-    ("VAN=F", "van.f", "METALES_VAN", "VANADIO (VAN)", "US$/ozt", 3.17),
-    ("COBALT", "cobalt.us", "METALES_LCO", "COBALTO (LCO)", "US$/oz", 1.04)
-]
-
-def obtener_datos_metales_en_vivo() -> List[Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    def fetch_metal_worker(info):
-        sym_y, sym_s, cod, desc, unidad, def_p = info
-        q = fetch_quote_externa(sym_y, sym_s)
-        if q:
-            p = q["price"]
-            chg = q["change_pct"]
-            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
-            fmt = f"{p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if p >= 1000 else f"{p:.2f} {unidad}".replace(".", ",")
-            return {
-                "variable": cod,
-                "descripcion": desc,
-                "categoria": "metales",
-                "valor_formateado": fmt,
-                "variacion": var_str,
-                "valor": p,
-                "fecha": fec_hoy
-            }
-        else:
-            fmt = f"{def_p:,.2f} {unidad}".replace(",", "X").replace(".", ",").replace("X", ".") if def_p >= 1000 else f"{def_p:.2f} {unidad}".replace(".", ",")
-            return {
-                "variable": cod,
-                "descripcion": desc,
-                "categoria": "metales",
-                "valor_formateado": fmt,
-                "variacion": "0.00%",
-                "valor": def_p,
-                "fecha": fec_hoy
-            }
-
-    with ThreadPoolExecutor(max_workers=10) as ex:
-        resultados = list(ex.map(fetch_metal_worker, METALES_TICKERS_TOTAL))
-    return [r for r in resultados if r]
-
-PETROLEO_TICKERS_TOTAL = [
-    ("CL=F", "cl.f", "PETROLEO_WTI", "Petróleo Crudo WTI", "USD/bbl", 71.24),
-    ("BZ=F", "cb.f", "PETROLEO_BRENT", "Petróleo Crudo Brent", "USD/bbl", 74.88),
-    ("BZ=F", "cb.f", "PETROLEO_MURBAN", "Petróleo Crudo Murban", "USD/bbl", 75.12),
-    ("NG=F", "ng.f", "ENERGIA_GAS_NATURAL", "Gas Natural (Henry Hub)", "USD/MMBtu", 2.85),
-    ("RB=F", "rb.f", "ENERGIA_GASOLINA_FUT", "Gasolina RBOB", "USD/gal", 2.05),
-    ("HO=F", "ho.f", "ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 2.26)
-]
-
-def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    def fetch_petroleo_worker(info):
-        sym_y, sym_s, cod, desc, unidad, def_p = info
-        q = fetch_quote_externa(sym_y, sym_s)
-        if q:
-            p = q["price"]
-            if cod == "PETROLEO_MURBAN":
-                p = round(p + 0.35, 2)
-            chg = q["change_pct"]
-            var_str = f"+{chg:.2f}%" if chg > 0 else f"{chg:.2f}%"
-            fmt = f"{p:.2f} {unidad}".replace(".", ",")
-            return {
-                "variable": cod,
-                "descripcion": desc,
-                "categoria": "petroleo",
-                "valor_formateado": fmt,
-                "variacion": var_str,
-                "valor": p,
-                "fecha": fec_hoy
-            }
-        else:
-            fmt = f"{def_p:.2f} {unidad}".replace(".", ",")
-            return {
-                "variable": cod,
-                "descripcion": desc,
-                "categoria": "petroleo",
-                "valor_formateado": fmt,
-                "variacion": "0.00%",
-                "valor": def_p,
-                "fecha": fec_hoy
-            }
-
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        resultados = list(ex.map(fetch_petroleo_worker, PETROLEO_TICKERS_TOTAL))
-    return [r for r in resultados if r]
-
-def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
-    url = "https://api.marketdata.mae.com.ar/api/mercado/licitaciones"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        r = requests.get(url, headers=headers, timeout=4.0)
-        if r.status_code == 200:
-            data = r.json()
-            if isinstance(data, list):
-                return data
-            elif isinstance(data, dict):
-                return data.get("licitaciones") or data.get("data") or [data]
-    except Exception as e:
-        print(f"[MAE Licitaciones Error] {e}")
-    return []
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
@@ -834,13 +648,9 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
             if d and len(d[0]) >= 2 and d[0][1]:
                 usd_oficial = float(d[0][1])
                 items.append({
-                    "variable": "DOLAR_A3500",
-                    "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
-                    "categoria": "dolar_y_cambiario",
-                    "valor_formateado": f"${usd_oficial:.2f}",
-                    "variacion": "0,0%",
-                    "valor": usd_oficial,
-                    "fecha": d[0][0]
+                    "variable": "DOLAR_A3500", "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
+                    "categoria": "dolar_y_cambiario", "valor_formateado": f"${usd_oficial:.2f}",
+                    "variacion": "0,0%", "valor": usd_oficial, "fecha": d[0][0]
                 })
     except Exception:
         pass
@@ -884,13 +694,8 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
                         try:
                             v_float = float(val)
                             items.append({
-                                "variable": f"BONO_{tk}",
-                                "descripcion": f"Bono {tk}",
-                                "categoria": "cotizacion_bonos",
-                                "valor_formateado": f"{v_float:,.2f}",
-                                "variacion": "0,0%",
-                                "valor": round(v_float, 2),
-                                "fecha": fec_hoy
+                                "variable": f"BONO_{tk}", "descripcion": f"Bono {tk}", "categoria": "cotizacion_bonos",
+                                "valor_formateado": f"{v_float:,.2f}", "variacion": "0,0%", "valor": round(v_float, 2), "fecha": fec_hoy
                             })
                         except Exception:
                             pass
@@ -919,99 +724,79 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
             norm = normalizar_respuesta_curva(r.json())
             if norm:
                 return clave, norm
-    except Exception as e:
-        print(f"[Curva {clave} Error] {e}")
+    except Exception:
+        pass
     return clave, None
 
 def fetch_inflacion_implicita_sjb():
-    urls = [
-        "https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita",
-        "https://sjbdashboards.up.railway.app/api/inflacion-implicita"
-    ]
-    for u in urls:
+    for u in ["https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita", "https://sjbdashboards.up.railway.app/api/inflacion-implicita"]:
         try:
             r = requests.get(u, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
-            if r.status_code == 200:
-                data = r.json()
-                if data:
-                    return data
+            if r.status_code == 200 and r.json():
+                return r.json()
         except Exception:
             pass
     return None
 
 def fetch_bandas_dolarito() -> Dict[str, Any]:
-    b_inf = 703.82
-    b_sup = 1974.20
-    d_may = 1545.50
+    b_inf, b_sup, d_may = 703.82, 1974.20, 1545.50
     try:
         h = {"User-Agent": "Mozilla/5.0"}
         r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=3.0)
         if r1.status_code == 200:
-            d1 = r1.json()
-            v1 = float(d1.get("value") or d1.get("valor") or b_inf)
-            if v1 > 0: b_inf = v1
-
+            b_inf = float(r1.json().get("value") or r1.json().get("valor") or b_inf)
         r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=3.0)
         if r2.status_code == 200:
-            d2 = r2.json()
-            v2 = float(d2.get("value") or d2.get("valor") or b_sup)
-            if v2 > 0: b_sup = v2
-
+            b_sup = float(r2.json().get("value") or r2.json().get("valor") or b_sup)
         r_m = requests.get("https://dolarapi.com/v1/dolares/mayorista", headers=h, timeout=3.0)
         if r_m.status_code == 200:
-            dm = r_m.json()
-            vm = float(dm.get("venta") or dm.get("compra") or d_may)
-            if vm > 0: d_may = vm
+            d_may = float(r_m.json().get("venta") or r_m.json().get("compra") or d_may)
     except Exception:
         pass
-
-    return {
-        "banda_inferior": round(b_inf, 2),
-        "banda_superior": round(b_sup, 2),
-        "dolar_mayorista": round(d_may, 2)
-    }
+    return {"banda_inferior": round(b_inf, 2), "banda_superior": round(b_sup, 2), "dolar_mayorista": round(d_may, 2)}
 
 def fetch_finviz_sectores() -> Optional[Dict[str, Any]]:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    }
-    url = "https://finviz.com/groups?g=sector&v=210&o=name"
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
     tickers_map = {
         "basic materials": "XLB", "communication services": "XLC", "consumer cyclical": "XLY",
         "consumer defensive": "XLP", "energy": "XLE", "financial": "XLF", "healthcare": "XLV",
         "industrials": "XLI", "real estate": "XLRE", "technology": "XLK", "utilities": "XLU"
     }
     try:
-        r = requests.get(url, headers=headers, timeout=5.0)
+        r = requests.get("https://finviz.com/groups?g=sector&v=210&o=name", headers=headers, timeout=5.0)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
-            data_res: Dict[str, List[Dict[str, Any]]] = {"1W": [], "1M": [], "1Y": []}
+            data_res: Dict[str, Any] = {"1W": [], "1M": [], "1Y": []}
             for tr in soup.find_all("tr"):
                 tds = tr.find_all("td")
                 if len(tds) >= 8:
                     nom = tds[1].get_text(strip=True)
-                    nom_low = nom.lower()
-                    if nom_low in tickers_map:
-                        tk = tickers_map[nom_low]
+                    tk = tickers_map.get(nom.lower())
+                    if tk:
                         p_w = normalizar_valor(tds[3].get_text(strip=True))
                         p_m = normalizar_valor(tds[4].get_text(strip=True))
                         p_y = normalizar_valor(tds[7].get_text(strip=True))
-                        if p_w is not None:
-                            data_res["1W"].append({"name": nom, "ticker": tk, "perf": p_w})
-                        if p_m is not None:
-                            data_res["1M"].append({"name": nom, "ticker": tk, "perf": p_m})
-                        if p_y is not None:
-                            data_res["1Y"].append({"name": nom, "ticker": tk, "perf": p_y})
-
+                        if p_w is not None: data_res["1W"].append({"name": nom, "ticker": tk, "perf": p_w})
+                        if p_m is not None: data_res["1M"].append({"name": nom, "ticker": tk, "perf": p_m})
+                        if p_y is not None: data_res["1Y"].append({"name": nom, "ticker": tk, "perf": p_y})
             if len(data_res["1W"]) >= 8:
                 for k in ["1W", "1M", "1Y"]:
                     data_res[k].sort(key=lambda x: x["perf"], reverse=True)
                 data_res["updated"] = datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
                 return data_res
-    except Exception as e:
-        print(f"[Finviz Scraper Aviso] {e}")
+    except Exception:
+        pass
     return None
+
+def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
+    try:
+        r = requests.get("https://api.marketdata.mae.com.ar/api/mercado/licitaciones", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
+        if r.status_code == 200:
+            data = r.json()
+            return data if isinstance(data, list) else (data.get("licitaciones") or data.get("data") or [data])
+    except Exception:
+        pass
+    return []
 
 def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, CACHE_FINVIZ_SECTORES, ULTIMA_ACTUALIZACION
@@ -1054,20 +839,14 @@ def worker_refresco_continuo():
                     if data:
                         CACHE_CURVAS_SJB[k] = data
 
-            if res_inf_imp:
-                CACHE_INFLACION_IMPLICITA = res_inf_imp
-            if res_bandas:
-                CACHE_BANDAS_CAMBIARIAS = res_bandas
-            if res_licit is not None:
-                CACHE_LICITACIONES_MAE = res_licit
-            if res_finviz:
-                CACHE_FINVIZ_SECTORES = res_finviz
+            if res_inf_imp: CACHE_INFLACION_IMPLICITA = res_inf_imp
+            if res_bandas: CACHE_BANDAS_CAMBIARIAS = res_bandas
+            if res_licit is not None: CACHE_LICITACIONES_MAE = res_licit
+            if res_finviz: CACHE_FINVIZ_SECTORES = res_finviz
 
             indices_map = {item["variable"]: dict(item) for item in INDICES_BASE_MEMORIA}
-
             for item in res_usa:
                 indices_map[item["variable"]] = item
-
             for item in res_ind:
                 if item.get("categoria") == "indices":
                     indices_map[item["variable"]] = item
@@ -1146,11 +925,7 @@ def inicio():
     if os.path.exists("static/index.html"):
         return FileResponse(
             "static/index.html",
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
         )
     return {"mensaje": "Servidor activo", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
 
