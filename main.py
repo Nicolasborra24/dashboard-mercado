@@ -269,6 +269,19 @@ CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
 }
 
 CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
+    "1D": [
+        {"name": "Consumer Cyclical", "ticker": "XLY", "perf": 1.40},
+        {"name": "Financial", "ticker": "XLF", "perf": 1.15},
+        {"name": "Energy", "ticker": "XLE", "perf": 0.84},
+        {"name": "Industrials", "ticker": "XLI", "perf": 0.65},
+        {"name": "Technology", "ticker": "XLK", "perf": 0.52},
+        {"name": "Communication Services", "ticker": "XLC", "perf": 0.48},
+        {"name": "Basic Materials", "ticker": "XLB", "perf": 0.35},
+        {"name": "Consumer Defensive", "ticker": "XLP", "perf": -0.15},
+        {"name": "Healthcare", "ticker": "XLV", "perf": -0.28},
+        {"name": "Utilities", "ticker": "XLU", "perf": -0.45},
+        {"name": "Real Estate", "ticker": "XLRE", "perf": -0.62}
+    ],
     "1W": [
         {"name": "Communication Services", "ticker": "XLC", "perf": 3.55},
         {"name": "Basic Materials", "ticker": "XLB", "perf": 2.09},
@@ -328,7 +341,6 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
 CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
 
-# --- CONSULTA DIRECTA SIN SESSION COMPARTIDA (EVITA BLOQUEO DE YAHOO Y STOOQ) ---
 def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     h = {"User-Agent": "Mozilla/5.0"}
     try:
@@ -384,6 +396,7 @@ def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
                 "valor_formateado": fmt,
                 "variacion": var_str,
                 "valor": p,
+                "chg_pct": chg,
                 "fecha": fec_hoy
             }
         return None
@@ -755,38 +768,71 @@ def fetch_bandas_dolarito() -> Dict[str, Any]:
         pass
     return {"banda_inferior": round(b_inf, 2), "banda_superior": round(b_sup, 2), "dolar_mayorista": round(d_may, 2)}
 
-def fetch_finviz_sectores() -> Optional[Dict[str, Any]]:
+def fetch_finviz_sectores(res_usa: Optional[List[Dict[str, Any]]] = None) -> Optional[Dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
     tickers_map = {
         "basic materials": "XLB", "communication services": "XLC", "consumer cyclical": "XLY",
         "consumer defensive": "XLP", "energy": "XLE", "financial": "XLF", "healthcare": "XLV",
         "industrials": "XLI", "real estate": "XLRE", "technology": "XLK", "utilities": "XLU"
     }
+    nombres_spdr = {
+        "SPDR_XLK": ("Technology", "XLK"),
+        "SPDR_XLF": ("Financial", "XLF"),
+        "SPDR_XLE": ("Energy", "XLE"),
+        "SPDR_XLV": ("Healthcare", "XLV"),
+        "SPDR_XLI": ("Industrials", "XLI"),
+        "SPDR_XLY": ("Consumer Cyclical", "XLY"),
+        "SPDR_XLP": ("Consumer Defensive", "XLP"),
+        "SPDR_XLU": ("Utilities", "XLU"),
+        "SPDR_XLB": ("Basic Materials", "XLB"),
+        "SPDR_XLRE": ("Real Estate", "XLRE"),
+        "SPDR_XLC": ("Communication Services", "XLC")
+    }
+
+    data_res: Dict[str, Any] = {"1D": [], "1W": [], "1M": [], "1Y": []}
+
+    # Calcular 1D en tiempo real desde las variaciones de los 11 ETFs sectoriales en vivo
+    if res_usa:
+        for item in res_usa:
+            cod = item.get("variable", "")
+            if cod in nombres_spdr:
+                nom_en, tk = nombres_spdr[cod]
+                chg_d = item.get("chg_pct")
+                if chg_d is None:
+                    chg_d = normalizar_valor(item.get("variacion", "0")) or 0.0
+                data_res["1D"].append({"name": nom_en, "ticker": tk, "perf": round(float(chg_d), 2)})
+
     try:
         r = requests.get("https://finviz.com/groups?g=sector&v=210&o=name", headers=headers, timeout=5.0)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
-            data_res: Dict[str, Any] = {"1W": [], "1M": [], "1Y": []}
             for tr in soup.find_all("tr"):
                 tds = tr.find_all("td")
-                if len(tds) >= 8:
+                if len(tds) >= 10:
                     nom = tds[1].get_text(strip=True)
                     tk = tickers_map.get(nom.lower())
                     if tk:
                         p_w = normalizar_valor(tds[3].get_text(strip=True))
                         p_m = normalizar_valor(tds[4].get_text(strip=True))
                         p_y = normalizar_valor(tds[7].get_text(strip=True))
+                        p_d = normalizar_valor(tds[-2].get_text(strip=True))
                         if p_w is not None: data_res["1W"].append({"name": nom, "ticker": tk, "perf": p_w})
                         if p_m is not None: data_res["1M"].append({"name": nom, "ticker": tk, "perf": p_m})
                         if p_y is not None: data_res["1Y"].append({"name": nom, "ticker": tk, "perf": p_y})
-            if len(data_res["1W"]) >= 8:
-                for k in ["1W", "1M", "1Y"]:
-                    data_res[k].sort(key=lambda x: x["perf"], reverse=True)
-                data_res["updated"] = datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
-                return data_res
+                        if not data_res["1D"] and p_d is not None:
+                            data_res["1D"].append({"name": nom, "ticker": tk, "perf": p_d})
     except Exception:
         pass
-    return None
+
+    # Completar con caché previo si algún período no vino en este ciclo
+    for k in ["1D", "1W", "1M", "1Y"]:
+        if len(data_res[k]) < 8:
+            data_res[k] = list(CACHE_FINVIZ_SECTORES.get(k, []))
+        else:
+            data_res[k].sort(key=lambda x: x["perf"], reverse=True)
+
+    data_res["updated"] = datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
+    return data_res
 
 def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     try:
@@ -803,7 +849,7 @@ def worker_refresco_continuo():
 
     while True:
         try:
-            with ThreadPoolExecutor(max_workers=17) as executor:
+            with ThreadPoolExecutor(max_workers=16) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
@@ -816,7 +862,6 @@ def worker_refresco_continuo():
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
                 f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
                 f_licit = executor.submit(fetch_licitaciones_mae)
-                f_finviz = executor.submit(fetch_finviz_sectores)
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
@@ -832,12 +877,13 @@ def worker_refresco_continuo():
                 res_metales = f_metales.result()
                 res_petroleo = f_petroleo.result()
                 res_licit = f_licit.result()
-                res_finviz = f_finviz.result()
 
                 for fut in futures_curvas:
                     k, data = fut.result()
                     if data:
                         CACHE_CURVAS_SJB[k] = data
+
+            res_finviz = fetch_finviz_sectores(res_usa)
 
             if res_inf_imp: CACHE_INFLACION_IMPLICITA = res_inf_imp
             if res_bandas: CACHE_BANDAS_CAMBIARIAS = res_bandas
