@@ -1194,6 +1194,172 @@ def fetch_licitaciones_mae_rango(desde: Optional[str] = None, hasta: Optional[st
     resultado.sort(key=lambda x: (x["fecha"], x["horario"]))
     return resultado
 
+
+CALENDARIO_INDEC_BASE = [
+    {"fecha": "2026-10-14", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31"},
+    {"fecha": "2026-10-21", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Nivel3-Tema-3-2"},
+    {"fecha": "2026-10-28", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Agosto de 2026", "url": "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-9-48"},
+    {"fecha": "2026-11-03", "hora": "16:00hs", "publicacion": "Índices de precios y cantidades del comercio exterior. Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-04", "hora": "16:00hs", "publicacion": "Indicadores de condiciones de vida de los hogares (EPH). Primer semestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-04", "hora": "16:00hs", "publicacion": "Bases de microdatos de la Encuesta Permanente de Hogares. Segundo trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-05", "hora": "16:00hs", "publicacion": "Encuesta Nacional de Empresas (ENE). Resultados preliminares 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Índice de producción industrial minero (IPI minero). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Indicadores de coyuntura de la actividad de la construcción (ISAC). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-06", "hora": "16:00hs", "publicacion": "Índice de producción industrial manufacturero (IPI manufacturero). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-11", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-12", "hora": "16:00hs", "publicacion": "Utilización de la capacidad instalada en la industria. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-12", "hora": "16:00hs", "publicacion": "Índice de salarios. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-13", "hora": "16:00hs", "publicacion": "Sistema de índices de precios mayoristas (SIPM). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-13", "hora": "16:00hs", "publicacion": "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-16", "hora": "16:00hs", "publicacion": "Encuesta de turismo internacional (ETI). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-17", "hora": "16:00hs", "publicacion": "Valorización mensual de la canasta de crianza. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-18", "hora": "16:00hs", "publicacion": "Intercambio comercial argentino (ICA). Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-19", "hora": "16:00hs", "publicacion": "Estimador mensual de actividad económica (EMAE). Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-24", "hora": "16:00hs", "publicacion": "Encuesta de supermercados y autoservicios mayoristas. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-24", "hora": "16:00hs", "publicacion": "Encuesta de centros de compras. Septiembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-25", "hora": "16:00hs", "publicacion": "Generación de energía eléctrica. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-27", "hora": "16:00hs", "publicacion": "Dotación de personal de la administración pública nacional, empresas y sociedades. Octubre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-11-30", "hora": "16:00hs", "publicacion": "Cuentas internacionales de la Argentina. Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-10", "hora": "16:00hs", "publicacion": "Índice de precios al consumidor (IPC) y Canasta básica. Noviembre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-16", "hora": "16:00hs", "publicacion": "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"},
+    {"fecha": "2026-12-17", "hora": "16:00hs", "publicacion": "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Tercer trimestre de 2026", "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"}
+]
+
+CALENDARIO_USA_BASE = [
+    {"fecha": "2026-11-09", "hora": "13:00", "div": "US", "evento": "Expectativas de inflación del consumidor (Oct)", "importancia": 2, "actual": "2,9%", "prevision": "3,0%", "anterior": "3,0%"},
+    {"fecha": "2026-11-09", "hora": "15:00", "div": "US", "evento": "Subasta de letras a 3 y 6 meses del Tesoro", "importancia": 2, "actual": "4,42%", "prevision": "-", "anterior": "4,45%"},
+    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC (Mensual) (Oct)", "importancia": 3, "actual": "0,4%", "prevision": "0,3%", "anterior": "0,6%"},
+    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC subyacente (Mensual) (Oct)", "importancia": 3, "actual": "0,3%", "prevision": "0,2%", "anterior": "0,3%"},
+    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC (Anual) (Oct)", "importancia": 3, "actual": "2,6%", "prevision": "2,6%", "anterior": "2,4%"},
+    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC subyacente (Anual) (Oct)", "importancia": 3, "actual": "3,3%", "prevision": "3,3%", "anterior": "3,3%"},
+    {"fecha": "2026-11-10", "hora": "16:00", "div": "US", "evento": "Balance presupuestario federal (Oct)", "importancia": 2, "actual": "-", "prevision": "-225,0B", "anterior": "-64,3B"},
+    {"fecha": "2026-11-11", "hora": "09:00", "div": "US", "evento": "Solicitudes de hipoteca MBA (Semanal)", "importancia": 2, "actual": "-", "prevision": "-", "anterior": "-1,8%"},
+    {"fecha": "2026-11-11", "hora": "15:00", "div": "US", "evento": "Subasta de bonos del Tesoro a 10 años (UST 10Y)", "importancia": 3, "actual": "-", "prevision": "4,30%", "anterior": "4,26%"},
+    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "IPP (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,2%", "anterior": "0,0%"},
+    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "IPP subyacente (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,2%"},
+    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "Nuevas peticiones de subsidio por desempleo", "importancia": 3, "actual": "-", "prevision": "220K", "anterior": "221K"},
+    {"fecha": "2026-11-12", "hora": "13:00", "div": "US", "evento": "Inventarios de petróleo crudo de la AIE", "importancia": 3, "actual": "-", "prevision": "1,100M", "anterior": "2,149M"},
+    {"fecha": "2026-11-12", "hora": "17:00", "div": "US", "evento": "Comparecencia de Jerome Powell, presidente de la Fed", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"},
+    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Ventas minoristas (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,4%"},
+    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Ventas minoristas subyacentes (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,5%"},
+    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Índice manufacturero Empire State (Nov)", "importancia": 2, "actual": "-", "prevision": "-0,50", "anterior": "-11,90"},
+    {"fecha": "2026-11-13", "hora": "11:15", "div": "US", "evento": "Producción industrial (Mensual) (Oct)", "importancia": 2, "actual": "-", "prevision": "-0,3%", "anterior": "-0,3%"},
+    {"fecha": "2026-11-17", "hora": "12:00", "div": "US", "evento": "Índice NAHB del mercado de la vivienda (Nov)", "importancia": 2, "actual": "-", "prevision": "43", "anterior": "43"},
+    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Permisos de construcción (Oct)", "importancia": 3, "actual": "-", "prevision": "1,440M", "anterior": "1,425M"},
+    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Inicios de construcción de viviendas (Oct)", "importancia": 2, "actual": "-", "prevision": "1,340M", "anterior": "1,354M"},
+    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Nuevas peticiones de subsidio por desempleo", "importancia": 3, "actual": "-", "prevision": "222K", "anterior": "220K"},
+    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Índice manufacturero de la Fed de Filadelfia (Nov)", "importancia": 3, "actual": "-", "prevision": "8,0", "anterior": "10,3"},
+    {"fecha": "2026-11-19", "hora": "12:00", "div": "US", "evento": "Ventas de viviendas de segunda mano (Oct)", "importancia": 3, "actual": "-", "prevision": "3,93M", "anterior": "3,84M"},
+    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI manufacturero de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "48,8", "anterior": "48,5"},
+    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI de servicios de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "55,2", "anterior": "55,0"},
+    {"fecha": "2026-11-20", "hora": "12:00", "div": "US", "evento": "Confianza del consumidor de la Universidad de Michigan (Nov)", "importancia": 3, "actual": "-", "prevision": "73,0", "anterior": "70,5"}
+]
+
+CACHE_CALENDARIO_INDEC: List[Dict[str, Any]] = list(CALENDARIO_INDEC_BASE)
+CACHE_CALENDARIO_USA: List[Dict[str, Any]] = list(CALENDARIO_USA_BASE)
+
+def extraer_calendario_indec() -> List[Dict[str, Any]]:
+    global CACHE_CALENDARIO_INDEC
+    url_js = "https://www.indec.gob.ar/Scripts/CalendarioFull.js"
+    candidatos = [
+        url_js,
+        f"https://api.allorigins.win/raw?url={quote(url_js, safe='')}",
+        f"https://api.codetabs.com/v1/proxy?quest={quote(url_js, safe='')}"
+    ]
+    extraidos = []
+    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", "Referer": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"}
+    for u in candidatos:
+        try:
+            r = requests.get(u, headers=hdrs, timeout=4.5, verify=False)
+            if r.status_code == 200 and len(r.text) > 100:
+                txt = r.text
+                bloques = re.findall(r"\{[^{}]*?(?:title|titulo|descripcion|start|fecha)[^{}]*?\}", txt, re.IGNORECASE | re.DOTALL)
+                for b in bloques:
+                    m_f = re.search(r"(?:start|fecha|date)\s*[:=]\s*['\"](20\d{2}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]20\d{2})", b, re.IGNORECASE)
+                    m_t = re.search(r"(?:title|titulo|descripcion)\s*[:=]\s*['\"]([^'\"]+)['\"]", b, re.IGNORECASE)
+                    if m_f and m_t:
+                        f_str = m_f.group(1).replace("/", "-")
+                        partes = f_str.split("-")
+                        f_iso = f"{partes[0]}-{int(partes[1]):02d}-{int(partes[2]):02d}" if len(partes[0]) == 4 else f"{partes[2]}-{int(partes[1]):02d}-{int(partes[0]):02d}"
+                        pub = BeautifulSoup(m_t.group(1), "html.parser").get_text(" ", strip=True)
+                        if len(pub) > 5:
+                            extraidos.append({"fecha": f_iso, "hora": "16:00hs", "publicacion": pub, "url": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"})
+                if extraidos:
+                    break
+        except Exception:
+            pass
+
+    mapa = {}
+    for item in CALENDARIO_INDEC_BASE + CACHE_CALENDARIO_INDEC + extraidos:
+        if item.get("fecha") and item.get("publicacion"):
+            mapa[f"{item['fecha']}|{item['publicacion']}"] = item
+    res = sorted(list(mapa.values()), key=lambda x: x["fecha"])
+    CACHE_CALENDARIO_INDEC = res
+    return res
+
+def extraer_calendario_usa() -> List[Dict[str, Any]]:
+    global CACHE_CALENDARIO_USA
+    url_aws = "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no"
+    candidatos = [
+        url_aws,
+        f"https://api.allorigins.win/raw?url={quote(url_aws, safe='')}",
+        f"https://api.codetabs.com/v1/proxy?quest={quote(url_aws, safe='')}"
+    ]
+    extraidos = []
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://es.investing.com",
+        "Referer": "https://es.investing.com/economic-calendar/"
+    }
+    for u in candidatos:
+        try:
+            r = requests.get(u, headers=hdrs, timeout=4.5, verify=False)
+            if r.status_code == 200 and r.text.strip():
+                data = r.json()
+                lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or data.get("items") or [])
+                if isinstance(lista, list):
+                    for ev in lista:
+                        if not isinstance(ev, dict):
+                            continue
+                        cur = str(ev.get("currency") or ev.get("country") or ev.get("div") or "US").upper()
+                        if cur not in ("USD", "US", "UNITED STATES", "EE.UU.", ""):
+                            continue
+                        f_raw = str(ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "")
+                        m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
+                        if not m_f:
+                            continue
+                        f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
+                        m_h = re.search(r"(\d{2}:\d{2})", f_raw)
+                        hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
+                        nom = str(ev.get("event") or ev.get("title") or ev.get("name") or ev.get("evento") or "").strip()
+                        if not nom:
+                            continue
+                        imp_raw = ev.get("importance") or ev.get("impact") or ev.get("importancia") or 2
+                        imp = 3 if str(imp_raw).lower() in ("3", "high", "alta", "bull3") else (1 if str(imp_raw).lower() in ("1", "low", "baja") else 2)
+                        extraidos.append({
+                            "fecha": f_iso,
+                            "hora": hora,
+                            "div": "US",
+                            "evento": nom,
+                            "importancia": imp,
+                            "actual": str(ev.get("actual") if ev.get("actual") not in (None, "") else "-"),
+                            "prevision": str(ev.get("forecast") or ev.get("prevision") or "-"),
+                            "anterior": str(ev.get("previous") or ev.get("anterior") or "-")
+                        })
+                if extraidos:
+                    break
+        except Exception:
+            pass
+
+    mapa = {}
+    for item in CALENDARIO_USA_BASE + CACHE_CALENDARIO_USA + extraidos:
+        if item.get("fecha") and item.get("evento"):
+            mapa[f"{item['fecha']}|{item['evento']}"] = item
+    res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
+    CACHE_CALENDARIO_USA = res
+    return res
+
 def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     fetch_estado_mae()
     return fetch_licitaciones_mae_rango()
@@ -1403,6 +1569,13 @@ def ver_licitaciones_mae(desde: Optional[str] = Query(None), hasta: Optional[str
 @app.get("/api/mercado/estado")
 def ver_estado_mae():
     return fetch_estado_mae()
+
+
+@app.get("/api/calendario/economico")
+def ver_calendario_economico():
+    indec = extraer_calendario_indec()
+    usa = extraer_calendario_usa()
+    return {"argentina": indec, "estados_unidos": usa, "updated": ULTIMA_ACTUALIZACION}
 
 @app.get("/dolar")
 def ver_dolar():

@@ -134,6 +134,7 @@
           </div>
           <div class="grid grid-cols-6 gap-1.5">
             <button onclick="filtrarCategoria('calendario_licitaciones', event)" class="nav-tab col-span-6 sm:col-span-2 px-3 py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-cyan-500/30"><i class="fa-regular fa-calendar-check text-cyan-400 text-[11px]"></i><span class="truncate font-semibold">Calendario Licitaciones (A3 / MAE)</span></button>
+            <button onclick="filtrarCategoria('calendario_economico', event)" class="nav-tab col-span-6 sm:col-span-2 px-3 py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-purple-500/30"><i class="fa-solid fa-calendar-days text-purple-400 text-[11px]"></i><span class="truncate font-semibold">Calendario Económico (ARG / EE.UU.)</span></button>
           </div>
         </div>
       </div>
@@ -355,7 +356,8 @@
       macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-scale-balanced", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
       micro_y_sectores: { titulo: "Economía Real, Crédito y Actividad Productiva", sub: "Construcción, Industria, Consumo y Crédito", icono: "fa-industry", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" },
-      calendario_licitaciones: { titulo: "Calendario de Licitaciones — A3 Mercados (MAE)", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-calendar-check", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" }
+      calendario_licitaciones: { titulo: "Calendario de Licitaciones — A3 Mercados (MAE)", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-calendar-check", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      calendario_economico: { titulo: "Calendario Económico — Argentina (INDEC) y Estados Unidos", sub: "Agenda de Publicaciones INDEC e Indicadores de EE.UU.", icono: "fa-calendar-days", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" }
     };
 
     window.BLOQUES_HOME = [
@@ -1257,6 +1259,504 @@
         </div>`;
     };
 
+    
+    // === CALENDARIO ECONÓMICO (ARGENTINA INDEC & ESTADOS UNIDOS INVESTING) ===
+    window.CALENDARIO_INDEC_DATA = [
+      { fecha: "2026-10-14", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31" },
+      { fecha: "2026-10-21", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Nivel3-Tema-3-2" },
+      { fecha: "2026-10-28", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Agosto de 2026", url: "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-9-48" },
+      { fecha: "2026-11-03", hora: "16:00hs", publicacion: "Índices de precios y cantidades del comercio exterior. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Indicadores de condiciones de vida de los hogares (EPH). Primer semestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Bases de microdatos de la Encuesta Permanente de Hogares. Segundo trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-05", hora: "16:00hs", publicacion: "Encuesta Nacional de Empresas (ENE). Resultados preliminares 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial minero (IPI minero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Indicadores de coyuntura de la actividad de la construcción (ISAC). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI manufacturero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-11", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Utilización de la capacidad instalada en la industria. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Índice de salarios. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-16", hora: "16:00hs", publicacion: "Encuesta de turismo internacional (ETI). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-17", hora: "16:00hs", publicacion: "Valorización mensual de la canasta de crianza. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-18", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-19", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de supermercados y autoservicios mayoristas. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de centros de compras. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-25", hora: "16:00hs", publicacion: "Generación de energía eléctrica. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-27", hora: "16:00hs", publicacion: "Dotación de personal de la administración pública nacional, empresas y sociedades. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-11-30", hora: "16:00hs", publicacion: "Cuentas internacionales de la Argentina. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-10", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica. Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-16", hora: "16:00hs", publicacion: "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
+      { fecha: "2026-12-17", hora: "16:00hs", publicacion: "Mercado de trabajo. Tasas e indicadores socioeconómicos (EPH). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" }
+    ];
+
+    window.CALENDARIO_USA_DATA = [
+      { fecha: "2026-11-09", hora: "13:00", div: "US", evento: "Expectativas de inflación del consumidor (Oct)", importancia: 2, actual: "2,9%", prevision: "3,0%", anterior: "3,0%" },
+      { fecha: "2026-11-09", hora: "15:00", div: "US", evento: "Subasta de letras a 3 y 6 meses del Tesoro", importancia: 2, actual: "4,42%", prevision: "-", anterior: "4,45%" },
+      { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC (Mensual) (Oct)", importancia: 3, actual: "0,4%", prevision: "0,3%", anterior: "0,6%" },
+      { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC subyacente (Mensual) (Oct)", importancia: 3, actual: "0,3%", prevision: "0,2%", anterior: "0,3%" },
+      { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC (Anual) (Oct)", importancia: 3, actual: "2,6%", prevision: "2,6%", anterior: "2,4%" },
+      { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC subyacente (Anual) (Oct)", importancia: 3, actual: "3,3%", prevision: "3,3%", anterior: "3,3%" },
+      { fecha: "2026-11-10", hora: "16:00", div: "US", evento: "Balance presupuestario federal (Oct)", importancia: 2, actual: "-", prevision: "-225,0B", anterior: "-64,3B" },
+      { fecha: "2026-11-11", hora: "09:00", div: "US", evento: "Solicitudes de hipoteca MBA (Semanal)", importancia: 2, actual: "-", prevision: "-", anterior: "-1,8%" },
+      { fecha: "2026-11-11", hora: "15:00", div: "US", evento: "Subasta de bonos del Tesoro a 10 años (UST 10Y)", importancia: 3, actual: "-", prevision: "4,30%", anterior: "4,26%" },
+      { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "IPP (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,2%", anterior: "0,0%" },
+      { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "IPP subyacente (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,2%" },
+      { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "Nuevas peticiones de subsidio por desempleo", importancia: 3, actual: "-", prevision: "220K", anterior: "221K" },
+      { fecha: "2026-11-12", hora: "13:00", div: "US", evento: "Inventarios de petróleo crudo de la AIE", importancia: 3, actual: "-", prevision: "1,100M", anterior: "2,149M" },
+      { fecha: "2026-11-12", hora: "17:00", div: "US", evento: "Comparecencia de Jerome Powell, presidente de la Fed", importancia: 3, actual: "-", prevision: "-", anterior: "-" },
+      { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Ventas minoristas (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,4%" },
+      { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Ventas minoristas subyacentes (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,5%" },
+      { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Índice manufacturero Empire State (Nov)", importancia: 2, actual: "-", prevision: "-0,50", anterior: "-11,90" },
+      { fecha: "2026-11-13", hora: "11:15", div: "US", evento: "Producción industrial (Mensual) (Oct)", importancia: 2, actual: "-", prevision: "-0,3%", anterior: "-0,3%" },
+      { fecha: "2026-11-17", hora: "12:00", div: "US", evento: "Índice NAHB del mercado de la vivienda (Nov)", importancia: 2, actual: "-", prevision: "43", anterior: "43" },
+      { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Permisos de construcción (Oct)", importancia: 3, actual: "-", prevision: "1,440M", anterior: "1,425M" },
+      { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Inicios de construcción de viviendas (Oct)", importancia: 2, actual: "-", prevision: "1,340M", anterior: "1,354M" },
+      { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Nuevas peticiones de subsidio por desempleo", importancia: 3, actual: "-", prevision: "222K", anterior: "220K" },
+      { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Índice manufacturero de la Fed de Filadelfia (Nov)", importancia: 3, actual: "-", prevision: "8,0", anterior: "10,3" },
+      { fecha: "2026-11-19", hora: "12:00", div: "US", evento: "Ventas de viviendas de segunda mano (Oct)", importancia: 3, actual: "-", prevision: "3,93M", anterior: "3,84M" },
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI manufacturero de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "48,8", anterior: "48,5" },
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI de servicios de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "55,2", anterior: "55,0" },
+      { fecha: "2026-11-20", hora: "12:00", div: "US", evento: "Confianza del consumidor de la Universidad de Michigan (Nov)", importancia: 3, actual: "-", prevision: "73,0", anterior: "70,5" }
+    ];
+
+    window.subCalEconomicoActivo = "argentina"; // "argentina" | "estados_unidos"
+    window.indecMesCursor = new Date(2026, 10, 10);
+    window.indecFechaSeleccionada = "2026-11-10";
+    window.indecModoVista = "mes"; // "dia" | "mes"
+    window.indecBusqueda = "";
+
+    window.usaFiltroActivo = "hoy"; // "ayer" | "hoy" | "manana" | "esta_semana" | "proxima_semana" | "custom"
+    window.usaCustomDesde = "2026-11-09";
+    window.usaCustomHasta = "2026-11-20";
+    window.usaMostrarCustom = false;
+
+    window.sincronizarCalendarioEconomico = async function() {
+      const resp = await fetchJsonSeguro("/api/calendario/economico?t=" + Date.now());
+      if (resp) {
+        if (Array.isArray(resp.argentina) && resp.argentina.length > 0) {
+          const mapArg = {};
+          [...window.CALENDARIO_INDEC_DATA, ...resp.argentina].forEach(it => {
+            if (it && it.fecha && it.publicacion) mapArg[it.fecha + "|" + it.publicacion] = it;
+          });
+          window.CALENDARIO_INDEC_DATA = Object.values(mapArg).sort((a, b) => a.fecha.localeCompare(b.fecha));
+        }
+        if (Array.isArray(resp.estados_unidos) && resp.estados_unidos.length > 0) {
+          const mapUsa = {};
+          [...window.CALENDARIO_USA_DATA, ...resp.estados_unidos].forEach(it => {
+            if (it && it.fecha && it.evento) mapUsa[it.fecha + "|" + it.evento] = it;
+          });
+          window.CALENDARIO_USA_DATA = Object.values(mapUsa).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+        }
+      }
+
+      // Intento directo desde navegador al feed AWS de EE.UU. y CalendarioFull.js de INDEC vía proxy CORS
+      try {
+        const urlAws = "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no";
+        const rAws = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(urlAws));
+        if (rAws.ok) {
+          const dAws = await rAws.json();
+          const arr = Array.isArray(dAws) ? dAws : (dAws.events || dAws.data || []);
+          if (Array.isArray(arr) && arr.length > 0) {
+            const mapU = {};
+            window.CALENDARIO_USA_DATA.forEach(x => { mapU[x.fecha + "|" + x.evento] = x; });
+            arr.forEach(ev => {
+              const nom = String(ev.event || ev.title || ev.name || "").trim();
+              const fRaw = String(ev.date || ev.fecha || ev.datetime || "").slice(0, 10);
+              if (nom && fRaw.length === 10 && fRaw.startsWith("202")) {
+                mapU[fRaw + "|" + nom] = {
+                  fecha: fRaw,
+                  hora: String(ev.time || ev.hora || "10:30").slice(0, 5),
+                  div: "US",
+                  evento: nom,
+                  importancia: Number(ev.importance || 2),
+                  actual: String(ev.actual || "-"),
+                  prevision: String(ev.forecast || "-"),
+                  anterior: String(ev.previous || "-")
+                };
+              }
+            });
+            window.CALENDARIO_USA_DATA = Object.values(mapU).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+          }
+        }
+      } catch (e) {}
+
+      if (categoriaActiva === "calendario_economico") renderizar(true);
+    };
+
+    window.cambiarSubCalEconomico = function(sub) {
+      window.subCalEconomicoActivo = sub;
+      renderizar(true);
+    };
+
+    window.navegarMesIndec = function(dir) {
+      const d = new Date(window.indecMesCursor);
+      d.setMonth(d.getMonth() + dir);
+      window.indecMesCursor = d;
+      window.indecModoVista = "mes";
+      renderizar(true);
+    };
+
+    window.seleccionarDiaIndec = function(fIso) {
+      window.indecFechaSeleccionada = fIso;
+      window.indecModoVista = "dia";
+      renderizar(true);
+    };
+
+    window.cambiarModoVistaIndec = function(modo) {
+      window.indecModoVista = modo;
+      renderizar(true);
+    };
+
+    window.filtrarBusquedaIndec = function(val) {
+      window.indecBusqueda = String(val || "");
+      const contenedorLista = document.getElementById("indec-lista-publicaciones");
+      if (contenedorLista) {
+        contenedorLista.innerHTML = window.generarFilasPublicacionesIndec();
+      }
+    };
+
+    window.agendarEventoGoogleCal = function(fechaIso, titulo) {
+      const fClean = fechaIso.replace(/-/g, "");
+      const details = encodeURIComponent("Publicación oficial INDEC — Monitor Maestro De Mercado");
+      const text = encodeURIComponent("INDEC: " + titulo);
+      const urlGcal = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + text + "&dates=" + fClean + "T190000Z/" + fClean + "T200000Z&details=" + details;
+      window.open(urlGcal, "_blank");
+    };
+
+    window.generarFilasPublicacionesIndec = function() {
+      const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"];
+      const yCursor = window.indecMesCursor.getFullYear();
+      const mCursor = String(window.indecMesCursor.getMonth() + 1).padStart(2, "0");
+      const prefijoMes = yCursor + "-" + mCursor;
+
+      let lista = window.CALENDARIO_INDEC_DATA.filter(item => {
+        if (window.indecModoVista === "dia") return item.fecha === window.indecFechaSeleccionada;
+        return item.fecha.startsWith(prefijoMes);
+      });
+
+      if (window.indecBusqueda.trim() !== "") {
+        const q = window.indecBusqueda.toLowerCase().trim();
+        lista = lista.filter(it => it.publicacion.toLowerCase().includes(q));
+      }
+
+      if (lista.length === 0) {
+        return `<div class="py-14 text-center text-slate-400 text-xs">No se encontraron publicaciones del INDEC para el filtro seleccionado.</div>`;
+      }
+
+      const agrupado = {};
+      lista.forEach(it => {
+        if (!agrupado[it.fecha]) agrupado[it.fecha] = [];
+        agrupado[it.fecha].push(it);
+      });
+
+      return Object.keys(agrupado).sort().map(fIso => {
+        const p = fIso.split("-").map(Number);
+        const dt = new Date(p[0], p[1] - 1, p[2]);
+        const diaNum = p[2];
+        const diaNom = diasSemana[dt.getDay()];
+        const pubs = agrupado[fIso];
+
+        return `
+          <div class="py-5 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-start gap-4 hover:bg-slate-900/40 transition px-3 rounded-xl">
+            <div class="w-28 shrink-0 text-center flex flex-col items-center justify-center pt-0.5">
+              <span class="text-2xl font-extrabold text-white leading-none">${diaNum}</span>
+              <span class="text-[11px] font-medium text-slate-400 tracking-wider mt-1 uppercase">${diaNom}</span>
+            </div>
+            <div class="flex-1 space-y-4">
+              ${pubs.map(pub => `
+                <div class="grid grid-cols-12 items-center gap-3">
+                  <div class="col-span-12 md:col-span-7 text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                    ${pub.publicacion}
+                  </div>
+                  <div class="col-span-4 md:col-span-2 text-center font-mono text-xs text-slate-300">
+                    ${pub.hora || "16:00hs"}
+                  </div>
+                  <div class="col-span-4 md:col-span-1 flex justify-center">
+                    <a href="${pub.url || 'https://www.indec.gob.ar/indec/web/Calendario-Fecha-0'}" target="_blank" rel="noopener" class="w-8 h-8 rounded-lg hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 flex items-center justify-center transition" title="Ver en INDEC">
+                      <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </a>
+                  </div>
+                  <div class="col-span-4 md:col-span-2 flex justify-center">
+                    <button onclick="window.agendarEventoGoogleCal('${pub.fecha}', '${pub.publicacion.replace(/'/g, "")}')" class="w-8 h-8 rounded-lg hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 flex items-center justify-center transition" title="Agendar en Google Calendar">
+                      <i class="fa-regular fa-calendar-plus text-sm"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>`;
+      }).join("");
+    };
+
+    window.renderizarVistaIndec = function() {
+      const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      const y = window.indecMesCursor.getFullYear();
+      const m = window.indecMesCursor.getMonth();
+      const tituloMes = mesesNombres[m] + " " + y;
+
+      const primerDia = new Date(y, m, 1).getDay(); // 0 = Dom
+      const totalDias = new Date(y, m + 1, 0).getDate();
+      const fechasConEventos = new Set(window.CALENDARIO_INDEC_DATA.map(x => x.fecha));
+
+      const celdasMini = [];
+      for (let i = 0; i < primerDia; i++) {
+        celdasMini.push(`<div></div>`);
+      }
+      for (let d = 1; d <= totalDias; d++) {
+        const fIso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+        const tieneEv = fechasConEventos.has(fIso);
+        const esSel = fIso === window.indecFechaSeleccionada;
+        celdasMini.push(`
+          <button onclick="window.seleccionarDiaIndec('${fIso}')" class="py-1.5 flex flex-col items-center justify-center rounded-xl transition ${esSel ? 'border-2 border-cyan-400 bg-cyan-500/20 text-white font-extrabold shadow-[0_0_10px_rgba(34,211,238,0.3)]' : 'text-slate-300 hover:bg-slate-800/70'}">
+            <span class="text-xs leading-none">${d}</span>
+            <span class="w-1.5 h-1.5 rounded-full mt-1 ${tieneEv ? 'bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]' : 'bg-transparent'}"></span>
+          </button>`);
+      }
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <!-- Mini Calendario Mensual Izquierdo (Estilo INDEC) -->
+          <div class="lg:col-span-4 rounded-2xl border border-slate-800 bg-[#090e1e]/95 p-5 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="window.navegarMesIndec(-1)" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-cyan-500/30 text-slate-300 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-chevron-left text-[10px]"></i>
+              </button>
+              <span class="text-sm font-extrabold text-white tracking-wide">${tituloMes}</span>
+              <button onclick="window.navegarMesIndec(1)" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-cyan-500/30 text-slate-300 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-chevron-right text-[10px]"></i>
+              </button>
+            </div>
+            <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 mb-2">
+              <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+            </div>
+            <div class="grid grid-cols-7 gap-y-1 text-center">
+              ${celdasMini.join("")}
+            </div>
+          </div>
+
+          <!-- Panel Derecho de Publicaciones INDEC -->
+          <div class="lg:col-span-8 rounded-2xl border border-slate-800 bg-[#090e1e]/95 p-5 shadow-2xl space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="inline-flex rounded-xl overflow-hidden border border-slate-700 bg-slate-900">
+                <button onclick="window.cambiarModoVistaIndec('dia')" class="px-5 py-2 text-xs font-bold transition ${window.indecModoVista === 'dia' ? 'bg-[#2b4c65] text-white' : 'text-slate-400 hover:text-white'}">Día</button>
+                <button onclick="window.cambiarModoVistaIndec('mes')" class="px-5 py-2 text-xs font-bold transition ${window.indecModoVista === 'mes' ? 'bg-[#2b4c65] text-white' : 'text-slate-400 hover:text-white'}">Mes</button>
+              </div>
+              <div class="relative flex-1 min-w-[220px]">
+                <input type="text" value="${window.indecBusqueda}" oninput="window.filtrarBusquedaIndec(this.value)" placeholder="Buscar publicación (ej: IPC, EMAE, Salarios, EPH)..." class="w-full rounded-xl bg-slate-900/90 border border-slate-700/80 px-4 py-2 pr-9 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute right-3.5 top-1/2 -translate-y-1/2"></i>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 items-center border-b border-slate-800 pb-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-300 px-3">
+              <div class="col-span-12 sm:col-span-3 text-[#60a5fa] border-b-2 border-[#60a5fa] pb-2 -mb-2.5 text-center">${tituloMes}</div>
+              <div class="hidden sm:block sm:col-span-5 text-center">PUBLICACIÓN</div>
+              <div class="hidden sm:block sm:col-span-2 text-center">HORA</div>
+              <div class="hidden sm:block sm:col-span-1 text-center">VER</div>
+              <div class="hidden sm:block sm:col-span-1 text-center">AGENDAR</div>
+            </div>
+
+            <div id="indec-lista-publicaciones" class="divide-y divide-slate-800/40 max-h-[620px] overflow-y-auto pr-1">
+              ${window.generarFilasPublicacionesIndec()}
+            </div>
+          </div>
+        </div>`;
+    };
+
+    window.cambiarFiltroUsa = function(filtro) {
+      window.usaFiltroActivo = filtro;
+      window.usaMostrarCustom = (filtro === "custom");
+      renderizar(true);
+    };
+
+    window.aplicarFechasCustomUsa = function() {
+      const inpD = document.getElementById("usa-custom-desde");
+      const inpH = document.getElementById("usa-custom-hasta");
+      if (inpD && inpD.value) window.usaCustomDesde = inpD.value;
+      if (inpH && inpH.value) window.usaCustomHasta = inpH.value;
+      renderizar(true);
+    };
+
+    window.renderizarVistaUsaInvesting = function() {
+      const mesesLargos = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+      let dIni = "2026-11-10", dFin = "2026-11-10";
+      if (window.usaFiltroActivo === "ayer") { dIni = "2026-11-09"; dFin = "2026-11-09"; }
+      else if (window.usaFiltroActivo === "hoy") { dIni = "2026-11-10"; dFin = "2026-11-10"; }
+      else if (window.usaFiltroActivo === "manana") { dIni = "2026-11-11"; dFin = "2026-11-11"; }
+      else if (window.usaFiltroActivo === "esta_semana") { dIni = "2026-11-09"; dFin = "2026-11-15"; }
+      else if (window.usaFiltroActivo === "proxima_semana") { dIni = "2026-11-16"; dFin = "2026-11-22"; }
+      else if (window.usaFiltroActivo === "custom") { dIni = window.usaCustomDesde; dFin = window.usaCustomHasta; }
+
+      const eventos = window.CALENDARIO_USA_DATA.filter(ev => ev.fecha >= dIni && ev.fecha <= dFin);
+      const porFecha = {};
+      eventos.forEach(ev => {
+        if (!porFecha[ev.fecha]) porFecha[ev.fecha] = [];
+        porFecha[ev.fecha].push(ev);
+      });
+      const fechasOrdenadas = Object.keys(porFecha).sort();
+
+      const ahoraStr = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+      const botonesFiltro = [
+        ["ayer", "Ayer"],
+        ["hoy", "Hoy"],
+        ["manana", "Mañana"],
+        ["esta_semana", "Esta semana"],
+        ["proxima_semana", "Próxima semana"]
+      ];
+
+      let filasTablaHtml = "";
+      if (fechasOrdenadas.length === 0) {
+        filasTablaHtml = `<tr><td colspan="7" class="py-12 text-center text-slate-400 text-xs">No hay eventos macroeconómicos de EE.UU. registrados para este rango.</td></tr>`;
+      } else {
+        filasTablaHtml = fechasOrdenadas.map(fIso => {
+          const p = fIso.split("-").map(Number);
+          const dt = new Date(p[0], p[1] - 1, p[2]);
+          const cabeceraFecha = diasSemana[dt.getDay()] + ", " + p[2] + " de " + mesesLargos[p[1] - 1] + " de " + p[0];
+
+          const filasEv = porFecha[fIso].map(ev => {
+            const estrellas = [1, 2, 3].map(n => `<i class="fa-solid fa-star text-[11px] ${n <= (ev.importancia || 2) ? 'text-amber-400' : 'text-slate-700'}"></i>`).join(" ");
+            let claseActual = "text-slate-300 font-semibold";
+            if (ev.actual && ev.actual !== "-") {
+              const vAct = parseFloat(String(ev.actual).replace(",", "."));
+              const vPrev = parseFloat(String(ev.prevision).replace(",", "."));
+              if (!isNaN(vAct) && !isNaN(vPrev)) {
+                claseActual = vAct >= vPrev ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold";
+              } else {
+                claseActual = "text-emerald-400 font-extrabold";
+              }
+            }
+            return `
+              <tr class="border-b border-slate-800/60 hover:bg-slate-900/70 transition text-xs">
+                <td class="py-3 px-4 font-mono text-slate-300 whitespace-nowrap">${ev.hora}</td>
+                <td class="py-3 px-3 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1.5 font-semibold text-slate-200">
+                    <span class="text-sm">🇺🇸</span><span>${ev.div || "US"}</span>
+                  </span>
+                </td>
+                <td class="py-3 px-4 font-semibold text-white">${ev.evento}</td>
+                <td class="py-3 px-3 text-center whitespace-nowrap">${estrellas}</td>
+                <td class="py-3 px-4 text-right font-mono ${claseActual}">${ev.actual || "-"}</td>
+                <td class="py-3 px-4 text-right font-mono text-slate-300">${ev.prevision || "-"}</td>
+                <td class="py-3 px-4 text-right font-mono text-slate-400">${ev.anterior || "-"}</td>
+              </tr>`;
+          }).join("");
+
+          return `
+            <tr class="bg-[#111c30] border-y border-slate-700/70">
+              <td colspan="7" class="py-2.5 px-4 text-center font-bold text-xs text-slate-100 tracking-wide">${cabeceraFecha}</td>
+            </tr>
+            ${filasEv}`;
+        }).join("");
+      }
+
+      return `
+        <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/95 p-5 shadow-2xl space-y-4">
+          <!-- Barra de Píldoras Estilo Investing.com -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
+            <div class="flex flex-wrap items-center gap-2">
+              ${botonesFiltro.map(([k, lbl]) => `
+                <button onclick="window.cambiarFiltroUsa('${k}')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition border ${window.usaFiltroActivo === k ? 'bg-blue-600/25 text-blue-300 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.25)]' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600 hover:text-white'}">
+                  ${lbl}
+                </button>`).join("")}
+              <button onclick="window.cambiarFiltroUsa('custom')" class="px-4 py-1.5 rounded-full text-xs font-semibold transition border flex items-center gap-1.5 ${window.usaFiltroActivo === 'custom' ? 'bg-blue-600/25 text-blue-300 border-blue-500' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600 hover:text-white'}">
+                <i class="fa-regular fa-calendar text-[11px]"></i>
+                <span>Personalizar fechas</span>
+              </button>
+            </div>
+            <button onclick="window.sincronizarCalendarioEconomico()" class="px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-blue-400 text-blue-400 text-xs font-bold flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-rotate text-[11px]"></i>
+              <span>Actualizar en vivo</span>
+            </button>
+          </div>
+
+          ${window.usaMostrarCustom ? `
+            <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
+              <span class="text-slate-400 font-semibold">Desde:</span>
+              <input id="usa-custom-desde" type="date" value="${window.usaCustomDesde}" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-mono">
+              <span class="text-slate-400 font-semibold">Hasta:</span>
+              <input id="usa-custom-hasta" type="date" value="${window.usaCustomHasta}" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-mono">
+              <button onclick="window.aplicarFechasCustomUsa()" class="px-3.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition">Aplicar</button>
+            </div>` : ""}
+
+          <!-- Sub-barra de Hora actual (GMT-3:00) -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 border-b border-slate-800/80 pb-3">
+            <div class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5 text-blue-400 font-medium">
+                <i class="fa-regular fa-clock"></i>
+                <span>Hora actual: <strong class="text-white font-mono">${ahoraStr}</strong> (GMT-3:00)</span>
+              </span>
+            </div>
+            <span class="text-[11px] text-slate-400">Todos los datos se transmiten y actualizan automáticamente.</span>
+          </div>
+
+          <!-- Tabla de Eventos Económicos de EE.UU. -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-300">
+                  <th class="py-2.5 px-4">Hora</th>
+                  <th class="py-2.5 px-3">Div.</th>
+                  <th class="py-2.5 px-4">Evento</th>
+                  <th class="py-2.5 px-3 text-center">Importancia</th>
+                  <th class="py-2.5 px-4 text-right">Actual</th>
+                  <th class="py-2.5 px-4 text-right">Previsión</th>
+                  <th class="py-2.5 px-4 text-right">Anterior</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filasTablaHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    window.renderizarSeccionCalendarioEconomico = function() {
+      const cfgHeader = (window.CONFIG_SECCIONES && window.CONFIG_SECCIONES.calendario_economico) || {
+        titulo: "Calendario Económico — Argentina (INDEC) y Estados Unidos",
+        icono: "fa-calendar-days",
+        barra: "section-bar-purple",
+        flare: "glow-flare-purple",
+        badge: "bg-purple-500/20 border-purple-400/40 text-purple-300"
+      };
+
+      return `
+        <div class="space-y-4">
+          ${renderizarBarraSeccion(cfgHeader)}
+          <div class="flex flex-col lg:flex-row gap-5 items-start">
+            <!-- Clasificación Lateral: Argentina vs Estados Unidos -->
+            <aside class="w-full lg:w-60 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl">
+              <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span>
+              </div>
+              <button onclick="window.cambiarSubCalEconomico('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${window.subCalEconomicoActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-sm' : 'text-slate-400 hover:text-white border-slate-800/60'}">
+                <span class="text-xs font-semibold flex items-center gap-2">
+                  <i class="fa-solid fa-landmark-flag text-sky-400"></i>
+                  <span>Argentina (INDEC)</span>
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-sky-300">AR</span>
+              </button>
+              <button onclick="window.cambiarSubCalEconomico('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${window.subCalEconomicoActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-sm' : 'text-slate-400 hover:text-white border-slate-800/60'}">
+                <span class="text-xs font-semibold flex items-center gap-2">
+                  <i class="fa-solid fa-flag-usa text-blue-400"></i>
+                  <span>Estados Unidos</span>
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-blue-300">US</span>
+              </button>
+            </aside>
+
+            <!-- Contenido Principal según Clasificación -->
+            <section class="flex-1 w-full overflow-hidden">
+              ${window.subCalEconomicoActivo === "argentina" ? window.renderizarVistaIndec() : window.renderizarVistaUsaInvesting()}
+            </section>
+          </div>
+        </div>`;
+    };
+
     function renderizar(forzarReconstruccion = false) {
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
@@ -1585,6 +2085,7 @@
     cargarDatos();
     actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
+    window.sincronizarCalendarioEconomico();
     sincronizarLicitacionesA3();
 
     setInterval(actualizarCriptosEnVivo, 5000);
