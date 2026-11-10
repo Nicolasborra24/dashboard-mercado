@@ -125,7 +125,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-base font-bold tracking-tight text-white leading-tight">Monitor Maestro De Mercado</h1>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.0</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]">4.1</span>
         </div>
         <p class="text-[11px] text-slate-400">Diseñado por Nicolás Borra para toda la comunidad bolsera</p>
       </div>
@@ -216,23 +216,18 @@
   </main>
 
   <script>
-    // Catálogo completo de bonos de SJB (Respaldo íntegro con todos los tickers de cada curva)
+    // Catálogo de respaldo SJB (Se usa sólo si la API de SJB aún no respondió)
     window.TABLAS_BONOS_INTEGRAS = {
       lecaps: [
-        { Ticker: "S12N6", Vencimiento: "2026-11-12", Dias: 4, Precio: 101.85, Variacion: "+0.08%", TEM: "1.06%", TNA: "12.90%", TIR: "13.52%", MD: 0.01 },
-        { Ticker: "S30N6", Vencimiento: "2026-11-30", Dias: 21, Precio: 104.25, Variacion: "+0.18%", TEM: "1.64%", TNA: "19.95%", TIR: "21.65%", MD: 0.06 },
-        { Ticker: "S31D6", Vencimiento: "2026-12-31", Dias: 52, Precio: 106.80, Variacion: "+0.22%", TEM: "1.82%", TNA: "22.10%", TIR: "24.18%", MD: 0.14 },
-        { Ticker: "T15E7", Vencimiento: "2027-01-15", Dias: 67, Precio: 108.15, Variacion: "+0.19%", TEM: "1.92%", TNA: "23.35%", TIR: "25.72%", MD: 0.18 },
-        { Ticker: "S29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 109.10, Variacion: "+0.15%", TEM: "1.90%", TNA: "23.10%", TIR: "25.40%", MD: 0.22 },
-        { Ticker: "S12F7", Vencimiento: "2027-02-12", Dias: 95, Precio: 110.30, Variacion: "+0.20%", TEM: "1.93%", TNA: "23.45%", TIR: "25.80%", MD: 0.26 },
-        { Ticker: "S26F7", Vencimiento: "2027-02-26", Dias: 109, Precio: 111.45, Variacion: "+0.25%", TEM: "1.95%", TNA: "23.70%", TIR: "26.08%", MD: 0.30 },
-        { Ticker: "S31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 114.20, Variacion: "+0.19%", TEM: "2.04%", TNA: "24.80%", TIR: "27.45%", MD: 0.39 },
-        { Ticker: "T30A7", Vencimiento: "2027-04-30", Dias: 172, Precio: 117.65, Variacion: "+0.32%", TEM: "2.24%", TNA: "27.20%", TIR: "30.48%", MD: 0.47 },
-        { Ticker: "T31Y7", Vencimiento: "2027-05-31", Dias: 203, Precio: 120.40, Variacion: "+0.28%", TEM: "2.19%", TNA: "26.60%", TIR: "29.72%", MD: 0.55 },
-        { Ticker: "T30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 123.10, Variacion: "+0.31%", TEM: "2.16%", TNA: "26.25%", TIR: "29.35%", MD: 0.64 },
-        { Ticker: "S31G7", Vencimiento: "2027-08-31", Dias: 295, Precio: 129.40, Variacion: "+0.35%", TEM: "2.21%", TNA: "26.85%", TIR: "30.15%", MD: 0.81 },
-        { Ticker: "TY30P", Vencimiento: "2027-09-30", Dias: 325, Precio: 132.85, Variacion: "+0.42%", TEM: "2.26%", TNA: "27.50%", TIR: "30.88%", MD: 0.89 },
-        { Ticker: "T15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 141.20, Variacion: "+0.40%", TEM: "2.28%", TNA: "27.70%", TIR: "31.15%", MD: 1.10 }
+        { Ticker: "S13N6", Vencimiento: "2026-11-13", Dias: 4, Precio: 101.85, Variacion: "+0.08%", TIR: "13.35%", TEM: "1.05%", TNA: "12.80%", MD: 0.01 },
+        { Ticker: "S30N6", Vencimiento: "2026-11-30", Dias: 21, Precio: 104.25, Variacion: "+0.18%", TIR: "21.65%", TEM: "1.64%", TNA: "19.95%", MD: 0.06 },
+        { Ticker: "T15E7", Vencimiento: "2027-01-15", Dias: 67, Precio: 108.15, Variacion: "+0.19%", TIR: "25.72%", TEM: "1.92%", TNA: "23.35%", MD: 0.18 },
+        { Ticker: "S29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 109.10, Variacion: "+0.15%", TIR: "25.40%", TEM: "1.90%", TNA: "23.10%", MD: 0.22 },
+        { Ticker: "S26F7", Vencimiento: "2027-02-26", Dias: 109, Precio: 111.45, Variacion: "+0.25%", TIR: "26.08%", TEM: "1.95%", TNA: "23.70%", MD: 0.30 },
+        { Ticker: "T30A7", Vencimiento: "2027-04-30", Dias: 172, Precio: 117.65, Variacion: "+0.32%", TIR: "30.48%", TEM: "2.24%", TNA: "27.20%", MD: 0.47 },
+        { Ticker: "T31Y7", Vencimiento: "2027-05-31", Dias: 203, Precio: 120.40, Variacion: "+0.28%", TIR: "29.72%", TEM: "2.19%", TNA: "26.60%", MD: 0.55 },
+        { Ticker: "T30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 123.10, Variacion: "+0.31%", TIR: "29.35%", TEM: "2.16%", TNA: "26.25%", MD: 0.64 },
+        { Ticker: "TY30P", Vencimiento: "2027-09-30", Dias: 325, Precio: 132.85, Variacion: "+0.42%", TIR: "30.88%", TEM: "2.26%", TNA: "27.50%", MD: 0.89 }
       ],
       cer: [
         { Ticker: "TZXD6", Vencimiento: "2026-12-15", Dias: 36, Precio: 215.40, Variacion: "+0.30%", TIR: "5.20%", TEM: "0.42%", Paridad: "99.45%", MD: 0.10 },
@@ -293,30 +288,29 @@
         { Ticker: "TZV28", Vencimiento: "2028-06-30", Dias: 599, Precio: 1024.0, Variacion: "+0.35%", TIR: "8.15%", Paridad: "89.80%", MD: 1.58 }
       ],
       tamar: [
-        { Ticker: "M29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 108.40, Variacion: "+0.15%", TNA: "28.10%", TIR: "31.40%", MD: 0.22 },
-        { Ticker: "M31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 113.90, Variacion: "+0.24%", TNA: "28.65%", TIR: "32.15%", MD: 0.39 },
-        { Ticker: "M30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 121.50, Variacion: "+0.30%", TNA: "29.10%", TIR: "32.80%", MD: 0.64 },
-        { Ticker: "M15S7", Vencimiento: "2027-09-15", Dias: 310, Precio: 128.90, Variacion: "+0.28%", TNA: "29.40%", TIR: "33.20%", MD: 0.85 },
-        { Ticker: "M15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 137.60, Variacion: "+0.33%", TNA: "29.65%", TIR: "33.55%", MD: 1.10 }
+        { Ticker: "M29E7", Vencimiento: "2027-01-29", Dias: 81, Precio: 108.40, Variacion: "+0.15%", TIR: "31.40%", TNA: "28.10%", MD: 0.22 },
+        { Ticker: "M31M7", Vencimiento: "2027-03-31", Dias: 142, Precio: 113.90, Variacion: "+0.24%", TIR: "32.15%", TNA: "28.65%", MD: 0.39 },
+        { Ticker: "M30J7", Vencimiento: "2027-06-30", Dias: 233, Precio: 121.50, Variacion: "+0.30%", TIR: "32.80%", TNA: "29.10%", MD: 0.64 },
+        { Ticker: "M15S7", Vencimiento: "2027-09-15", Dias: 310, Precio: 128.90, Variacion: "+0.28%", TIR: "33.20%", TNA: "29.40%", MD: 0.85 },
+        { Ticker: "M15D7", Vencimiento: "2027-12-15", Dias: 401, Precio: 137.60, Variacion: "+0.33%", TIR: "33.55%", TNA: "29.65%", MD: 1.10 }
       ]
     };
 
-    // Serie completa SJB para el gráfico y tabla de Inflación Implícita (CER vs Renta Fija)
     const SERIE_INFLACION_IMPLICITA_SJB = [
-      { mes: "May 2026", tipo: "real", ipc_real: 2.15, inf_implicita: null, tem_nominal: null, tem_cer: null, bono_fijo: "-", bono_cer: "-" },
-      { mes: "Jun 2026", tipo: "real", ipc_real: 1.89, inf_implicita: null, tem_nominal: null, tem_cer: null, bono_fijo: "-", bono_cer: "-" },
-      { mes: "Jul 2026", tipo: "real", ipc_real: 2.11, inf_implicita: null, tem_nominal: null, tem_cer: null, bono_fijo: "-", bono_cer: "-" },
-      { mes: "Aug 2026", tipo: "real", ipc_real: 1.66, inf_implicita: null, tem_nominal: null, tem_cer: null, bono_fijo: "-", bono_cer: "-" },
-      { mes: "Sep 2026", tipo: "real", ipc_real: 1.93, inf_implicita: null, tem_nominal: null, tem_cer: null, bono_fijo: "-", bono_cer: "-" },
-      { mes: "Oct 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.71, tem_nominal: 1.83, tem_cer: 0.13, bono_fijo: "S12N6", bono_cer: "TZXD6" },
-      { mes: "Nov 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.90, tem_nominal: 1.90, tem_cer: 0.01, bono_fijo: "S30N6", bono_cer: "TZXD6" },
-      { mes: "Dec 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.56, tem_nominal: 1.94, tem_cer: 0.38, bono_fijo: "S31D6", bono_cer: "TZXD6" },
-      { mes: "Jan 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.84, tem_nominal: 2.08, tem_cer: 0.24, bono_fijo: "S29E7", bono_cer: "TZXE7" },
-      { mes: "Feb 2027", tipo: "implicita", ipc_real: null, inf_implicita: 2.10, tem_nominal: 2.24, tem_cer: 0.14, bono_fijo: "S26F7", bono_cer: "TZXF7" },
-      { mes: "Mar 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.87, tem_nominal: 2.19, tem_cer: 0.32, bono_fijo: "S31M7", bono_cer: "TX27" },
-      { mes: "Apr 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.85, tem_nominal: 2.16, tem_cer: 0.31, bono_fijo: "T30A7", bono_cer: "TZXA7" },
-      { mes: "May 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.69, tem_nominal: 2.23, tem_cer: 0.53, bono_fijo: "T31Y7", bono_cer: "TZXM7" },
-      { mes: "Jun 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.70, tem_nominal: 2.25, tem_cer: 0.55, bono_fijo: "T30J7", bono_cer: "TZX27" }
+      { mes: "May 2026", tipo: "real", ipc_real: 2.15, inf_implicita: null, tem_nominal: null, tem_cer: null },
+      { mes: "Jun 2026", tipo: "real", ipc_real: 1.89, inf_implicita: null, tem_nominal: null, tem_cer: null },
+      { mes: "Jul 2026", tipo: "real", ipc_real: 2.11, inf_implicita: null, tem_nominal: null, tem_cer: null },
+      { mes: "Aug 2026", tipo: "real", ipc_real: 1.66, inf_implicita: null, tem_nominal: null, tem_cer: null },
+      { mes: "Sep 2026", tipo: "real", ipc_real: 1.93, inf_implicita: null, tem_nominal: null, tem_cer: null },
+      { mes: "Oct 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.71, tem_nominal: 1.83, tem_cer: 0.13 },
+      { mes: "Nov 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.90, tem_nominal: 1.90, tem_cer: 0.01 },
+      { mes: "Dec 2026", tipo: "implicita", ipc_real: null, inf_implicita: 1.56, tem_nominal: 1.94, tem_cer: 0.38 },
+      { mes: "Jan 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.84, tem_nominal: 2.08, tem_cer: 0.24 },
+      { mes: "Feb 2027", tipo: "implicita", ipc_real: null, inf_implicita: 2.10, tem_nominal: 2.24, tem_cer: 0.14 },
+      { mes: "Mar 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.87, tem_nominal: 2.19, tem_cer: 0.32 },
+      { mes: "Apr 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.85, tem_nominal: 2.16, tem_cer: 0.31 },
+      { mes: "May 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.69, tem_nominal: 2.23, tem_cer: 0.53 },
+      { mes: "Jun 2027", tipo: "implicita", ipc_real: null, inf_implicita: 1.70, tem_nominal: 2.25, tem_cer: 0.55 }
     ];
 
     const CONFIG_SECCIONES = {
@@ -460,37 +454,17 @@
       return isNaN(n) ? NaN : n;
     }
 
-    // Une los datos en vivo de SJB con el catálogo completo para que nunca falte ningún bono
+    // Prioriza los datos en vivo de SJB para no mezclar bonos viejos o columnas distintas
     function obtenerFilasCurva(clave) {
-      const base = (window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave])
+      const d = datosCurvasSJB[clave];
+      if (d) {
+        if (Array.isArray(d) && d.length > 0) return d;
+        const arr = d.tabla || d.data || d.bonos || d.filas || d.items || d.rows;
+        if (Array.isArray(arr) && arr.length > 0) return arr;
+      }
+      return (window.TABLAS_BONOS_INTEGRAS && window.TABLAS_BONOS_INTEGRAS[clave])
         ? window.TABLAS_BONOS_INTEGRAS[clave].map(x => ({ ...x }))
         : [];
-      const d = datosCurvasSJB[clave];
-      let remotos = [];
-      if (d) {
-        if (Array.isArray(d)) remotos = d;
-        else {
-          const arr = d.tabla || d.data || d.bonos || d.filas || d.items || d.rows;
-          if (Array.isArray(arr)) remotos = arr;
-        }
-      }
-      if (remotos.length === 0) return base;
-      if (remotos.length >= base.length) return remotos;
-
-      // Si el endpoint trajo datos parciales, actualiza los existentes y conserva el resto de los bonos SJB
-      const mapaRemoto = {};
-      remotos.forEach(r => {
-        const kTk = Object.keys(r).find(k => /ticker|especie|bono|simbolo/i.test(k)) || Object.keys(r)[0];
-        if (r[kTk]) mapaRemoto[String(r[kTk]).toUpperCase().trim()] = r;
-      });
-      const combinados = [...remotos];
-      base.forEach(b => {
-        const tk = String(b.Ticker || "").toUpperCase().trim();
-        if (tk && !mapaRemoto[tk]) {
-          combinados.push(b);
-        }
-      });
-      return combinados;
     }
 
     function obtenerSerieInflacionImplicita() {
@@ -514,9 +488,7 @@
               ipc_real: !isNaN(vReal) ? vReal : null,
               inf_implicita: !isNaN(vImp) ? vImp : null,
               tem_nominal: !isNaN(vNom) ? vNom : null,
-              tem_cer: !isNaN(vCer) ? vCer : null,
-              bono_fijo: r.Bono_Tasa_Fija || r.bono_fijo || r.lecap || "-",
-              bono_cer: r.Bono_CER || r.bono_cer || r.cer || "-"
+              tem_cer: !isNaN(vCer) ? vCer : null
             };
           });
         }
@@ -524,7 +496,6 @@
       return SERIE_INFLACION_IMPLICITA_SJB;
     }
 
-    // Plugin para mostrar el Ticker arriba de cada punto azul en la Curva de Rendimientos
     const pluginEtiquetasCurvaSJB = {
       id: "etiquetasCurvaSJB",
       afterDatasetsDraw(chart) {
@@ -546,7 +517,6 @@
       }
     };
 
-    // Plugin para mostrar el valor porcentual arriba de cada barra en Inflación Implícita
     const pluginValoresBarrasInflacion = {
       id: "valoresBarrasInflacion",
       afterDatasetsDraw(chart) {
@@ -571,7 +541,33 @@
       }
     };
 
-    // 2. Gráfico de Curva de Rendimientos igual a la Imagen 1 de SJB
+    // Extrae siempre la TIR Anualizada para que todos los puntos queden exactamente sobre la misma escala en la curva
+    function extraerTIRParaCurva(fila) {
+      const keys = Object.keys(fila);
+      // 1. Prioridad absoluta: TIR o TEA
+      const kTir = keys.find(k => /^tir$|^tea$|tir_anual|tir\s*\(%\)|tea\s*\(%\)|rendimiento/i.test(k.trim()))
+        || keys.find(k => /tir|tea/i.test(k));
+      if (kTir) {
+        const v = parseNumSeguro(fila[kTir]);
+        if (!isNaN(v) && v !== 0) return v;
+      }
+      // 2. Segunda opción: TNA
+      const kTna = keys.find(k => /tna/i.test(k));
+      if (kTna) {
+        const vTna = parseNumSeguro(fila[kTna]);
+        if (!isNaN(vTna) && vTna !== 0) return vTna;
+      }
+      // 3. Si sólo viene TEM mensual, anualizarla a TIR efectiva anual: ((1 + TEM/100)^12 - 1) * 100
+      const kTem = keys.find(k => /tem/i.test(k));
+      if (kTem) {
+        const vTem = parseNumSeguro(fila[kTem]);
+        if (!isNaN(vTem) && vTem > 0) {
+          return +(((Math.pow(1 + vTem / 100, 12)) - 1) * 100).toFixed(2);
+        }
+      }
+      return NaN;
+    }
+
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
@@ -586,16 +582,21 @@
       filas.forEach((f, idx) => {
         const keys = Object.keys(f);
         const kTicker = keys.find(k => /ticker|especie|bono|simbolo/i.test(k)) || keys[0];
-        const kDias = keys.find(k => /^dias$|^días$|dias_vto|plazo/i.test(k));
+        const kDias = keys.find(k => /^dias$|^días$|dias_vto|días_al_vencimiento|plazo/i.test(k.trim()))
+          || keys.find(k => /dias|días/i.test(k));
         const kVto = keys.find(k => /vencimiento|vto|fecha/i.test(k));
         const kDur = keys.find(k => /^md$|duration|duracion/i.test(k));
-        const kTir = keys.find(k => /^tir$|tir_anual|tea|rendimiento|tem|tna/i.test(k));
 
         const ticker = String(f[kTicker] || `B${idx + 1}`).trim();
         let diasVal = kDias ? parseNumSeguro(f[kDias]) : NaN;
 
         if (isNaN(diasVal) && kVto && f[kVto]) {
-          const fVto = new Date(f[kVto]);
+          const sVto = String(f[kVto]).trim();
+          let fVto = new Date(sVto);
+          if (isNaN(fVto.getTime()) && /^\d{2}\/\d{2}\/\d{4}$/.test(sVto)) {
+            const p = sVto.split("/");
+            fVto = new Date(`${p[2]}-${p[1]}-${p[0]}`);
+          }
           if (!isNaN(fVto.getTime())) {
             diasVal = Math.max(1, Math.round((fVto - new Date()) / (1000 * 60 * 60 * 24)));
           }
@@ -604,17 +605,16 @@
           const dVal = parseNumSeguro(f[kDur]);
           if (!isNaN(dVal)) diasVal = Math.round(dVal * 365);
         }
-        if (isNaN(diasVal)) diasVal = (idx + 1) * 30;
 
-        const yVal = kTir ? parseNumSeguro(f[kTir]) : NaN;
-        if (!isNaN(diasVal) && !isNaN(yVal) && diasVal >= 0 && yVal > -50 && yVal < 250) {
+        const yVal = extraerTIRParaCurva(f);
+        if (!isNaN(diasVal) && !isNaN(yVal) && diasVal > 0 && yVal > -30 && yVal < 250) {
           puntos.push({ x: diasVal, y: yVal, ticker });
         }
       });
 
       puntos.sort((a, b) => a.x - b.x);
 
-      // Generar 80 puntos continuos para que la curva logarítmica roja punteada quede suave como en SJB
+      // Regresión logarítmica y = a + b * ln(x) calculada sobre los puntos limpios
       const lineaTendencia = [];
       if (puntos.length >= 2) {
         const n = puntos.length;
@@ -632,11 +632,11 @@
 
         const minX = Math.max(1, puntos[0].x);
         const maxX = puntos[puntos.length - 1].x;
-        const pasos = 80;
+        const pasos = 100;
         for (let i = 0; i <= pasos; i++) {
           const cx = minX + ((maxX - minX) * i) / pasos;
           const cy = a + b * Math.log(Math.max(1, cx));
-          lineaTendencia.push({ x: +cx.toFixed(1), y: +cy.toFixed(2) });
+          lineaTendencia.push({ x: +cx.toFixed(2), y: +cy.toFixed(2) });
         }
       }
 
@@ -651,6 +651,7 @@
               backgroundColor: "#3b82f6",
               borderColor: "#3b82f6",
               borderWidth: 1,
+              pointStyle: "circle",
               pointRadius: 5,
               pointHoverRadius: 7,
               order: 1
@@ -663,10 +664,11 @@
               backgroundColor: "transparent",
               borderWidth: 2,
               borderDash: [3, 3],
+              pointStyle: "line",
               pointRadius: 0,
               pointHoverRadius: 0,
               fill: false,
-              tension: 0.4,
+              tension: 0.35,
               order: 2
             }
           ]
@@ -683,7 +685,7 @@
               labels: {
                 color: "#94a3b8",
                 usePointStyle: true,
-                boxWidth: 20,
+                boxWidth: 22,
                 padding: 14,
                 font: { family: "'Inter', sans-serif", size: 11 }
               }
@@ -737,7 +739,6 @@
       });
     }
 
-    // 3. Gráfico de Inflación Implícita igual a la Imagen 2 de SJB
     function dibujarGraficoInflacionImplicita() {
       const canvas = document.getElementById("canvas-inflacion-implicita");
       if (!canvas) return;
@@ -1543,7 +1544,6 @@
         return;
       }
 
-      // 1. VISTA DE COTIZACIÓN BONOS: TABLA ARRIBA Y CURVA DEBAJO
       if (categoriaActiva === "cotizacion_bonos") {
         const infoCurva = CURVAS_INFO[curvaActiva] || { titulo: "Curva", desc: "", color: "text-cyan-400" };
         let filas = [...obtenerFilasCurva(curvaActiva)];
@@ -1674,12 +1674,10 @@
                   <span class="text-[11px] font-mono text-slate-400">${infoCurva.desc} • Clic en columna para ordenar</span>
                 </div>
                 
-                <!-- 1. Tabla Arriba -->
                 <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl backdrop-blur-md">
                   ${tablaHtml}
                 </div>
 
-                <!-- 2. Gráfico de la Curva Debajo de la Tabla (Diseño exacto SJB) -->
                 <div class="rounded-2xl sjb-chart-box p-6 space-y-4">
                   <div>
                     <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
@@ -1697,41 +1695,10 @@
         return;
       }
 
-      // 3. VISTA DE INFLACIÓN Y COEFICIENTES (CON GRÁFICO EXACTO A LA SEGUNDA CAPTURA)
+      // VISTA DE INFLACIÓN Y COEFICIENTES (Sin el detalle por tramos debajo)
       if (categoriaActiva === "inflacion_y_ajuste") {
         const items = (datosGlobales[categoriaActiva] || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
         const cfgHeader = CONFIG_SECCIONES.inflacion_y_ajuste;
-        const serieImp = obtenerSerieInflacionImplicita();
-        const tramosImplicita = serieImp.filter(s => s.inf_implicita !== null);
-
-        const tablaImplicitaHtml = `
-          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-[#060a16]">
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th class="py-3 px-3 text-center">MES</th>
-                  <th class="py-3 px-3 text-center">LECAP / BONCAP</th>
-                  <th class="py-3 px-3 text-center">BONO CER</th>
-                  <th class="py-3 px-3 text-center">TEM NOMINAL</th>
-                  <th class="py-3 px-3 text-center">TEM REAL (CER)</th>
-                  <th class="py-3 px-3 text-center">INFLACIÓN IMPLÍCITA</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800/60 text-slate-200">
-                ${tramosImplicita.map(row => `
-                  <tr class="table-dark-row transition">
-                    <td class="py-2.5 px-3 font-bold text-white text-center">${row.mes}</td>
-                    <td class="py-2.5 px-3 text-center text-amber-300 font-bold">${row.bono_fijo || "-"}</td>
-                    <td class="py-2.5 px-3 text-center text-purple-300 font-bold">${row.bono_cer || "-"}</td>
-                    <td class="py-2.5 px-3 text-center text-slate-200">${row.tem_nominal !== null ? row.tem_nominal.toFixed(2) + "%" : "-"}</td>
-                    <td class="py-2.5 px-3 text-center text-slate-200">${row.tem_cer !== null ? row.tem_cer.toFixed(2) + "%" : "-"}</td>
-                    <td class="py-2.5 px-3 text-center">${renderFilaTerminal(row.inf_implicita.toFixed(2) + "%", "neutro")}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        `;
 
         contenedor.innerHTML = `
           <div class="space-y-6">
@@ -1749,14 +1716,6 @@
 
               <div class="w-full h-[400px] relative">
                 <canvas id="canvas-inflacion-implicita"></canvas>
-              </div>
-
-              <div class="space-y-2 pt-3 border-t border-slate-800/80">
-                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <i class="fa-solid fa-table text-sky-400"></i>
-                  <span>Detalle por Tramo — Break-Even de Inflación</span>
-                </h3>
-                ${tablaImplicitaHtml}
               </div>
             </section>
           </div>
