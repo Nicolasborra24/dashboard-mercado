@@ -1792,9 +1792,7 @@
       const fecha = String(item.fecha || "").replace(/Â/g, "").trim();
       const animFlash = FLASH_REGISTRO[item.variable] || "";
 
-      if (item.variable === "INFLACION_MENSUAL" && fecha) {
-        desc = `INFLACIÓN MENSUAL`;
-      }
+
 
       if (item.variable && item.variable.startsWith("TASA_")) {
         if (!valFmt.toUpperCase().includes("TNA")) valFmt = `${valFmt} TNA`;

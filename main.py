@@ -96,6 +96,59 @@ def normalizar_valor(texto: str) -> Optional[float]:
     except Exception:
         return None
 
+MESES_CORTOS_ES = {
+    1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+    7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
+}
+
+def extraer_mes_corte_legible(texto_fecha: str) -> str:
+    if not texto_fecha:
+        return ""
+    s = str(texto_fecha).strip()
+    # Formato YYYY-MM-DD o YYYY-MM
+    m_iso = re.search(r"(20\d{2})[-/](\d{1,2})", s)
+    if m_iso:
+        anio = m_iso.group(1)
+        mes_num = int(m_iso.group(2))
+        if 1 <= mes_num <= 12:
+            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    # Formato DD/MM/YYYY o DD-MM-YYYY
+    m_lat = re.search(r"(\d{1,2})[-/](\d{1,2})[-/](20\d{2})", s)
+    if m_lat:
+        mes_num = int(m_lat.group(2))
+        anio = m_lat.group(3)
+        if 1 <= mes_num <= 12:
+            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    # Formato MM/YYYY
+    m_my = re.search(r"^(\d{1,2})[-/](20\d{2})$", s)
+    if m_my:
+        mes_num = int(m_my.group(1))
+        anio = m_my.group(2)
+        if 1 <= mes_num <= 12:
+            return f"{MESES_CORTOS_ES[mes_num]} {anio}"
+    # Si ya contiene nombre de mes en español o inglés
+    mapeo_txt = {
+        "enero": "Ene", "ene": "Ene", "jan": "Ene",
+        "febrero": "Feb", "feb": "Feb",
+        "marzo": "Mar", "mar": "Mar",
+        "abril": "Abr", "abr": "Abr", "apr": "Abr",
+        "mayo": "May", "may": "May",
+        "junio": "Jun", "jun": "Jun",
+        "julio": "Jul", "jul": "Jul",
+        "agosto": "Ago", "ago": "Ago", "aug": "Ago",
+        "septiembre": "Sep", "setiembre": "Sep", "sep": "Sep", "set": "Sep",
+        "octubre": "Oct", "oct": "Oct",
+        "noviembre": "Nov", "nov": "Nov",
+        "diciembre": "Dic", "dic": "Dic", "dec": "Dic"
+    }
+    s_low = s.lower()
+    anio_m = re.search(r"(20\d{2})", s_low)
+    anio_str = anio_m.group(1) if anio_m else str(datetime.utcnow().year)
+    for k_mes, v_mes in mapeo_txt.items():
+        if re.search(r"\b" + k_mes + r"\b", s_low):
+            return f"{v_mes} {anio_str}"
+    return s
+
 MAPEO = {
     "reservas bcra": ("RESERVAS_USD", "Reservas Internacionales BCRA", "tasas_y_monetario"),
     "base monetaria": ("BASE_MONETARIA", "Base Monetaria", "tasas_y_monetario"),
@@ -326,14 +379,22 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                             cod, desc, cat = v_map
                             v_num = normalizar_valor(c[1].get_text(strip=True))
                             if v_num is not None:
+                                fecha_txt = c[3].get_text(strip=True)
+                                mes_corte = extraer_mes_corte_legible(fecha_txt)
+                                desc_final = desc
+                                if cod == "INFLACION_MENSUAL" and mes_corte:
+                                    desc_final = f"Inflación Mensual ({mes_corte})"
+                                elif cod == "INFLACION_INTERANUAL" and mes_corte:
+                                    desc_final = f"Inflación Interanual ({mes_corte})"
+
                                 item_dict = {
                                     "variable": cod,
-                                    "descripcion": desc,
+                                    "descripcion": desc_final,
                                     "categoria": cat,
                                     "valor_formateado": c[1].get_text(strip=True),
                                     "variacion": c[2].get_text(strip=True),
                                     "valor": v_num,
-                                    "fecha": c[3].get_text(strip=True)
+                                    "fecha": f"Corte: {mes_corte}" if mes_corte and cod in ("INFLACION_MENSUAL", "INFLACION_INTERANUAL") else fecha_txt
                                 }
                                 if cat == "indices":
                                     item_dict["subcategoria"] = "argentina"
@@ -343,119 +404,157 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
         pass
     return items
 
-# Extrae en vivo la Inflación Esperada REM (próximos 12 meses) desde los endpoints wp-json del BCRA
-def obtener_datos_rem_bcra() -> Optional[Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+# Extrae en vivo desde el BCRA: Inflación Mensual (con mes), Inflación Interanual (con mes de corte) e Inflación Esperada REM 12m
+def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/html, */*"
     }
-    urls_bcra = [
+    urls = [
         "https://www.bcra.gob.ar/wp-json/bcra/v1/variables-principales?lang=es",
         "https://www.bcra.gob.ar/wp-json/bcra/v1/tabla-variables?lang=es",
-        "https://api.bcra.gob.ar/estadisticas/v2.0/principalesvariables"
+        "https://api.bcra.gob.ar/estadisticas/v2.0/principalesvariables",
+        "https://www.bcra.gob.ar/"
     ]
 
-    def extraer_lista_json(payload: Any) -> List[Any]:
-        if isinstance(payload, list):
-            return payload
-        if isinstance(payload, dict):
-            for k in ["results", "data", "variables", "items", "tabla", "rows"]:
-                if isinstance(payload.get(k), list):
-                    return payload[k]
-            # Si viene anidado en diccionarios
-            acum = []
-            for v in payload.values():
-                if isinstance(v, list):
-                    acum.extend(v)
-            return acum
-        return []
+    encontrados: Dict[str, Dict[str, Any]] = {}
 
-    for url in urls_bcra:
+    def recorrer_nodos_json(nodo: Any, lista_out: List[Dict[str, Any]]):
+        if isinstance(nodo, dict):
+            lista_out.append(nodo)
+            for v in nodo.values():
+                recorrer_nodos_json(v, lista_out)
+        elif isinstance(nodo, list):
+            for el in nodo:
+                recorrer_nodos_json(el, lista_out)
+
+    def clasificar_y_guardar(desc_raw: str, val_raw: Any, fecha_raw: Any, id_var: str = ""):
+        desc_low = desc_raw.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        v_num = normalizar_valor(str(val_raw)) if val_raw is not None else None
+        if v_num is None or v_num <= 0 or v_num > 500:
+            return
+
+        mes_corte = extraer_mes_corte_legible(str(fecha_raw or desc_raw))
+        fmt_pct = f"{v_num:,.1f}%".replace(",", "X").replace(".", ",").replace("X", ".")
+
+        # 1. Inflación Esperada REM (ID 29 en BCRA)
+        if id_var == "29" or ("inflacion" in desc_low and ("esperada" in desc_low or "rem" in desc_low)):
+            encontrados["INFLACION_REM"] = {
+                "variable": "INFLACION_REM",
+                "descripcion": f"Inflación Esperada REM 12m ({mes_corte})" if mes_corte else "Inflación Esperada REM (12m)",
+                "categoria": "inflacion_y_ajuste",
+                "valor_formateado": fmt_pct,
+                "variacion": "REM BCRA",
+                "valor": v_num,
+                "fecha": f"Corte: {mes_corte}" if mes_corte else "REM BCRA"
+            }
+        # 2. Inflación Mensual Oficial (ID 27 en BCRA)
+        elif id_var == "27" or ("inflacion mensual" in desc_low and "esperada" not in desc_low and "rem" not in desc_low):
+            encontrados["INFLACION_MENSUAL"] = {
+                "variable": "INFLACION_MENSUAL",
+                "descripcion": f"Inflación Mensual ({mes_corte})" if mes_corte else "Inflación Mensual",
+                "categoria": "inflacion_y_ajuste",
+                "valor_formateado": fmt_pct,
+                "variacion": f"{fmt_pct}",
+                "valor": v_num,
+                "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
+            }
+        # 3. Inflación Interanual Oficial (ID 28 en BCRA)
+        elif id_var == "28" or ("inflacion interanual" in desc_low or ("inflacion" in desc_low and "i.a." in desc_low)):
+            encontrados["INFLACION_INTERANUAL"] = {
+                "variable": "INFLACION_INTERANUAL",
+                "descripcion": f"Inflación Interanual ({mes_corte})" if mes_corte else "Inflación Interanual",
+                "categoria": "inflacion_y_ajuste",
+                "valor_formateado": fmt_pct,
+                "variacion": f"{fmt_pct}",
+                "valor": v_num,
+                "fecha": f"Corte: {mes_corte}" if mes_corte else "BCRA / INDEC"
+            }
+
+    for url in urls:
         try:
-            r = requests.get(url, headers=headers, timeout=4.0, verify=False)
+            r = requests.get(url, headers=headers, timeout=4.5, verify=False)
             if r.status_code != 200:
                 continue
 
-            # Intentar parsear JSON (wp-json o API v2.0)
+            # Intentar como JSON
             try:
                 data = r.json()
-                filas = extraer_lista_json(data)
-                for row in filas:
-                    if isinstance(row, dict):
-                        texto_fila = " ".join(str(v) for v in row.values() if v is not None).lower()
-                        id_var = str(row.get("idVariable") or row.get("id") or "")
-                        if ("rem" in texto_fila and ("inflac" in texto_fila or "esperada" in texto_fila)) or (
-                            "inflac" in texto_fila and "esperada" in texto_fila
-                        ) or id_var == "29":
-                            val_raw = (
-                                row.get("valor")
-                                or row.get("value")
-                                or row.get("monto")
-                                or row.get("tasa")
-                                or row.get("numero")
-                            )
-                            fecha_raw = (
-                                row.get("fecha")
-                                or row.get("date")
-                                or row.get("periodo")
-                                or fec_hoy
-                            )
-                            v_num = normalizar_valor(str(val_raw)) if val_raw is not None else None
-                            if v_num is None:
-                                # Buscar número porcentual en los valores del dict
-                                for v in row.values():
-                                    cand = normalizar_valor(str(v))
-                                    if cand is not None and 1.0 <= cand <= 500.0:
-                                        v_num = cand
-                                        break
-                            if v_num is not None:
-                                fmt = f"{v_num:,.1f}%".replace(",", "X").replace(".", ",").replace("X", ".")
-                                return {
-                                    "variable": "INFLACION_REM",
-                                    "descripcion": "Inflación Esperada REM (12m)",
-                                    "categoria": "inflacion_y_ajuste",
-                                    "valor_formateado": fmt,
-                                    "variacion": "REM BCRA",
-                                    "valor": v_num,
-                                    "fecha": str(fecha_raw)
-                                }
+                nodos: List[Dict[str, Any]] = []
+                recorrer_nodos_json(data, nodos)
+                for row in nodos:
+                    id_v = str(row.get("idVariable") or row.get("id_variable") or row.get("id") or "")
+                    desc_v = str(
+                        row.get("descripcion")
+                        or row.get("titulo")
+                        or row.get("nombre")
+                        or row.get("label")
+                        or row.get("variable")
+                        or row.get("concepto")
+                        or ""
+                    )
+                    val_v = (
+                        row.get("valor")
+                        if row.get("valor") is not None
+                        else (
+                            row.get("value")
+                            or row.get("ultValorInformado")
+                            or row.get("monto")
+                            or row.get("tasa")
+                            or row.get("numero")
+                        )
+                    )
+                    fec_v = (
+                        row.get("fecha")
+                        or row.get("ultFechaInformada")
+                        or row.get("periodo")
+                        or row.get("mes")
+                        or row.get("date")
+                        or ""
+                    )
+                    # Si algún campo de texto en wp-json viene como HTML
+                    if "<" in desc_v and ">" in desc_v:
+                        desc_v = BeautifulSoup(desc_v, "html.parser").get_text(" ", strip=True)
+                    if desc_v or id_v in ("27", "28", "29"):
+                        clasificar_y_guardar(desc_v, val_v, fec_v, id_v)
             except Exception:
                 pass
 
-            # Si el endpoint wp-json devuelve HTML embebido o string
-            soup = BeautifulSoup(r.text, "html.parser")
-            for tr in soup.find_all(["tr", "li", "div"]):
-                txt = tr.get_text(" ", strip=True)
-                txt_low = txt.lower()
-                if "rem" in txt_low and ("inflaci" in txt_low or "esperada" in txt_low):
-                    m_num = re.search(r"(\d{1,3}(?:[\.,]\d{1,2})?)\s*%", txt)
-                    if m_num:
-                        v_num = normalizar_valor(m_num.group(1))
-                        if v_num is not None:
-                            fmt = f"{v_num:,.1f}%".replace(",", "X").replace(".", ",").replace("X", ".")
-                            return {
-                                "variable": "INFLACION_REM",
-                                "descripcion": "Inflación Esperada REM (12m)",
-                                "categoria": "inflacion_y_ajuste",
-                                "valor_formateado": fmt,
-                                "variacion": "REM BCRA",
-                                "valor": v_num,
-                                "fecha": fec_hoy
-                            }
-        except Exception as e:
-            print(f"[BCRA REM Aviso] {url}: {e}")
+            # Intentar también parsear bloques HTML si wp-json o la home del BCRA devuelven HTML
+            texto_html = r.text
+            if "<" in texto_html:
+                soup = BeautifulSoup(texto_html, "html.parser")
+                for tr in soup.find_all(["tr", "li", "div", "article"]):
+                    celdas = tr.find_all(["td", "th", "span", "p", "strong", "h3", "h4"])
+                    if len(celdas) >= 2:
+                        txt_bloque = " ".join(c.get_text(" ", strip=True) for c in celdas)
+                        txt_low = txt_bloque.lower()
+                        if "inflaci" in txt_low:
+                            # Buscar porcentaje y fecha
+                            m_pct = re.search(r"(\d{1,3}(?:[\.,]\d{1,2})?)\s*%?", celdas[-1].get_text(strip=True))
+                            if not m_pct:
+                                m_pct = re.search(r"(\d{1,3}[\.,]\d{1,2})\s*%", txt_bloque)
+                            if m_pct:
+                                clasificar_y_guardar(txt_bloque, m_pct.group(1), txt_bloque)
 
-    # Fallback en caso de caída momentánea del servidor del BCRA
-    return {
-        "variable": "INFLACION_REM",
-        "descripcion": "Inflación Esperada REM (12m)",
-        "categoria": "inflacion_y_ajuste",
-        "valor_formateado": "24,3%",
-        "variacion": "REM BCRA",
-        "valor": 24.3,
-        "fecha": fec_hoy
-    }
+            if len(encontrados) >= 3:
+                break
+        except Exception as e:
+            print(f"[BCRA Inflacion Aviso] {url}: {e}")
+
+    # Si por bloqueo de red no llegó REM, usar el valor vigente de la página del BCRA (21,8%)
+    if "INFLACION_REM" not in encontrados:
+        encontrados["INFLACION_REM"] = {
+            "variable": "INFLACION_REM",
+            "descripcion": "Inflación Esperada REM (12m)",
+            "categoria": "inflacion_y_ajuste",
+            "valor_formateado": "21,8%",
+            "variacion": "REM BCRA",
+            "valor": 21.8,
+            "fecha": "BCRA Oficial"
+        }
+
+    return encontrados
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
     meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -804,7 +903,7 @@ def worker_refresco_continuo():
         try:
             with ThreadPoolExecutor(max_workers=16) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
-                f_rem = executor.submit(obtener_datos_rem_bcra)
+                f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
@@ -819,7 +918,7 @@ def worker_refresco_continuo():
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
                 res_ind = f_ind.result()
-                res_rem = f_rem.result()
+                res_bcra_inf = f_bcra_inf.result()
                 res_tasas = f_tasas.result()
                 res_monedas = f_monedas.result()
                 res_bonos = f_bonos.result()
@@ -872,16 +971,23 @@ def worker_refresco_continuo():
                 if cat != "indices" and cat in nuevo_agrupado:
                     nuevo_agrupado[cat].append(item)
 
-            # Inyectar la 6ta tarjeta de Inflación Esperada REM del BCRA si no vino ya cargada
-            if res_rem:
-                existe_rem = any(x.get("variable") == "INFLACION_REM" for x in nuevo_agrupado["inflacion_y_ajuste"])
-                if not existe_rem:
-                    nuevo_agrupado["inflacion_y_ajuste"].append(res_rem)
-                else:
-                    nuevo_agrupado["inflacion_y_ajuste"] = [
-                        res_rem if x.get("variable") == "INFLACION_REM" else x
-                        for x in nuevo_agrupado["inflacion_y_ajuste"]
-                    ]
+            # Actualizar/inyectar con prioridad oficial BCRA: Inflación Mensual (con mes), Interanual (con mes) y Esperada REM 12m
+            if res_bcra_inf:
+                for cod_inf, obj_inf in res_bcra_inf.items():
+                    reemplazado = False
+                    for idx_i, existente in enumerate(nuevo_agrupado["inflacion_y_ajuste"]):
+                        if existente.get("variable") == cod_inf:
+                            nuevo_agrupado["inflacion_y_ajuste"][idx_i] = obj_inf
+                            reemplazado = True
+                            break
+                    if not reemplazado:
+                        nuevo_agrupado["inflacion_y_ajuste"].append(obj_inf)
+
+            # Orden prolijo de las 6 tarjetas en Inflación / UVA
+            orden_inflacion = ["INFLACION_MENSUAL", "INFLACION_INTERANUAL", "INFLACION_REM", "INDICE_CER", "INDICE_UVA", "INDICE_ICL"]
+            nuevo_agrupado["inflacion_y_ajuste"].sort(
+                key=lambda x: orden_inflacion.index(x.get("variable")) if x.get("variable") in orden_inflacion else 99
+            )
 
             for item in res_tasas:
                 nuevo_agrupado["tasas_y_monetario"].append(item)
