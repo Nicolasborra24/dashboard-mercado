@@ -735,7 +735,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    # 1. Consulta a Dolarito.ar (quotations + bancos/billeteras para Mejor Precio)
+    # 1. Consulta en vivo a Dolarito.ar (quotations + __NEXT_DATA__)
     for u in ["https://api.dolarito.ar/api/frontend/quotations", "https://www.dolarito.ar/"]:
         try:
             r = requests.get(u, headers=headers, timeout=3.5)
@@ -760,7 +760,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                 for nd in nodos:
                     nom = str(nd.get("name") or nd.get("nombre") or nd.get("slug") or "").lower()
                     c = normalizar_valor(nd.get("buy") or nd.get("compra"))
-                    v = normalizar_valor(nd.get("sell") or nd.get("venta"))
+                    v = normalizar_valor(nd.get("sell") or nd.get("venta") or nd.get("value") or nd.get("valor"))
                     if v and v > 500:
                         if any(k in nom for k in ["oficial", "minorista", "bna", "nacion"]) and "DOLAR_OFICIAL" not in res and c:
                             res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
@@ -770,10 +770,12 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                             res["DOLAR_TARJETA"] = {"compra": round(c, 2) if c else None, "venta": round(v, 2), "fecha": fec_hoy}
                         elif any(k in nom for k in ["cripto", "crypto", "usdt"]) and "DOLAR_CRIPTO" not in res:
                             res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                        elif any(k in nom for k in ["netflix", "streaming"]) and "DOLAR_NETFLIX" not in res:
+                            res["DOLAR_NETFLIX"] = {"compra": None, "venta": round(v, 2), "fecha": fec_hoy}
         except Exception:
             pass
 
-    # 2. Respaldo y completado con DolarApi (Oficial, Blue, Tarjeta, Cripto)
+    # 2. Respaldo en tiempo real con DolarApi
     try:
         r_api = requests.get("https://dolarapi.com/v1/dolares", headers=headers, timeout=3.5)
         if r_api.status_code == 200:
@@ -793,65 +795,13 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     except Exception:
         pass
 
-    # 3. Extraer MEJOR PRECIO de Dolarito (Entidad única con el precio de venta más bajo: ej. brubank Vendé a / Comprá a)
-    bancos_dolarito = []
-    NOMBRES_BANCOS = {
-        "brubank": "brubank", "bna": "Banco Nación", "nacion": "Banco Nación",
-        "galicia": "Galicia", "santander": "Santander", "bbva": "BBVA",
-        "macro": "Macro", "patagonia": "Patagonia", "supervielle": "Supervielle",
-        "icbc": "ICBC", "ciudad": "Banco Ciudad", "provincia": "Banco Provincia",
-        "rebanking": "Reba", "reba": "Reba", "uala": "Ualá", "nx": "Naranja X",
-        "cocos": "Cocos", "balanz": "Balanz", "ppi": "PPI", "ieb": "IEB+"
-    }
-
-    # Intentar API de bancos de Dolarito y CriptoYa Bancos Oficiales
-    for u_b in [
-        "https://api.dolarito.ar/api/frontend/quotations/banks",
-        "https://www.dolarito.ar/cotizacion/dolar-hoy",
-        "https://criptoya.com/api/bancostodos"
-    ]:
-        try:
-            r_b = requests.get(u_b, headers=headers, timeout=3.5)
-            if r_b.status_code != 200:
-                continue
-            if "application/json" in r_b.headers.get("Content-Type", ""):
-                dj = r_b.json()
-                if isinstance(dj, dict):
-                    for k_b, v_b in dj.items():
-                        if isinstance(v_b, dict):
-                            c_val = normalizar_valor(v_b.get("bid") or v_b.get("buy") or v_b.get("compra"))
-                            v_val = normalizar_valor(v_b.get("ask") or v_b.get("sell") or v_b.get("venta"))
-                            k_low = k_b.lower()
-                            if k_low in NOMBRES_BANCOS and c_val and v_val and 1200 < c_val <= v_val < 2200:
-                                bancos_dolarito.append({
-                                    "entidad": NOMBRES_BANCOS[k_low],
-                                    "compra": round(c_val, 2),
-                                    "venta": round(v_val, 2),
-                                    "es_brubank": 1 if k_low == "brubank" else 0
-                                })
-        except Exception:
-            pass
-
-    if bancos_dolarito:
-        # Priorizar la entidad con menor precio "Comprá a" (venta), desempatando a favor de brubank como Dolarito
-        bancos_dolarito.sort(key=lambda x: (x["venta"], -x["es_brubank"], -x["compra"]))
-        mejor = bancos_dolarito[0]
-        res["DOLAR_MEJOR_PRECIO"] = {
-            "compra": mejor["compra"],
-            "venta": mejor["venta"],
-            "entidad": mejor["entidad"],
-            "entidad_compra": mejor["entidad"],
-            "entidad_venta": mejor["entidad"],
-            "fecha": "Hace minutos"
-        }
-    else:
-        res["DOLAR_MEJOR_PRECIO"] = {
-            "compra": 1530.00,
-            "venta": 1565.00,
-            "entidad": "brubank",
-            "entidad_compra": "brubank",
-            "entidad_venta": "brubank",
-            "fecha": "Hace minutos"
+    # 3. Asegurar DÓLAR NETFLIX en vivo (Dolarito: Oficial Minorista Venta + 51% [21% IVA + 30% Percepción])
+    if "DOLAR_NETFLIX" not in res:
+        v_of = (res.get("DOLAR_OFICIAL") or {}).get("venta") or 1570.00
+        res["DOLAR_NETFLIX"] = {
+            "compra": None,
+            "venta": round(float(v_of) * 1.51, 2),
+            "fecha": fec_hoy
         }
 
     return res
@@ -1646,7 +1596,7 @@ def worker_refresco_continuo():
                 ("DOLAR_BLUE", "Dólar Blue"),
                 ("DOLAR_TARJETA", "Dólar Tarjeta"),
                 ("DOLAR_CRIPTO", "Dólar Cripto (USDT)"),
-                ("DOLAR_MEJOR_PRECIO", "Mejor Precio Dolarito")
+                ("DOLAR_NETFLIX", "Dólar Netflix")
             ]:
                 if cod_p in puntas_dl:
                     info_p = puntas_dl[cod_p]

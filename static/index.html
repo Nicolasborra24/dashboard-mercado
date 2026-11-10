@@ -843,7 +843,7 @@
       DOLAR_BLUE: { compra: 1535.00, venta: 1555.00 },
       DOLAR_TARJETA: { compra: null, venta: 2041.00 },
       DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00 },
-      DOLAR_MEJOR_PRECIO: { compra: 1530.00, venta: 1565.00, entidad: "brubank" }
+      DOLAR_NETFLIX: { compra: null, venta: 2370.70 }
     };
 
     async function actualizarPuntasDolarEnVivo() {
@@ -854,6 +854,7 @@
           const c = parseFloat(d.compra), v = parseFloat(d.venta);
           if (casa === "oficial" && !isNaN(v)) {
             window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL = { compra: !isNaN(c) ? c : v, venta: v };
+            window.PUNTAS_DOLAR_VIVO.DOLAR_NETFLIX = { compra: null, venta: +(v * 1.51).toFixed(2) };
           } else if (casa === "blue" && !isNaN(v)) {
             window.PUNTAS_DOLAR_VIVO.DOLAR_BLUE = { compra: !isNaN(c) ? c : v, venta: v };
           } else if (casa === "tarjeta" && !isNaN(v)) {
@@ -863,43 +864,6 @@
           }
         });
       }
-
-      try {
-        const rBancos = await fetchJsonSeguro("https://criptoya.com/api/bancostodos");
-        if (rBancos && typeof rBancos === "object") {
-          const mapBancos = {
-            brubank: "brubank", bna: "Banco Nación", galicia: "Galicia", santander: "Santander",
-            bbva: "BBVA", macro: "Macro", patagonia: "Patagonia", supervielle: "Supervielle",
-            icbc: "ICBC", ciudad: "Banco Ciudad", provincia: "Banco Provincia", reba: "Reba",
-            rebanking: "Reba", uala: "Ualá", nx: "Naranja X", cocos: "Cocos", balanz: "Balanz"
-          };
-          const candidatos = [];
-          Object.keys(rBancos).forEach(k => {
-            const kLow = k.toLowerCase();
-            if (mapBancos[kLow] && rBancos[k]) {
-              const bid = parseFloat(rBancos[k].bid || rBancos[k].compra);
-              const ask = parseFloat(rBancos[k].ask || rBancos[k].venta);
-              if (!isNaN(bid) && !isNaN(ask) && bid > 1200 && ask >= bid && ask < 2200) {
-                candidatos.push({
-                  entidad: mapBancos[kLow],
-                  compra: bid,
-                  venta: ask,
-                  esBrubank: kLow === "brubank" ? 1 : 0
-                });
-              }
-            }
-          });
-          if (candidatos.length > 0) {
-            candidatos.sort((a, b) => (a.venta - b.venta) || (b.esBrubank - a.esBrubank) || (b.compra - a.compra));
-            const ganador = candidatos[0];
-            window.PUNTAS_DOLAR_VIVO.DOLAR_MEJOR_PRECIO = {
-              compra: ganador.compra,
-              venta: ganador.venta,
-              entidad: ganador.entidad
-            };
-          }
-        }
-      } catch (e) {}
 
       if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
         renderizar(false);
@@ -1023,30 +987,6 @@
               const vVenta = item.venta || pVivo.venta || item.valor;
               const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-              if (item.variable === "DOLAR_MEJOR_PRECIO" && vCompra && vVenta) {
-                const entUnica = item.entidad || item.entidad_venta || pVivo.entidad || "brubank";
-                const fmtInt = n => Number(n) % 1 === 0
-                  ? Number(n).toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-                  : Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                return `
-                  <div class="mt-2 pt-1.5 border-t border-slate-800/70 flex flex-col items-center">
-                    <div class="flex items-center justify-center gap-1.5 mb-2">
-                      <span class="px-2.5 py-0.5 rounded-full bg-[#6344f5] text-white text-[9px] font-extrabold uppercase tracking-wider shadow-[0_0_10px_rgba(99,68,245,0.5)]">MEJOR PRECIO</span>
-                      <span class="text-base font-black tracking-tight text-[#816bff] lowercase">${entUnica}</span>
-                    </div>
-                    <div class="w-full grid grid-cols-2 divide-x divide-slate-800 bg-slate-950/60 border border-indigo-500/30 rounded-xl py-2 px-2 text-center">
-                      <div class="flex flex-col items-center justify-center px-1">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">VENDÉ A</span>
-                        <span class="text-lg font-extrabold text-white font-mono mt-0.5 ${animFlash}"><span class="text-xs text-slate-400 mr-0.5">$</span>${fmtInt(vCompra)}</span>
-                      </div>
-                      <div class="flex flex-col items-center justify-center px-1">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">COMPRÁ A</span>
-                        <span class="text-lg font-extrabold text-[#816bff] font-mono mt-0.5 ${animFlash}"><span class="text-xs text-[#816bff] mr-0.5">$</span>${fmtInt(vVenta)}</span>
-                      </div>
-                    </div>
-                  </div>`;
-              }
-
               if ((item.variable === "DOLAR_OFICIAL" || item.variable === "DOLAR_BLUE" || item.variable === "DOLAR_CRIPTO") && vCompra && vVenta) {
                 return `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
@@ -1060,7 +1000,8 @@
                     </div>
                   </div>`;
               }
-              return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valFmt}</span></div>`;
+              const valMostrar = (item.variable === "DOLAR_NETFLIX" || item.variable === "DOLAR_TARJETA") && vVenta ? fmtP(vVenta) : valFmt;
+              return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valMostrar}</span></div>`;
             })()}
           </div>
           <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
@@ -1925,10 +1866,18 @@
         };
         asegurarItemDolar("DOLAR_TARJETA", "Dólar Tarjeta", 2041.00);
         asegurarItemDolar("DOLAR_CRIPTO", "Dólar Cripto (USDT)", 1568.50);
-        asegurarItemDolar("DOLAR_MEJOR_PRECIO", "Mejor Precio (Dolarito)", 1550.00);
+        asegurarItemDolar("DOLAR_NETFLIX", "Dólar Netflix", 2370.70);
+        rawItems.forEach(it => {
+          if (it && pViv[it.variable] && pViv[it.variable].venta) {
+            it.venta = pViv[it.variable].venta;
+            it.valor = pViv[it.variable].venta;
+            if (pViv[it.variable].compra) it.compra = pViv[it.variable].compra;
+            it.valor_formateado = "$" + Number(it.valor).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+        });
 
         const orden9 = [
-          "DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_MEJOR_PRECIO",
+          "DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_NETFLIX",
           "DOLAR_MEP", "DOLAR_CCL", "DOLAR_CRIPTO",
           "DOLAR_TARJETA", "DOLAR_A3500", "DOLAR_FUTURO"
         ];
