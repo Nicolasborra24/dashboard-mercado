@@ -18,6 +18,82 @@ from sqlalchemy.orm import sessionmaker, Session
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+import ssl
+from urllib.parse import quote
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
+class MAEAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = create_urllib3_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        try:
+            ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+        except Exception:
+            pass
+        kwargs["ssl_context"] = ctx
+        return super().init_poolmanager(*args, **kwargs)
+
+LICITACIONES_AGENDA_COMPLETA = [
+    {"fecha": "2026-10-14", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN SECRETARÍA DE FINANZAS — LECAP (S30O6 / S30N6) Y BONCAP - REAPERTURA"},
+    {"fecha": "2026-10-15", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXI"},
+    {"fecha": "2026-10-21", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES PAN AMERICAN ENERGY S.L. CLASE XXIV"},
+    {"fecha": "2026-10-22", "horario": "10:00 - 16:00", "titulo": "LETRAS DE TESORERÍA PROVINCIA DEL NEUQUÉN SERIE IV"},
+    {"fecha": "2026-10-28", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN SECRETARÍA DE FINANZAS — BONOS CER (TZX27 / TZX28) Y LECAP"},
+    {"fecha": "2026-10-29", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES GENNEIA S.A. CLASE XLII"},
+    {"fecha": "2026-11-03", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES CRESUD S.A.C.I.F. Y A. CLASE XLVI"},
+    {"fecha": "2026-11-04", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXII - NUEVA"},
+    {"fecha": "2026-11-05", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES PAMPA ENERGÍA S.A. CLASE XXIII"},
+    {"fecha": "2026-11-06", "horario": "10:00 - 15:00", "titulo": "LETRAS DE TESORERÍA DE LA PROVINCIA DE BUENOS AIRES - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 30/06/2027 (T30J7) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 30/06/2028 (TZX28) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 29/01/2027 (S29E7) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 30/04/2027 (M30A7) - NUEVA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA"},
+    {"fecha": "2026-11-12", "horario": "10:00 - 16:00", "titulo": "ON BAJO IMPACTO MADERO HARBOUR SERIE II"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 15 (REAPERTURA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 18 (REAPERTURA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 21 (NUEVA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 22 (NUEVA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 23 (NUEVA)"},
+    {"fecha": "2026-11-13", "horario": "10:00 - 16:00", "titulo": "ON BAJO IMPACTO INGACOT COMERCIAL SERIE I"},
+    {"fecha": "2026-11-18", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES VISTA ENERGY ARGENTINA S.A.U. CLASE XXVI"},
+    {"fecha": "2026-11-19", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES TELECOM ARGENTINA S.A. CLASE XXI"},
+    {"fecha": "2026-11-20", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES IRSA INVERSIONES Y REPRESENTACIONES S.A. CLASE XXII"},
+    {"fecha": "2026-11-25", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN SECRETARÍA DE FINANZAS — LECAP (S29E7 / S26F7), BONCAP Y CER"},
+    {"fecha": "2026-11-26", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES TRANSPORTADORA DE GAS DEL SUR S.A. (TGS) CLASE VIII"},
+    {"fecha": "2026-12-02", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES ALUAR ALUMINIO ARGENTINO S.A.I.C. SERIE XI"},
+    {"fecha": "2026-12-03", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES CENTRAL PUERTO S.A. CLASE VI"},
+    {"fecha": "2026-12-09", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN SECRETARÍA DE FINANZAS — LETRAS Y BONOS DEL TESORO NACIONAL"},
+    {"fecha": "2026-12-16", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES LOMA NEGRA C.I.A.S.A. CLASE V"}
+]
+
+def consultar_url_mae_con_puentes(target_url: str) -> Any:
+    sess = requests.Session()
+    sess.mount("https://", MAEAdapter())
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://marketdata.mae.com.ar",
+        "Referer": "https://marketdata.mae.com.ar/calendario-licitaciones"
+    }
+    candidatos = [
+        target_url,
+        f"https://api.allorigins.win/raw?url={quote(target_url, safe='')}",
+        f"https://api.codetabs.com/v1/proxy?quest={quote(target_url, safe='')}",
+        f"https://corsproxy.io/?{quote(target_url, safe='')}"
+    ]
+    for u in candidatos:
+        try:
+            r = sess.get(u, headers=hdrs, timeout=4.0, verify=False)
+            if r.status_code == 200 and r.text.strip():
+                return r.json()
+        except Exception:
+            pass
+    return None
+
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
@@ -1088,34 +1164,27 @@ def fetch_estado_mae() -> Dict[str, Any]:
     return CACHE_ESTADO_MAE
 
 def fetch_licitaciones_mae_rango(desde: Optional[str] = None, hasta: Optional[str] = None) -> List[Dict[str, Any]]:
-    urls_intento = []
     base_url = "https://api.marketdata.mae.com.ar/api/mercado/licitaciones"
+    urls_intento = []
     if desde and hasta:
         urls_intento.append(f"{base_url}?fechaDesde={desde}&fechaHasta={hasta}")
-        urls_intento.append(f"{base_url}?desde={desde}&hasta={hasta}")
-        urls_intento.append(f"{base_url}?start={desde}&end={hasta}")
     urls_intento.append(base_url)
 
     extraidos: List[Dict[str, Any]] = []
     for u in urls_intento:
-        try:
-            r = requests.get(u, headers=headers_mae_a3(), timeout=4.5, verify=False)
-            if r.status_code == 200:
-                data = r.json()
-                lista_raw = data if isinstance(data, list) else (data.get("licitaciones") or data.get("data") or data.get("items") or data.get("eventos") or [])
-                if isinstance(lista_raw, list):
-                    for item in lista_raw:
-                        norm = normalizar_item_licitacion(item)
-                        if norm:
-                            extraidos.append(norm)
-                if len(extraidos) > 0:
-                    break
-        except Exception:
-            pass
+        data = consultar_url_mae_con_puentes(u)
+        if data:
+            lista_raw = data if isinstance(data, list) else (data.get("licitaciones") or data.get("data") or data.get("items") or data.get("eventos") or [])
+            if isinstance(lista_raw, list):
+                for item in lista_raw:
+                    norm = normalizar_item_licitacion(item)
+                    if norm:
+                        extraidos.append(norm)
+            if extraidos:
+                break
 
-    # Combinar datos en vivo de A3 con la base persistente sin duplicar
     mapa_unico = {}
-    for b in LICITACIONES_MAE_BASE + CACHE_LICITACIONES_MAE + extraidos:
+    for b in LICITACIONES_AGENDA_COMPLETA + CACHE_LICITACIONES_MAE + extraidos:
         norm_b = normalizar_item_licitacion(b) if "horario" not in b else b
         if norm_b and norm_b.get("fecha") and norm_b.get("titulo"):
             clave = f"{norm_b['fecha']}|{norm_b['titulo']}"
