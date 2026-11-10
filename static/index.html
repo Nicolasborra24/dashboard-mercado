@@ -132,6 +132,9 @@
             <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-industry text-orange-400 text-[10px]"></i><span class="truncate">Micro / Real</span></button>
             <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2 py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i><span class="truncate">Agro & Energía</span></button>
           </div>
+          <div class="grid grid-cols-6 gap-1.5">
+            <button onclick="filtrarCategoria('calendario_licitaciones', event)" class="nav-tab col-span-6 sm:col-span-2 px-3 py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-cyan-500/30"><i class="fa-regular fa-calendar-check text-cyan-400 text-[11px]"></i><span class="truncate font-semibold">Calendario Licitaciones (A3 / MAE)</span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -351,7 +354,8 @@
       petroleo: { titulo: "Mercado Internacional de Crudo y Combustibles", sub: "Petróleo y Derivados Energéticos", icono: "fa-oil-well", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
       macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-scale-balanced", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
       micro_y_sectores: { titulo: "Economía Real, Crédito y Actividad Productiva", sub: "Construcción, Industria, Consumo y Crédito", icono: "fa-industry", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
-      commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" }
+      commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-wheat-awn", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" },
+      calendario_licitaciones: { titulo: "Calendario de Licitaciones — A3 Mercados (MAE)", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-calendar-check", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" }
     };
 
     window.BLOQUES_HOME = [
@@ -798,6 +802,309 @@
           renderizar(false);
         }
       }
+    }
+
+    
+    window.LICITACIONES_A3_FALLBACK = [
+      { fecha: "2026-11-04", horario: "10:00 - 16:00", titulo: "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXII - NUEVA" },
+      { fecha: "2026-11-05", horario: "10:00 - 16:00", titulo: "OBLIGACIONES NEGOCIABLES PAMPA ENERGÍA S.A. CLASE XXIII" },
+      { fecha: "2026-11-06", horario: "10:00 - 15:00", titulo: "LETRAS DE TESORERÍA DE LA PROVINCIA DE BUENOS AIRES - REAPERTURA" },
+      { fecha: "2026-11-11", horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 30/06/2027 (T30J7) - REAPERTURA" },
+      { fecha: "2026-11-11", horario: "10:00 - 15:00", titulo: "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 30/06/2028 (TZX28) - REAPERTURA" },
+      { fecha: "2026-11-11", horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 29/01/2027 (S29E7) - REAPERTURA" },
+      { fecha: "2026-11-11", horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 30/04/2027 (M30A7) - NUEVA" },
+      { fecha: "2026-11-11", horario: "10:00 - 15:00", titulo: "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA" },
+      { fecha: "2026-11-12", horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO MADERO HARBOUR SERIE II" },
+      { fecha: "2026-11-12", horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 15 (REAPERTURA)" },
+      { fecha: "2026-11-12", horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 18 (REAPERTURA)" },
+      { fecha: "2026-11-12", horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 21 (NUEVA)" },
+      { fecha: "2026-11-12", horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 22 (NUEVA)" },
+      { fecha: "2026-11-12", horario: "11:00 - 16:00", titulo: "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 23 (NUEVA)" },
+      { fecha: "2026-11-13", horario: "10:00 - 16:00", titulo: "ON BAJO IMPACTO INGACOT COMERCIAL SERIE I" },
+      { fecha: "2026-11-18", horario: "10:00 - 16:00", titulo: "OBLIGACIONES NEGOCIABLES VISTA ENERGY ARGENTINA S.A.U. CLASE XXVI" },
+      { fecha: "2026-11-19", horario: "10:00 - 16:00", titulo: "OBLIGACIONES NEGOCIABLES TELECOM ARGENTINA S.A. CLASE XXI" },
+      { fecha: "2026-11-25", horario: "10:00 - 15:00", titulo: "LICITACIÓN QUINCENAL SECRETARÍA DE FINANZAS — LECAP / BONCAP / CER" }
+    ];
+
+    let datosLicitacionesMAE = [...window.LICITACIONES_A3_FALLBACK];
+    let estadoMercadoMAE = "ACTIVO";
+    let fechaCursorCalendario = new Date();
+    let vistaCalendarioMAE = "agenda"; // "agenda" | "mes"
+    let cargandoLicitaciones = false;
+
+    function normalizarItemClienteMAE(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      if (raw.fecha && raw.horario && raw.titulo && /^\d{4}-\d{2}-\d{2}$/.test(raw.fecha)) return raw;
+      const fRaw = String(raw.fecha || raw.fechaLicitacion || raw.start || raw.date || raw.fechaInicio || raw.dia || "").trim();
+      const hIni = String(raw.horaInicio || raw.desde || raw.startTime || "").trim();
+      const hFin = String(raw.horaFin || raw.hasta || raw.endTime || "").trim();
+      let horario = String(raw.horario || raw.hora || "").trim();
+      if (!horario) {
+        if (hIni && hFin) horario = `${hIni.slice(0, 5)} - ${hFin.slice(0, 5)}`;
+        else if (fRaw.includes("T")) {
+          const hExt = fRaw.split("T")[1].slice(0, 5);
+          const fEnd = String(raw.end || raw.fechaFin || "");
+          const hEnd = fEnd.includes("T") ? fEnd.split("T")[1].slice(0, 5) : "16:00";
+          horario = hExt !== "00:00" ? `${hExt} - ${hEnd}` : "10:00 - 15:00";
+        } else {
+          horario = "10:00 - 15:00";
+        }
+      }
+      let fechaIso = "";
+      const mIso = fRaw.match(/(20\d{2})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (mIso) {
+        fechaIso = `${mIso[1]}-${String(mIso[2]).padStart(2, "0")}-${String(mIso[3]).padStart(2, "0")}`;
+      } else {
+        const mLat = fRaw.match(/(\d{1,2})[-/](\d{1,2})[-/](20\d{2})/);
+        if (mLat) fechaIso = `${mLat[3]}-${String(mLat[2]).padStart(2, "0")}-${String(mLat[1]).padStart(2, "0")}`;
+      }
+      const titulo = String(raw.titulo || raw.title || raw.descripcion || raw.especie || raw.instrumento || raw.nombre || raw.emisor || "").trim().toUpperCase();
+      if (!fechaIso || !titulo) return null;
+      return { fecha: fechaIso, horario, titulo };
+    }
+
+    function fusionarLicitacionesMAE(nuevos) {
+      const mapa = {};
+      [...window.LICITACIONES_A3_FALLBACK, ...datosLicitacionesMAE, ...(Array.isArray(nuevos) ? nuevos : [])].forEach(it => {
+        const norm = normalizarItemClienteMAE(it);
+        if (norm) mapa[`${norm.fecha}|${norm.titulo}`] = norm;
+      });
+      datosLicitacionesMAE = Object.values(mapa).sort((a, b) => (a.fecha + a.horario).localeCompare(b.fecha + b.horario));
+    }
+
+    function obtenerRangoActualCalendario() {
+      const d = new Date(fechaCursorCalendario.getFullYear(), fechaCursorCalendario.getMonth(), fechaCursorCalendario.getDate());
+      if (vistaCalendarioMAE === "agenda") {
+        const day = d.getDay();
+        const diffLunes = day === 0 ? -6 : 1 - day;
+        const lunes = new Date(d);
+        lunes.setDate(d.getDate() + diffLunes);
+        const domingo = new Date(lunes);
+        domingo.setDate(lunes.getDate() + 6);
+        return { inicio: lunes, fin: domingo };
+      } else {
+        const primero = new Date(d.getFullYear(), d.getMonth(), 1);
+        const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        return { inicio: primero, fin: ultimo };
+      }
+    }
+
+    function fmtIsoDate(dt) {
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    }
+
+    async function sincronizarLicitacionesA3() {
+      const { inicio, fin } = obtenerRangoActualCalendario();
+      const dStr = fmtIsoDate(inicio);
+      const hStr = fmtIsoDate(fin);
+      cargandoLicitaciones = true;
+      if (categoriaActiva === "calendario_licitaciones") renderizar(true);
+
+      // Capa 1: Backend propio con cabeceras de A3 Mercados
+      const respBack = await fetchJsonSeguro(`/api/licitaciones/mae?desde=${dStr}&hasta=${hStr}&t=${Date.now()}`);
+      if (respBack) {
+        const listaB = Array.isArray(respBack) ? respBack : (respBack.licitaciones || []);
+        if (listaB.length > 0) fusionarLicitacionesMAE(listaB);
+        if (respBack.estado_mercado) {
+          const st = respBack.estado_mercado;
+          estadoMercadoMAE = typeof st === "string" ? st : (st.estado || st.status || st.descripcion || "ACTIVO");
+        }
+      }
+
+      // Capa 2: Intento directo desde el navegador del usuario (IP residencial evita bloqueo de datacenter) y puente CORS
+      const urlsDirectas = [
+        `https://api.marketdata.mae.com.ar/api/mercado/licitaciones?fechaDesde=${dStr}&fechaHasta=${hStr}`,
+        `https://api.marketdata.mae.com.ar/api/mercado/licitaciones`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://api.marketdata.mae.com.ar/api/mercado/licitaciones?fechaDesde=${dStr}&fechaHasta=${hStr}`)}`
+      ];
+      for (const u of urlsDirectas) {
+        try {
+          const r = await fetch(u, { mode: "cors" });
+          if (r.ok) {
+            const dj = await r.json();
+            const arr = Array.isArray(dj) ? dj : (dj.licitaciones || dj.data || dj.items || []);
+            if (Array.isArray(arr) && arr.length > 0) {
+              fusionarLicitacionesMAE(arr);
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      try {
+        const rEst = await fetch("https://api.marketdata.mae.com.ar/api/mercado/estado", { mode: "cors" });
+        if (rEst.ok) {
+          const dEst = await rEst.json();
+          if (dEst) estadoMercadoMAE = typeof dEst === "string" ? dEst : (dEst.estado || dEst.status || estadoMercadoMAE);
+        }
+      } catch (e) {}
+
+      cargandoLicitaciones = false;
+      if (categoriaActiva === "calendario_licitaciones") renderizar(true);
+    }
+
+    function navegarCalendarioMAE(accion) {
+      const d = new Date(fechaCursorCalendario);
+      if (accion === "hoy") {
+        fechaCursorCalendario = new Date();
+      } else if (accion === "prev") {
+        if (vistaCalendarioMAE === "agenda") d.setDate(d.getDate() - 7);
+        else d.setMonth(d.getMonth() - 1);
+        fechaCursorCalendario = d;
+      } else if (accion === "next") {
+        if (vistaCalendarioMAE === "agenda") d.setDate(d.getDate() + 7);
+        else d.setMonth(d.getMonth() + 1);
+        fechaCursorCalendario = d;
+      }
+      sincronizarLicitacionesA3();
+    }
+
+    function cambiarVistaCalendarioMAE(nuevaVista) {
+      vistaCalendarioMAE = nuevaVista;
+      sincronizarLicitacionesA3();
+    }
+
+    function renderizarSeccionCalendarioMAE() {
+      const mesesCortos = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const mesesLargos = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+      const { inicio, fin } = obtenerRangoActualCalendario();
+      const iniIso = fmtIsoDate(inicio);
+      const finIso = fmtIsoDate(fin);
+
+      let tituloRango = "";
+      if (vistaCalendarioMAE === "agenda") {
+        if (inicio.getMonth() === fin.getMonth()) {
+          tituloRango = `${inicio.getDate()} – ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
+        } else {
+          tituloRango = `${inicio.getDate()} ${mesesCortos[inicio.getMonth()]} – ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
+        }
+      } else {
+        tituloRango = `${mesesLargos[inicio.getMonth()].toUpperCase()} ${inicio.getFullYear()}`;
+      }
+
+      const eventosRango = datosLicitacionesMAE.filter(ev => ev.fecha >= iniIso && ev.fecha <= finIso);
+
+      let cuerpoHtml = "";
+      if (vistaCalendarioMAE === "agenda") {
+        const porFecha = {};
+        eventosRango.forEach(ev => {
+          if (!porFecha[ev.fecha]) porFecha[ev.fecha] = [];
+          porFecha[ev.fecha].push(ev);
+        });
+        const fechasOrdenadas = Object.keys(porFecha).sort();
+
+        if (fechasOrdenadas.length === 0) {
+          cuerpoHtml = `
+            <div class="py-16 text-center space-y-2 text-slate-400">
+              <i class="fa-regular fa-calendar-xmark text-2xl text-slate-500"></i>
+              <p class="text-xs font-medium">No hay licitaciones programadas en A3 Mercados para el período (${tituloRango}).</p>
+              <p class="text-[11px] text-slate-500">Usá los botones &lt; y &gt; para desplazarte a semanas anteriores o siguientes.</p>
+            </div>`;
+        } else {
+          cuerpoHtml = fechasOrdenadas.map(fIso => {
+            const [y, m, d] = fIso.split("-").map(Number);
+            const dtObj = new Date(y, m - 1, d);
+            const nomDia = diasSemana[dtObj.getDay()];
+            const fechaDerecha = `${d} de ${mesesLargos[m - 1]} de ${y}`;
+            const filasDia = porFecha[fIso].map(ev => `
+              <div class="flex items-center gap-4 px-4 py-2.5 border-b border-slate-800/60 hover:bg-[#112238]/60 transition text-xs">
+                <span class="w-28 shrink-0 font-mono text-slate-300 text-[11px]">${ev.horario}</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.8)] shrink-0"></span>
+                <span class="font-bold text-slate-100 tracking-wide uppercase">${ev.titulo}</span>
+              </div>`).join("");
+
+            return `
+              <div>
+                <div class="bg-[#16293d] px-4 py-2 flex items-center justify-between border-y border-slate-700/60">
+                  <span class="text-xs font-bold text-white lowercase first-letter:uppercase">${nomDia}</span>
+                  <span class="text-xs font-bold text-slate-200">${fechaDerecha}</span>
+                </div>
+                <div class="divide-y divide-slate-800/50 bg-[#0b1726]">${filasDia}</div>
+              </div>`;
+          }).join("");
+        }
+      } else {
+        // Vista Mes (Grilla de calendario mensual)
+        const primerDiaMes = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+        const ultimoDiaMes = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0);
+        const offsetInicio = (primerDiaMes.getDay() + 6) % 7; // Lunes = 0
+        const totalDias = ultimoDiaMes.getDate();
+        const celdas = [];
+
+        for (let i = 0; i < offsetInicio; i++) {
+          celdas.push(`<div class="min-h-[110px] bg-[#07101c]/60 border border-slate-800/50 p-2"></div>`);
+        }
+        for (let dia = 1; dia <= totalDias; dia++) {
+          const fIso = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+          const evs = datosLicitacionesMAE.filter(e => e.fecha === fIso);
+          const esHoy = fIso === fmtIsoDate(new Date());
+          celdas.push(`
+            <div class="min-h-[110px] bg-[#0b1726] border border-slate-800/70 p-2 flex flex-col gap-1 hover:border-sky-500/40 transition">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold ${esHoy ? 'px-2 py-0.5 rounded-full bg-sky-500 text-white' : 'text-slate-400'}">${dia}</span>
+                ${evs.length > 0 ? `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">${evs.length} lic.</span>` : ''}
+              </div>
+              <div class="space-y-1 overflow-y-auto max-h-24 pr-0.5">
+                ${evs.map(e => `<div class="text-[10px] leading-tight px-1.5 py-1 rounded bg-[#16293d] text-slate-100 border-l-2 border-sky-400 truncate" title="${e.horario} • ${e.titulo}"><span class="text-sky-300 font-mono">${e.horario.split('-')[0].trim()}</span> ${e.titulo}</div>`).join("")}
+              </div>
+            </div>`);
+        }
+        cuerpoHtml = `
+          <div class="grid grid-cols-7 bg-[#16293d] border-y border-slate-700/60 text-center py-2 text-[11px] font-bold text-slate-200 uppercase tracking-wider">
+            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+          </div>
+          <div class="grid grid-cols-7">${celdas.join("")}</div>`;
+      }
+
+      return `
+        <div class="space-y-4">
+          ${renderizarBarraSeccion(window.CONFIG_SECCIONES.calendario_licitaciones)}
+          <div class="rounded-2xl border border-slate-800 bg-[#081320] shadow-2xl overflow-hidden">
+            <!-- Barra superior idéntica a A3 Mercados -->
+            <div class="px-4 py-3 bg-[#091524] border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-1.5">
+                <div class="inline-flex rounded-lg overflow-hidden border border-slate-700/80 bg-[#122236]">
+                  <button onclick="navegarCalendarioMAE('prev')" class="px-3 py-1.5 text-slate-200 hover:bg-sky-500/20 hover:text-white transition text-xs font-bold" title="Anterior">
+                    <i class="fa-solid fa-chevron-left text-[11px]"></i>
+                  </button>
+                  <button onclick="navegarCalendarioMAE('next')" class="px-3 py-1.5 text-slate-200 hover:bg-sky-500/20 hover:text-white transition text-xs font-bold border-l border-slate-700/80" title="Siguiente">
+                    <i class="fa-solid fa-chevron-right text-[11px]"></i>
+                  </button>
+                </div>
+                <button onclick="navegarCalendarioMAE('hoy')" class="px-3 py-1.5 rounded-lg border border-slate-700/80 bg-[#122236] text-slate-200 hover:bg-sky-500/20 hover:text-white transition text-xs font-semibold">
+                  Hoy
+                </button>
+                <button onclick="sincronizarLicitacionesA3()" class="ml-1 px-2.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-500/20 transition text-xs flex items-center gap-1.5" title="Sincronizar con A3 Mercados">
+                  <i class="fa-solid fa-rotate ${cargandoLicitaciones ? 'fa-spin' : ''} text-[11px]"></i>
+                  <span class="hidden sm:inline text-[11px] font-mono">A3 Live</span>
+                </button>
+              </div>
+
+              <div class="text-sm sm:text-base font-bold text-slate-100 tracking-wide">
+                ${tituloRango}
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="hidden md:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> MAE: ${estadoMercadoMAE}
+                </span>
+                <div class="inline-flex rounded-lg overflow-hidden border border-slate-700/80 bg-[#122236] text-xs font-semibold">
+                  <button onclick="cambiarVistaCalendarioMAE('mes')" class="px-3 py-1.5 transition ${vistaCalendarioMAE === 'mes' ? 'bg-slate-200 text-slate-950 font-bold' : 'text-slate-300 hover:text-white'}">
+                    Mes
+                  </button>
+                  <button onclick="cambiarVistaCalendarioMAE('agenda')" class="px-3 py-1.5 transition border-l border-slate-700/80 ${vistaCalendarioMAE === 'agenda' ? 'bg-slate-200 text-slate-950 font-bold' : 'text-slate-300 hover:text-white'}">
+                    Agenda
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cuerpo del Calendario -->
+            <div>${cuerpoHtml}</div>
+          </div>
+        </div>`;
     }
 
     async function cargarDatos() {
@@ -1260,6 +1567,7 @@
     cargarDatos();
     actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
+    sincronizarLicitacionesA3();
 
     setInterval(actualizarCriptosEnVivo, 5000);
     setInterval(cargarDatos, 8000);

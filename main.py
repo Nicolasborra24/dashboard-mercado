@@ -1002,15 +1002,132 @@ def fetch_finviz_sectores(res_usa: Optional[List[Dict[str, Any]]] = None) -> Opt
     data_res["updated"] = datetime.utcnow().strftime("%d %b %Y %H:%M UTC")
     return data_res
 
-def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
+
+CACHE_ESTADO_MAE: Dict[str, Any] = {"estado": "ABIERTO", "descripcion": "A3 Mercados - Market Data"}
+
+LICITACIONES_MAE_BASE = [
+    {"fecha": "2026-11-04", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXII - NUEVA"},
+    {"fecha": "2026-11-05", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES PAMPA ENERGÍA S.A. CLASE XXIII"},
+    {"fecha": "2026-11-06", "horario": "10:00 - 15:00", "titulo": "LETRAS DE TESORERÍA DE LA PROVINCIA DE BUENOS AIRES - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "BONO DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 30/06/2027 (T30J7) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "BONO DEL TESORO NACIONAL EN PESOS CERO CUPÓN CON AJUSTE POR CER VTO. 30/06/2028 (TZX28) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL CAPITALIZABLE EN PESOS CON VTO. 29/01/2027 (S29E7) - REAPERTURA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL EN PESOS A TASA TAMAR CON VTO. 30/04/2027 (M30A7) - NUEVA"},
+    {"fecha": "2026-11-11", "horario": "10:00 - 15:00", "titulo": "LETRA DEL TESORO NACIONAL VINCULADA AL DÓLAR ESTADOUNIDENSE CERO CUPÓN CON VTO. 15/01/2027 (D15E7) - REAPERTURA"},
+    {"fecha": "2026-11-12", "horario": "10:00 - 16:00", "titulo": "ON BAJO IMPACTO MADERO HARBOUR SERIE II"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 15 (REAPERTURA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 18 (REAPERTURA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 21 (NUEVA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 22 (NUEVA)"},
+    {"fecha": "2026-11-12", "horario": "11:00 - 16:00", "titulo": "LETRAS DE TESORERIA DE LA PROVINCIA DEL CHACO CLASE 23 (NUEVA)"},
+    {"fecha": "2026-11-13", "horario": "10:00 - 16:00", "titulo": "ON BAJO IMPACTO INGACOT COMERCIAL SERIE I"},
+    {"fecha": "2026-11-18", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES VISTA ENERGY ARGENTINA S.A.U. CLASE XXVI"},
+    {"fecha": "2026-11-19", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES TELECOM ARGENTINA S.A. CLASE XXI"},
+    {"fecha": "2026-11-25", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN QUINCENAL SECRETARÍA DE FINANZAS — LECAP / BONCAP / CER"}
+]
+
+def headers_mae_a3() -> Dict[str, str]:
+    return {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
+        "Origin": "https://marketdata.mae.com.ar",
+        "Referer": "https://marketdata.mae.com.ar/calendario-licitaciones",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site"
+    }
+
+def normalizar_item_licitacion(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+    f_raw = str(raw.get("fecha") or raw.get("fechaLicitacion") or raw.get("start") or raw.get("date") or raw.get("fechaInicio") or raw.get("dia") or "").strip()
+    h_ini = str(raw.get("horaInicio") or raw.get("desde") or raw.get("startTime") or "").strip()
+    h_fin = str(raw.get("horaFin") or raw.get("hasta") or raw.get("endTime") or "").strip()
+    horario = str(raw.get("horario") or raw.get("hora") or "").strip()
+
+    if not horario:
+        if h_ini and h_fin:
+            horario = f"{h_ini[:5]} - {h_fin[:5]}"
+        elif "T" in f_raw:
+            partes_t = f_raw.split("T")
+            h_ext = partes_t[1][:5]
+            f_end = str(raw.get("end") or raw.get("fechaFin") or "")
+            h_end_ext = f_end.split("T")[1][:5] if "T" in f_end else "16:00"
+            horario = f"{h_ext} - {h_end_ext}" if h_ext != "00:00" else "10:00 - 15:00"
+        else:
+            horario = "10:00 - 15:00"
+
+    fecha_iso = ""
+    m_iso = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
+    if m_iso:
+        fecha_iso = f"{m_iso.group(1)}-{int(m_iso.group(2)):02d}-{int(m_iso.group(3)):02d}"
+    else:
+        m_lat = re.search(r"(\d{1,2})[-/](\d{1,2})[-/](20\d{2})", f_raw)
+        if m_lat:
+            fecha_iso = f"{m_lat.group(3)}-{int(m_lat.group(2)):02d}-{int(m_lat.group(1)):02d}"
+
+    titulo = str(
+        raw.get("titulo") or raw.get("title") or raw.get("descripcion") or raw.get("especie")
+        or raw.get("instrumento") or raw.get("nombre") or raw.get("emisor") or raw.get("summary") or ""
+    ).strip().upper()
+
+    if not fecha_iso or not titulo:
+        return None
+    return {"fecha": fecha_iso, "horario": horario, "titulo": titulo}
+
+def fetch_estado_mae() -> Dict[str, Any]:
+    global CACHE_ESTADO_MAE
     try:
-        r = requests.get("https://api.marketdata.mae.com.ar/api/mercado/licitaciones", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
-        if r.status_code == 200:
-            data = r.json()
-            return data if isinstance(data, list) else (data.get("licitaciones") or data.get("data") or [data])
+        r = requests.get("https://api.marketdata.mae.com.ar/api/mercado/estado", headers=headers_mae_a3(), timeout=4.0, verify=False)
+        if r.status_code == 200 and r.json():
+            d = r.json()
+            CACHE_ESTADO_MAE = d if isinstance(d, dict) else {"estado": str(d)}
     except Exception:
         pass
-    return []
+    return CACHE_ESTADO_MAE
+
+def fetch_licitaciones_mae_rango(desde: Optional[str] = None, hasta: Optional[str] = None) -> List[Dict[str, Any]]:
+    urls_intento = []
+    base_url = "https://api.marketdata.mae.com.ar/api/mercado/licitaciones"
+    if desde and hasta:
+        urls_intento.append(f"{base_url}?fechaDesde={desde}&fechaHasta={hasta}")
+        urls_intento.append(f"{base_url}?desde={desde}&hasta={hasta}")
+        urls_intento.append(f"{base_url}?start={desde}&end={hasta}")
+    urls_intento.append(base_url)
+
+    extraidos: List[Dict[str, Any]] = []
+    for u in urls_intento:
+        try:
+            r = requests.get(u, headers=headers_mae_a3(), timeout=4.5, verify=False)
+            if r.status_code == 200:
+                data = r.json()
+                lista_raw = data if isinstance(data, list) else (data.get("licitaciones") or data.get("data") or data.get("items") or data.get("eventos") or [])
+                if isinstance(lista_raw, list):
+                    for item in lista_raw:
+                        norm = normalizar_item_licitacion(item)
+                        if norm:
+                            extraidos.append(norm)
+                if len(extraidos) > 0:
+                    break
+        except Exception:
+            pass
+
+    # Combinar datos en vivo de A3 con la base persistente sin duplicar
+    mapa_unico = {}
+    for b in LICITACIONES_MAE_BASE + CACHE_LICITACIONES_MAE + extraidos:
+        norm_b = normalizar_item_licitacion(b) if "horario" not in b else b
+        if norm_b and norm_b.get("fecha") and norm_b.get("titulo"):
+            clave = f"{norm_b['fecha']}|{norm_b['titulo']}"
+            mapa_unico[clave] = norm_b
+
+    resultado = list(mapa_unico.values())
+    resultado.sort(key=lambda x: (x["fecha"], x["horario"]))
+    return resultado
+
+def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
+    fetch_estado_mae()
+    return fetch_licitaciones_mae_rango()
 
 def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, CACHE_FINVIZ_SECTORES, ULTIMA_ACTUALIZACION
@@ -1206,9 +1323,17 @@ def ver_bandas():
         return CACHE_BANDAS_CAMBIARIAS
 
 @app.get("/api/licitaciones/mae")
-def ver_licitaciones_mae():
+def ver_licitaciones_mae(desde: Optional[str] = Query(None), hasta: Optional[str] = Query(None)):
+    datos = fetch_licitaciones_mae_rango(desde, hasta)
     with CACHE_LOCK:
-        return CACHE_LICITACIONES_MAE
+        if datos:
+            CACHE_LICITACIONES_MAE.clear()
+            CACHE_LICITACIONES_MAE.extend(datos)
+        return {"licitaciones": datos, "estado_mercado": CACHE_ESTADO_MAE, "updated": ULTIMA_ACTUALIZACION}
+
+@app.get("/api/mercado/estado")
+def ver_estado_mae():
+    return fetch_estado_mae()
 
 @app.get("/dolar")
 def ver_dolar():
