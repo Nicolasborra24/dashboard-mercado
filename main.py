@@ -347,20 +347,9 @@ CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
     "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
     "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
     "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"},
-    "TASA_CAUCIONES": {
-        "variable": "TASA_CAUCIONES",
-        "descripcion": "Cauciones Bursátiles (Pesos TNA)",
-        "categoria": "tasas_y_monetario",
-        "valor_formateado": "9,50% TNA",
-        "variacion": "-63,6%",
-        "valor": 9.50,
-        "fecha": "Plazos: 1D • 7D • 14D",
-        "cauciones": [
-            {"plazo": "1D", "tasa": "9,50%", "dia": "-63,6%", "mes": "-47,2%", "anio": "-92,1%"},
-            {"plazo": "7D", "tasa": "19,00%", "dia": "-57,8%", "mes": "-2,1%", "anio": "-13,6%"},
-            {"plazo": "14D", "tasa": "20,90%", "dia": "-32,4%", "mes": "+8,9%", "anio": "-5,0%"}
-        ]
-    }
+    "TASA_CAUCION_1D": {"variable": "TASA_CAUCION_1D", "descripcion": "Caución Bursátil 1 Día (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "9,50% TNA", "variacion": "-63,6%", "var_mes": "-47,2%", "var_anio": "-92,1%", "valor": 9.50, "fecha": "Mes: -47,2% | Año: -92,1%"},
+    "TASA_CAUCION_7D": {"variable": "TASA_CAUCION_7D", "descripcion": "Caución Bursátil 7 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "19,00% TNA", "variacion": "-57,8%", "var_mes": "-2,1%", "var_anio": "-13,6%", "valor": 19.00, "fecha": "Mes: -2,1% | Año: -13,6%"},
+    "TASA_CAUCION_14D": {"variable": "TASA_CAUCION_14D", "descripcion": "Caución Bursátil 14 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "20,90% TNA", "variacion": "-32,4%", "var_mes": "+8,9%", "var_anio": "-5,0%", "valor": 20.90, "fecha": "Mes: +8,9% | Año: -5,0%"}
 }
 
 CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
@@ -893,9 +882,9 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
 
 def _actualizar_cauciones_en_vivo():
     base_c = {
-        "1D": {"tasa": 9.50, "dia": -63.6, "mes": -47.2, "anio": -92.1},
-        "7D": {"tasa": 19.00, "dia": -57.8, "mes": -2.1, "anio": -13.6},
-        "14D": {"tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
+        "1D": {"desc": "Caución Bursátil 1 Día (Pesos)", "tasa": 9.50, "dia": -63.6, "mes": -47.2, "anio": -92.1},
+        "7D": {"desc": "Caución Bursátil 7 Días (Pesos)", "tasa": 19.00, "dia": -57.8, "mes": -2.1, "anio": -13.6},
+        "14D": {"desc": "Caución Bursátil 14 Días (Pesos)", "tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
     }
     try:
         r = requests.get(
@@ -905,7 +894,6 @@ def _actualizar_cauciones_en_vivo():
         )
         if r.status_code == 200 and r.text:
             html_u = r.text.replace("&quot;", '"')
-            # A) Extraer desde JSON embebido
             for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"CAUCION\s*(1D|7D|14D)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
                 plz = m_obj.group(1).upper()
@@ -928,7 +916,6 @@ def _actualizar_cauciones_en_vivo():
                 if va is not None and -99.0 <= va <= 200.0:
                     base_c[plz]["anio"] = va
 
-            # B) Extraer desde tabla renderizada: CAUCION 1D | 9,50 | -63,6 | -47,2 | -92,1
             plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
             for plz in ("1D", "7D", "14D"):
                 mt = re.search(
@@ -950,29 +937,26 @@ def _actualizar_cauciones_en_vivo():
     def _f_pct(v):
         return f"+{v:.1f}%".replace(".", ",") if v > 0 else f"{v:.1f}%".replace(".", ",")
 
-    lista_c = []
+    CACHE_TASAS_PERSISTENTE.pop("TASA_CAUCIONES", None)
+
     for plz in ("1D", "7D", "14D"):
         d_p = base_c[plz]
-        lista_c.append({
-            "plazo": plz,
-            "tasa": f"{d_p['tasa']:.2f}%".replace(".", ","),
-            "dia": _f_pct(d_p["dia"]),
-            "mes": _f_pct(d_p["mes"]),
-            "anio": _f_pct(d_p["anio"])
-        })
-
-    t1 = base_c["1D"]["tasa"]
-    d1 = _f_pct(base_c["1D"]["dia"])
-    CACHE_TASAS_PERSISTENTE["TASA_CAUCIONES"] = {
-        "variable": "TASA_CAUCIONES",
-        "descripcion": "Cauciones Bursátiles (Pesos TNA)",
-        "categoria": "tasas_y_monetario",
-        "valor_formateado": f"{t1:.2f}% TNA".replace(".", ","),
-        "variacion": d1,
-        "valor": round(float(t1), 2),
-        "fecha": "Plazos: 1D • 7D • 14D",
-        "cauciones": lista_c
-    }
+        cod_var = f"TASA_CAUCION_{plz}"
+        t_val = d_p["tasa"]
+        var_d = _f_pct(d_p["dia"])
+        var_m = _f_pct(d_p["mes"])
+        var_a = _f_pct(d_p["anio"])
+        CACHE_TASAS_PERSISTENTE[cod_var] = {
+            "variable": cod_var,
+            "descripcion": d_p["desc"],
+            "categoria": "tasas_y_monetario",
+            "valor_formateado": f"{t_val:.2f}% TNA".replace(".", ","),
+            "variacion": var_d,
+            "var_mes": var_m,
+            "var_anio": var_a,
+            "valor": round(float(t_val), 2),
+            "fecha": f"Mes: {var_m} | Año: {var_a}"
+        }
 
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
