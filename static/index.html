@@ -267,9 +267,9 @@
 
     window.INDICES_ESTATICOS_BASE = [
       { variable: "TASA_CALL", descripcion: "TASA CALL INTERBANCARIA EN PESOS", subcategoria: "tasas", valor_formateado: "21,66% TNA", variacion: "0,0%", valor: 21.66, fecha: "Mercado" },
-      { variable: "MERVAL_ARS", descripcion: "S&P MERVAL EN PESOS", subcategoria: "argentina", valor_formateado: "84K", variacion: "+2.313,5%", valor: 84000.0, fecha: "08 Nov 2026" },
-      { variable: "MERVAL_USD", descripcion: "S&P MERVAL EN DÓLARES", subcategoria: "argentina", valor_formateado: "$54", variacion: "+2.292,9%", valor: 54.0, fecha: "08 Nov 2026" },
-      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "939 pb", variacion: "+59,4%", valor: 939.0, fecha: "08 Nov 2026" },
+      { variable: "MERVAL_ARS", descripcion: "MSCI MERVAL EN PESOS (MMSCI)", subcategoria: "argentina", valor_formateado: "84.387,25 pts", variacion: "+0,35%", valor: 84387.25, fecha: "En vivo" },
+      { variable: "MERVAL_USD", descripcion: "MSCI MERVAL EN DÓLARES (CCL)", subcategoria: "argentina", valor_formateado: "US$ 50,48", variacion: "+0,62%", valor: 50.48, fecha: "En vivo" },
+      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "852 pb", variacion: "-0,30%", valor: 852.0, fecha: "En vivo" },
       { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
       { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
       { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
@@ -401,7 +401,7 @@
     ];
 
     window.SUB_INDICES_INFO = {
-      argentina: { titulo: "Mercado Argentino — S&P Merval", desc: "Bolsa de Buenos Aires (BCBA / BYMA) & Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
+      argentina: { titulo: "Mercado Argentino — Índice MSCI Merval (MMSCI)", desc: "Bolsa de Buenos Aires (BCBA / BYMA) • En Pesos, Dólar CCL y Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
       estados_unidos: { titulo: "Mercado Estadounidense — S&P 500", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
       sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
     };
