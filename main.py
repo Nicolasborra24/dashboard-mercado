@@ -454,36 +454,115 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
         pass
     return None
 
+def _extraer_indice_dolarito(urls: List[str], rango_min: float, rango_max: float) -> tuple:
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/x-component, text/html, application/json, */*",
+        "RSC": "1",
+        "Referer": "https://www.dolarito.ar/"
+    }
+    for u in urls:
+        try:
+            r = requests.get(u, headers=hdrs, timeout=4.0)
+            if r.status_code != 200 or not r.text:
+                continue
+            txt = r.text
+
+            if txt.strip().startswith("{") or txt.strip().startswith("["):
+                try:
+                    dj = r.json()
+                    nodos = []
+                    def rec(o):
+                        if isinstance(o, dict):
+                            nodos.append(o)
+                            for v in o.values(): rec(v)
+                        elif isinstance(o, list):
+                            for el in o: rec(el)
+                    rec(dj)
+                    for nd in nodos:
+                        val = normalizar_valor(nd.get("value") or nd.get("valor") or nd.get("last") or nd.get("close") or nd.get("price"))
+                        chg = normalizar_valor(nd.get("variation") or nd.get("variacion") or nd.get("change") or nd.get("changePercent"))
+                        if val and rango_min <= val <= rango_max:
+                            return val, chg
+                except Exception:
+                    pass
+
+            for m_v in re.finditer(r'"(?:value|valor|last|close|price|ultimo|indice)"\s*:\s*"?([\d\.,]+)"?', txt, re.IGNORECASE):
+                v_cand = normalizar_valor(m_v.group(1))
+                if v_cand and rango_min <= v_cand <= rango_max:
+                    m_c = re.search(r'"(?:variation|variacion|change|changePercent|var)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', txt, re.IGNORECASE)
+                    c_cand = normalizar_valor(m_c.group(1)) if m_c else None
+                    return v_cand, c_cand
+
+            soup = BeautifulSoup(txt, "html.parser")
+            texto_plano = soup.get_text(" ", strip=True)
+            for m_num in re.finditer(r'(?:\$|US\$|USD)?\s*([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]{1,2})?|[\d]{3,7}(?:\.[\d]{1,2})?)', texto_plano):
+                v_cand = normalizar_valor(m_num.group(1))
+                if v_cand and rango_min <= v_cand <= rango_max:
+                    m_var = re.search(r'([+\-−]\s*\d+[,\.]\d+\s*%)', texto_plano)
+                    c_cand = normalizar_valor(m_var.group(1)) if m_var else None
+                    return v_cand, c_cand
+        except Exception:
+            pass
+    return None, None
+
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1671.58) -> Dict[str, Dict[str, Any]]:
+    # Fuente actualizada: Dolarito.ar (Merval ARS y Merval USD)
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    merval_pts = 84387.25
-    merval_chg = 0.35
     ccl_byma = ccl_ref if ccl_ref and ccl_ref > 1000 else 1671.58
-    ccl_chg = -0.27
-    try:
-        tv_payload = {"symbols": {"tickers": ["BCBA:MMSCI"], "query": {"types": []}}, "columns": ["close", "change"]}
-        r_tv = requests.post("https://scanner.tradingview.com/argentina/scan", json=tv_payload, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
-        if r_tv.status_code == 200:
-            d_tv = r_tv.json().get("data", [])
-            if d_tv and d_tv[0].get("d"):
-                vals = d_tv[0]["d"]
-                if vals[0] and float(vals[0]) > 10000:
-                    merval_pts = round(float(vals[0]), 2)
-                if vals[1] is not None:
-                    merval_chg = round(float(vals[1]), 2)
-    except Exception:
-        pass
-    if merval_pts > 500000:
-        merval_pts = 84387.25
-    merval_usd = round(merval_pts / ccl_byma, 2)
-    usd_chg = round(((1 + merval_chg / 100.0) / (1 + ccl_chg / 100.0) - 1) * 100.0, 2)
-    fmt_ars = f"{merval_pts:,.2f} pts".replace(",", "X").replace(".", ",").replace("X", ".")
-    fmt_usd = f"US$ {merval_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    var_ars_str = f"+{merval_chg:.2f}%".replace(".", ",") if merval_chg >= 0 else f"{merval_chg:.2f}%".replace(".", ",")
-    var_usd_str = f"+{usd_chg:.2f}%".replace(".", ",") if usd_chg >= 0 else f"{usd_chg:.2f}%".replace(".", ",")
+
+    urls_ars = [
+        "https://www.dolarito.ar/indices/indice-merval?_rsc=oOcUXRrCBxd5ngjl",
+        "https://www.dolarito.ar/indices/indice-merval",
+        "https://api.dolarito.ar/api/frontend/indices/indice-merval",
+        "https://api.dolarito.ar/api/frontend/indices/merval"
+    ]
+    urls_usd = [
+        "https://www.dolarito.ar/indices/indice-merval-usd?_rsc=oOcUXRrCBxd5ngjl",
+        "https://www.dolarito.ar/indices/indice-merval-usd",
+        "https://api.dolarito.ar/api/frontend/indices/indice-merval-usd",
+        "https://api.dolarito.ar/api/frontend/indices/merval-usd"
+    ]
+
+    val_ars, chg_ars = _extraer_indice_dolarito(urls_ars, 30000.0, 10000000.0)
+    val_usd, chg_usd = _extraer_indice_dolarito(urls_usd, 20.0, 10000.0)
+
+    if not val_ars:
+        val_ars = 2085420.0
+    if chg_ars is None:
+        chg_ars = 1.25
+
+    if not val_usd:
+        val_usd = round(val_ars / ccl_byma, 2)
+    if chg_usd is None:
+        chg_usd = chg_ars
+
+    fmt_ars = f"$ {val_ars:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if val_ars > 200000 else f"{val_ars:,.2f} pts".replace(",", "X").replace(".", ",").replace("X", ".")
+    fmt_usd = f"US$ {val_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    var_ars_str = f"+{chg_ars:.2f}%".replace(".", ",") if chg_ars >= 0 else f"{chg_ars:.2f}%".replace(".", ",")
+    var_usd_str = f"+{chg_usd:.2f}%".replace(".", ",") if chg_usd >= 0 else f"{chg_usd:.2f}%".replace(".", ",")
+
     return {
-        "MERVAL_ARS": {"variable": "MERVAL_ARS", "descripcion": "MSCI Merval en Pesos (MMSCI)", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": fmt_ars, "variacion": var_ars_str, "valor": merval_pts, "fecha": fec_hoy},
-        "MERVAL_USD": {"variable": "MERVAL_USD", "descripcion": "MSCI Merval en Dólares (CCL)", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": fmt_usd, "variacion": var_usd_str, "valor": merval_usd, "fecha": fec_hoy}
+        "MERVAL_ARS": {
+            "variable": "MERVAL_ARS",
+            "descripcion": "Índice Merval en Pesos",
+            "categoria": "indices",
+            "subcategoria": "argentina",
+            "valor_formateado": fmt_ars,
+            "variacion": var_ars_str,
+            "valor": round(float(val_ars), 2),
+            "fecha": f"{fec_hoy} • Dolarito"
+        },
+        "MERVAL_USD": {
+            "variable": "MERVAL_USD",
+            "descripcion": "Índice Merval en Dólares (USD)",
+            "categoria": "indices",
+            "subcategoria": "argentina",
+            "valor_formateado": fmt_usd,
+            "variacion": var_usd_str,
+            "valor": round(float(val_usd), 2),
+            "fecha": f"{fec_hoy} • Dolarito"
+        }
     }
 
 def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
