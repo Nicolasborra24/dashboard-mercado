@@ -1000,6 +1000,29 @@
                     </div>
                   </div>`;
               }
+              if (Array.isArray(item.cauciones) && item.cauciones.length > 0) {
+                return `
+                  <div class="mt-2.5 pt-1.5 border-t border-slate-800/60">
+                    <div class="grid grid-cols-5 text-[9px] font-bold uppercase tracking-wider text-slate-400 pb-1 border-b border-slate-800/60 font-mono">
+                      <span>Plazo</span>
+                      <span class="text-right">TNA</span>
+                      <span class="text-right">% Día</span>
+                      <span class="text-right">% Mes</span>
+                      <span class="text-right">% Año</span>
+                    </div>
+                    <div class="divide-y divide-slate-800/40 font-mono text-[11px]">
+                      ${item.cauciones.map(c => `
+                        <div class="grid grid-cols-5 items-center py-1">
+                          <span class="font-bold text-sky-300">Caución ${c.plazo}</span>
+                          <span class="text-right font-extrabold text-white ${animFlash}">${c.tasa}</span>
+                          <span class="text-right font-semibold ${String(c.dia).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${c.dia}</span>
+                          <span class="text-right ${String(c.mes).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${c.mes}</span>
+                          <span class="text-right ${String(c.anio).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${c.anio}</span>
+                        </div>
+                      `).join("")}
+                    </div>
+                  </div>`;
+              }
               if (item.precio_ars && item.precio_usd) {
                 return `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">

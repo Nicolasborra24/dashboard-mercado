@@ -346,7 +346,21 @@ CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
     "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
     "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
-    "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"}
+    "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"},
+    "TASA_CAUCIONES": {
+        "variable": "TASA_CAUCIONES",
+        "descripcion": "Cauciones Bursátiles (Pesos TNA)",
+        "categoria": "tasas_y_monetario",
+        "valor_formateado": "9,50% TNA",
+        "variacion": "-63,6%",
+        "valor": 9.50,
+        "fecha": "Plazos: 1D • 7D • 14D",
+        "cauciones": [
+            {"plazo": "1D", "tasa": "9,50%", "dia": "-63,6%", "mes": "-47,2%", "anio": "-92,1%"},
+            {"plazo": "7D", "tasa": "19,00%", "dia": "-57,8%", "mes": "-2,1%", "anio": "-13,6%"},
+            {"plazo": "14D", "tasa": "20,90%", "dia": "-32,4%", "mes": "+8,9%", "anio": "-5,0%"}
+        ]
+    }
 }
 
 CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
@@ -877,6 +891,89 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
         }
     return encontrados
 
+def _actualizar_cauciones_en_vivo():
+    base_c = {
+        "1D": {"tasa": 9.50, "dia": -63.6, "mes": -47.2, "anio": -92.1},
+        "7D": {"tasa": 19.00, "dia": -57.8, "mes": -2.1, "anio": -13.6},
+        "14D": {"tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
+    }
+    try:
+        r = requests.get(
+            "https://www.rava.com/",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
+            timeout=4.5
+        )
+        if r.status_code == 200 and r.text:
+            html_u = r.text.replace("&quot;", '"')
+            # A) Extraer desde JSON embebido
+            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"CAUCION\s*(1D|7D|14D)"[^{}]*\}', html_u, re.IGNORECASE):
+                b = m_obj.group(0)
+                plz = m_obj.group(1).upper()
+                m_u = re.search(r'"ultimo"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_d = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+
+                vu = normalizar_valor(m_u.group(1)) if m_u else None
+                vd = normalizar_valor(m_d.group(1)) if m_d else None
+                vm = normalizar_valor(m_m.group(1)) if m_m else None
+                va = normalizar_valor(m_a.group(1)) if m_a else None
+
+                if vu is not None and 0.5 <= vu <= 150.0:
+                    base_c[plz]["tasa"] = vu
+                if vd is not None and -99.0 <= vd <= 200.0:
+                    base_c[plz]["dia"] = vd
+                if vm is not None and -99.0 <= vm <= 200.0:
+                    base_c[plz]["mes"] = vm
+                if va is not None and -99.0 <= va <= 200.0:
+                    base_c[plz]["anio"] = va
+
+            # B) Extraer desde tabla renderizada: CAUCION 1D | 9,50 | -63,6 | -47,2 | -92,1
+            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+            for plz in ("1D", "7D", "14D"):
+                mt = re.search(
+                    r'\bCAUCION\s+' + plz + r'\b\s+([\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)',
+                    plano, re.IGNORECASE
+                )
+                if mt:
+                    u_v = normalizar_valor(mt.group(1))
+                    d_v = normalizar_valor(mt.group(2))
+                    m_v = normalizar_valor(mt.group(3))
+                    a_v = normalizar_valor(mt.group(4))
+                    if u_v is not None: base_c[plz]["tasa"] = u_v
+                    if d_v is not None: base_c[plz]["dia"] = d_v
+                    if m_v is not None: base_c[plz]["mes"] = m_v
+                    if a_v is not None: base_c[plz]["anio"] = a_v
+    except Exception:
+        pass
+
+    def _f_pct(v):
+        return f"+{v:.1f}%".replace(".", ",") if v > 0 else f"{v:.1f}%".replace(".", ",")
+
+    lista_c = []
+    for plz in ("1D", "7D", "14D"):
+        d_p = base_c[plz]
+        lista_c.append({
+            "plazo": plz,
+            "tasa": f"{d_p['tasa']:.2f}%".replace(".", ","),
+            "dia": _f_pct(d_p["dia"]),
+            "mes": _f_pct(d_p["mes"]),
+            "anio": _f_pct(d_p["anio"])
+        })
+
+    t1 = base_c["1D"]["tasa"]
+    d1 = _f_pct(base_c["1D"]["dia"])
+    CACHE_TASAS_PERSISTENTE["TASA_CAUCIONES"] = {
+        "variable": "TASA_CAUCIONES",
+        "descripcion": "Cauciones Bursátiles (Pesos TNA)",
+        "categoria": "tasas_y_monetario",
+        "valor_formateado": f"{t1:.2f}% TNA".replace(".", ","),
+        "variacion": d1,
+        "valor": round(float(t1), 2),
+        "fecha": "Plazos: 1D • 7D • 14D",
+        "cauciones": lista_c
+    }
+
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
@@ -909,6 +1006,7 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                     }
     except Exception:
         pass
+    _actualizar_cauciones_en_vivo()
     return list(CACHE_TASAS_PERSISTENTE.values())
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
