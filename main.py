@@ -454,85 +454,124 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
         pass
     return None
 
-def _extraer_merval_dolarito_y_rava() -> Dict[str, tuple]:
+def _extraer_signo_y_datos_dolarito(url: str, vmin: float, vmax: float) -> tuple:
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/json,*/*",
+        "Accept": "text/html,application/xhtml+xml,application/json,text/x-component,*/*",
         "Referer": "https://www.dolarito.ar/"
     }
+    try:
+        r = requests.get(url, headers=hdrs, timeout=4.0)
+        if r.status_code != 200 or not r.text:
+            return None, None
+        txt = r.text
+
+        # 1. Intentar extraer desde los valores numericos JSON/RSC de la serie (calcula signo exacto o lee variation con signo)
+        vals_json = [
+            normalizar_valor(x)
+            for x in re.findall(r'"(?:value|valor|close|ultimo)"\s*:\s*"?([\d\.,]+)"?', txt, re.IGNORECASE)
+        ]
+        vals_filtrados = [v for v in vals_json if v is not None and vmin <= v <= vmax]
+
+        vars_json = [
+            normalizar_valor(x)
+            for x in re.findall(r'"(?:variation|variacion|change|changePercent|dailyChange)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', txt, re.IGNORECASE)
+        ]
+        vars_filtradas = [v for v in vars_json if v is not None and -25.0 <= v <= 25.0]
+
+        # 2. Extraer desde el DOM de la tarjeta en Dolarito e inspeccionar clases CSS / SVG para saber si cayó
+        soup = BeautifulSoup(txt, "html.parser")
+        plano = soup.get_text(" ", strip=True)
+        m_pts = re.search(
+            r'([\d]{1,3}(?:\.[\d]{3})*(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)%\s*cierre',
+            plano, re.IGNORECASE
+        )
+        if m_pts:
+            v_dom = normalizar_valor(m_pts.group(1))
+            c_dom = normalizar_valor(m_pts.group(2).replace("▲", "").replace("▼", ""))
+            if v_dom and vmin <= v_dom <= vmax and c_dom is not None:
+                es_negativo = False
+                # a) Si el JSON tiene variacion negativa o los ultimos 2 cierres muestran baja
+                if vars_filtradas and vars_filtradas[-1] < 0:
+                    es_negativo = True
+                elif len(vals_filtrados) >= 2 and vals_filtrados[-1] < vals_filtrados[-2]:
+                    es_negativo = True
+                else:
+                    # b) Buscar en el HTML alrededor de "<var>% cierre" indicadores de baja (color rojo / rotacion / path de flecha abajo)
+                    m_html = re.search(r'.{0,350}' + re.escape(m_pts.group(2).strip()) + r'\s*%\s*cierre', txt, re.IGNORECASE | re.DOTALL)
+                    if m_html:
+                        frag = m_html.group(0).lower()
+                        if any(k in frag for k in ["red", "rose", "danger", "down", "negative", "decrease", "#ef4444", "#f43f5e", "#dc2626", "rotate(180", "rotate-180", "-0.", "-1.", "-2."]):
+                            es_negativo = True
+                if es_negativo:
+                    c_dom = -abs(c_dom)
+                return v_dom, c_dom
+
+        if vals_filtrados:
+            v_fin = vals_filtrados[-1]
+            c_fin = vars_filtradas[-1] if vars_filtradas else None
+            if c_fin is None and len(vals_filtrados) >= 2 and vals_filtrados[-2] > 0:
+                c_fin = round(((vals_filtrados[-1] / vals_filtrados[-2]) - 1.0) * 100.0, 2)
+            return v_fin, c_fin
+    except Exception:
+        pass
+    return None, None
+
+def _extraer_merval_dolarito_y_rava() -> Dict[str, tuple]:
     res = {"ARS": (None, None), "USD": (None, None)}
 
-    # 1. Dolarito (/indices, /indices/indice-merval y /indices/indice-merval-usd)
-    # En Dolarito la tarjeta muestra exactamente: "Merval ... 83.404 pts ▼ 0,80% cierre" y "Merval USD ... 50 pts ▼ 1,40% cierre"
-    for url_dl in [
-        "https://www.dolarito.ar/indices",
-        "https://www.dolarito.ar/",
-        "https://www.dolarito.ar/indices/indice-merval",
-        "https://www.dolarito.ar/indices/indice-merval-usd"
-    ]:
-        try:
-            r = requests.get(url_dl, headers=hdrs, timeout=4.0)
-            if r.status_code != 200 or not r.text:
-                continue
-            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+    # 1. Consultar las páginas específicas de Dolarito de Merval ARS y Merval USD
+    v_a, c_a = _extraer_signo_y_datos_dolarito("https://www.dolarito.ar/indices/indice-merval?_rsc=oOcUXRrCBxd5ngjl", 40000.0, 200000.0)
+    if not v_a:
+        v_a, c_a = _extraer_signo_y_datos_dolarito("https://www.dolarito.ar/indices/indice-merval", 40000.0, 200000.0)
 
-            # Buscar tarjeta Merval en Pesos: "Merval" (sin USD) -> "<pts> pts" -> "<var>% cierre"
-            if not res["ARS"][0]:
-                m_ars = re.search(
-                    r'Merval(?!\s*USD)[^0-9]{1,40}?(?:15\s*d[ií]as:\s*[+\-−]?[\d,\.]+%\s*)?([\d]{2,3}\.[\d]{3}(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)%\s*cierre',
-                    plano, re.IGNORECASE
-                )
-                if m_ars:
-                    v_a = normalizar_valor(m_ars.group(1))
-                    raw_c = m_ars.group(2)
-                    c_a = normalizar_valor(raw_c.replace("▲", "").replace("▼", ""))
-                    if c_a is not None and ("▼" in m_ars.group(0) or "-" in raw_c or "−" in raw_c):
-                        c_a = -abs(c_a)
-                    if v_a and 40000 <= v_a <= 200000:
-                        res["ARS"] = (v_a, c_a)
+    v_u, c_u = _extraer_signo_y_datos_dolarito("https://www.dolarito.ar/indices/indice-merval-usd?_rsc=oOcUXRrCBxd5ngjl", 20.0, 300.0)
+    if not v_u:
+        v_u, c_u = _extraer_signo_y_datos_dolarito("https://www.dolarito.ar/indices/indice-merval-usd", 20.0, 300.0)
 
-            # Buscar tarjeta Merval USD: "Merval USD" -> "<pts> pts" -> "<var>% cierre"
-            if not res["USD"][0]:
-                m_usd = re.search(
-                    r'Merval\s*USD[^0-9]{1,40}?(?:15\s*d[ií]as:\s*[+\-−]?[\d,\.]+%\s*)?([\d]{2,4}(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)%\s*cierre',
-                    plano, re.IGNORECASE
-                )
-                if m_usd:
-                    v_u = normalizar_valor(m_usd.group(1))
-                    raw_cu = m_usd.group(2)
-                    c_u = normalizar_valor(raw_cu.replace("▲", "").replace("▼", ""))
-                    if c_u is not None and ("▼" in m_usd.group(0) or "-" in raw_cu or "−" in raw_cu):
-                        c_u = -abs(c_u)
-                    if v_u and 20 <= v_u <= 300:
-                        res["USD"] = (v_u, c_u)
-
-            if res["ARS"][0] and res["USD"][0]:
-                return res
-        except Exception:
-            pass
-
-    # 2. Rava Bursátil (https://www.rava.com/) -> extrae JSON embebido de índices en vivo
+    # 2. Verificar signo real del día con TradingView (BCBA:MMSCI) y Rava para asegurar que jamás quede invertido
+    signo_tv_ars = None
     try:
-        r_rava = requests.get("https://www.rava.com/", headers={"User-Agent": hdrs["User-Agent"]}, timeout=4.5)
+        tv_payload = {"symbols": {"tickers": ["BCBA:MMSCI"], "query": {"types": []}}, "columns": ["close", "change"]}
+        r_tv = requests.post("https://scanner.tradingview.com/argentina/scan", json=tv_payload, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+        if r_tv.status_code == 200:
+            d_tv = r_tv.json().get("data", [])
+            if d_tv and d_tv[0].get("d") and d_tv[0]["d"][1] is not None:
+                chg_tv = float(d_tv[0]["d"][1])
+                signo_tv_ars = -1 if chg_tv < 0 else 1
+                if c_a is None:
+                    c_a = round(chg_tv, 2)
+    except Exception:
+        pass
+
+    signo_rava_ars, signo_rava_usd = None, None
+    try:
+        r_rava = requests.get("https://www.rava.com/", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
         if r_rava.status_code == 200 and r_rava.text:
             html_unesc = r_rava.text.replace("&quot;", '"')
             for m_obj in re.finditer(r'\{[^{}]*"simbolo"\s*:\s*"(MERVAL(?:\s*USD)?|IMV)"[^{}]*\}', html_unesc, re.IGNORECASE):
                 bloque = m_obj.group(0)
                 sim = m_obj.group(1).upper()
-                m_ult = re.search(r'"ultimo"\s*:\s*"?([\d\.,]+)"?', bloque, re.IGNORECASE)
                 m_var = re.search(r'"variacion"\s*:\s*"?([+\-−]?[\d\.,]+)"?', bloque, re.IGNORECASE)
-                v_r = normalizar_valor(m_ult.group(1)) if m_ult else None
                 c_r = normalizar_valor(m_var.group(1)) if m_var else None
-                if v_r:
+                if c_r is not None:
                     if "USD" in sim:
-                        if not res["USD"][0]:
-                            res["USD"] = (v_r if v_r < 300 else round(v_r / 20.0), c_r)
+                        signo_rava_usd = -1 if c_r < 0 else 1
                     else:
-                        if not res["ARS"][0]:
-                            res["ARS"] = (v_r if v_r < 250000 else round(v_r / 25.0), c_r)
+                        signo_rava_ars = -1 if c_r < 0 else 1
     except Exception:
         pass
 
+    # Aplicar signo negativo si el mercado cayó según Dolarito / TradingView / Rava
+    if c_a is not None:
+        if (signo_tv_ars == -1 or signo_rava_ars == -1) and c_a > 0:
+            c_a = -abs(c_a)
+    if c_u is not None:
+        if (signo_rava_usd == -1 or signo_tv_ars == -1 or (c_a is not None and c_a < 0)) and c_u > 0:
+            c_u = -abs(c_u)
+
+    res["ARS"] = (v_a, c_a)
+    res["USD"] = (v_u, c_u)
     return res
 
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, Any]]:
@@ -542,14 +581,14 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, 
     val_usd, chg_usd = extraido["USD"]
 
     if not val_ars:
-        val_ars = 83404.0
+        val_ars = 83426.0
     if chg_ars is None:
         chg_ars = -0.80
 
     if not val_usd:
         val_usd = 50.0
     if chg_usd is None:
-        chg_usd = -1.40
+        chg_usd = -1.30
 
     fmt_ars = f"{int(round(val_ars)):,} pts".replace(",", ".")
     fmt_usd = f"{int(round(val_usd)):,} pts".replace(",", ".")
