@@ -1000,6 +1000,19 @@
                     </div>
                   </div>`;
               }
+              if (item.precio_ars && item.precio_usd) {
+                return `
+                  <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
+                    <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400">Pesos (ARS/tn)</span>
+                      <span class="text-sm sm:text-base font-bold text-slate-100 font-mono truncate ${animFlash}">${item.precio_ars}</span>
+                    </div>
+                    <div class="bg-emerald-950/30 border border-emerald-500/40 rounded-xl px-2.5 py-1.5 flex flex-col">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Dólares (USD/tn)</span>
+                      <span class="text-sm sm:text-base font-extrabold text-white font-mono truncate ${animFlash}">${item.precio_usd}</span>
+                    </div>
+                  </div>`;
+              }
               const valMostrar = (item.variable === "DOLAR_NETFLIX" || item.variable === "DOLAR_TARJETA") && vVenta ? fmtP(vVenta) : valFmt;
               return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valMostrar}</span></div>`;
             })()}

@@ -566,6 +566,91 @@ PETROLEO_TICKERS_TOTAL = [
     ("HO=F", "ho.f", "ENERGIA_HEATING_OIL", "Aceite de Calefacción", "USD/gal", 2.26)
 ]
 
+AGRO_GRANOS_BASE = [
+    ("AGRO_SOJA", "Soja (Pizarra Rosario / Matba)", "ZS=F", "zs.f", 0.367437, 0.72, 298.50),
+    ("AGRO_MAIZ", "Maíz (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 1.08, 186.00),
+    ("AGRO_TRIGO", "Trigo (Pizarra Rosario / Matba)", "ZW=F", "zw.f", 0.367437, 0.96, 208.50),
+    ("AGRO_GIRASOL", "Girasol (Pizarra Rosario / Matba)", None, None, 1.0, 1.0, 365.00),
+    ("AGRO_SORGO", "Sorgo (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 0.92, 162.00),
+]
+
+def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    tc = tc_mayorista if tc_mayorista and tc_mayorista > 800 else 1545.50
+
+    pizarras_ars = {}
+    pizarras_var = {}
+    try:
+        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            mapa_nom = {"soja": "AGRO_SOJA", "maiz": "AGRO_MAIZ", "trigo": "AGRO_TRIGO", "girasol": "AGRO_GIRASOL", "sorgo": "AGRO_SORGO"}
+            for tr in soup.find_all("tr"):
+                c = tr.find_all(["td", "th"])
+                if len(c) >= 4:
+                    nom = c[0].get_text(strip=True).lower().replace("í", "i")
+                    if nom in mapa_nom:
+                        cod_g = mapa_nom[nom]
+                        v_n = normalizar_valor(c[1].get_text(strip=True))
+                        if v_n and v_n > 100:
+                            pizarras_ars[cod_g] = v_n
+                            pizarras_var[cod_g] = c[2].get_text(strip=True)
+    except Exception:
+        pass
+
+    def worker_grano(info):
+        cod, desc, sym_y, sym_s, factor_tn, ratio_local, def_usd = info
+        chg_pct = 0.0
+        usd_cbot = None
+        if sym_y:
+            q = fetch_quote_externa(sym_y, sym_s)
+            if q and q.get("price"):
+                p_raw = float(q["price"])
+                if p_raw > 150:
+                    usd_cbot = round((p_raw / 100.0) / factor_tn * ratio_local, 2)
+                chg_pct = float(q.get("change_pct", 0.0))
+
+        v_raw = pizarras_ars.get(cod)
+        if v_raw:
+            if v_raw > 50000:
+                precio_ars = round(v_raw, 2)
+                precio_usd = round(precio_ars / tc, 2)
+            else:
+                precio_usd = round(v_raw, 2)
+                precio_ars = round(precio_usd * tc, 2)
+        elif usd_cbot and usd_cbot > 100:
+            precio_usd = usd_cbot
+            precio_ars = round(precio_usd * tc, 2)
+        else:
+            precio_usd = def_usd
+            precio_ars = round(precio_usd * tc, 2)
+
+        fmt_ars = f"$ {precio_ars:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        fmt_usd = f"US$ {precio_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+        if chg_pct != 0.0:
+            var_str = f"+{chg_pct:.2f}%".replace(".", ",") if chg_pct > 0 else f"{chg_pct:.2f}%".replace(".", ",")
+        else:
+            var_str = pizarras_var.get(cod) or "0,00%"
+
+        return cod, {
+            "variable": cod,
+            "descripcion": desc,
+            "categoria": "commodities_agro_energia",
+            "precio_ars": fmt_ars,
+            "precio_usd": fmt_usd,
+            "valor_ars": precio_ars,
+            "valor_usd": precio_usd,
+            "valor_formateado": f"{fmt_ars} / {fmt_usd}",
+            "variacion": var_str,
+            "valor": precio_usd,
+            "fecha": f"{fec_hoy} • En vivo"
+        }
+
+    with ThreadPoolExecutor(max_workers=5) as ex:
+         pares = list(ex.map(worker_grano, AGRO_GRANOS_BASE))
+    return {k: v for k, v in pares}
+
 def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     def fetch_petroleo_worker(info):
@@ -1667,6 +1752,15 @@ def worker_refresco_continuo():
                         if ent_c: nuevo_item_d["entidad_compra"] = ent_c
                         if ent_v: nuevo_item_d["entidad_venta"] = ent_v
                         nuevo_agrupado["dolar_y_cambiario"].append(nuevo_item_d)
+            tc_agro = CACHE_BANDAS_CAMBIARIAS.get("dolar_mayorista", 1545.50)
+            for it_d in nuevo_agrupado["dolar_y_cambiario"]:
+                if it_d.get("variable") == "DOLAR_A3500" and it_d.get("valor", 0) > 800:
+                    tc_agro = float(it_d["valor"])
+                    break
+            agro_vivo = obtener_agro_en_vivo(tc_agro)
+            existentes_agro = [x for x in nuevo_agrupado["commodities_agro_energia"] if x.get("variable") not in agro_vivo]
+            nuevo_agrupado["commodities_agro_energia"] = list(agro_vivo.values()) + existentes_agro
+
             with CACHE_LOCK:
                 for k, v in nuevo_agrupado.items():
                     if len(v) > 0:
