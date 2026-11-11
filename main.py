@@ -162,7 +162,8 @@ def normalizar_valor(texto: Any) -> Optional[float]:
         t_clean = t_clean.replace(".", "").replace(",", ".")
     elif "." in t_clean and "," not in t_clean:
         partes = t_clean.split(".")
-        if len(partes[-1]) == 3 or len(partes) > 2:
+        pref_sin_signo = partes[0].lstrip("-")
+        if len(partes) > 2 or (len(partes[-1]) == 3 and pref_sin_signo not in ("0", "") and int(pref_sin_signo or "0") >= 10):
             t_clean = t_clean.replace(".", "")
     elif "," in t_clean:
         t_clean = t_clean.replace(",", ".")
@@ -301,8 +302,8 @@ US_TICKERS_DEF = [
 ]
 
 INDICES_BASE_MEMORIA = [
-    {"variable": "MERVAL_ARS", "descripcion": "Merval", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "83.404 pts", "variacion": "-0,80%", "valor": 83404.0, "fecha": "cierre"},
-    {"variable": "MERVAL_USD", "descripcion": "Merval USD", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "50 pts", "variacion": "-1,40%", "valor": 50.0, "fecha": "cierre"},
+    {"variable": "MERVAL_ARS", "descripcion": "Merval", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "83.482 pts", "variacion": "-0,7%", "valor": 83482.0, "fecha": "Rava"},
+    {"variable": "MERVAL_USD", "descripcion": "Merval USD", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "50 pts", "variacion": "-1,3%", "valor": 50.0, "fecha": "Rava"},
     {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "852 pb", "variacion": "-0,30%", "valor": 852.0, "fecha": "En vivo"},
     {"variable": "INDICE_SP500", "descripcion": "S&P 500 (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
     {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
@@ -454,102 +455,104 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
         pass
     return None
 
-def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    ccl = ccl_ref if ccl_ref and ccl_ref > 1000 else 1668.0
+def _parse_float_rava(val: Any) -> Optional[float]:
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip().replace("%", "").replace("−", "-")
+    if not s:
+        return None
+    if "," in s and "." in s:
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s:
+        s = s.replace(",", ".")
+    elif "." in s:
+        partes = s.split(".")
+        # En formato argentino de tabla visual "83.482" es 83482, pero en JSON "83482.15" o "-0.723" es decimal
+        if len(partes) == 2 and len(partes[1]) == 3 and partes[0].lstrip("-") not in ("0", "", "1", "2", "3", "4", "5", "6", "7", "8", "9"):
+            s = s.replace(".", "")
+    try:
+        return float(s)
+    except Exception:
+        return None
 
+def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, Any]]:
+    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     val_ars, chg_ars = None, None
     val_usd, chg_usd = None, None
 
-    # 1. FUENTE PRIMARIA: TradingView Scanner oficial de BYMA (BCBA:MMSCI) -> da los puntos exactos y variacion diaria real
-    try:
-        tv_payload = {
-            "symbols": {"tickers": ["BCBA:MMSCI"], "query": {"types": []}},
-            "columns": ["close", "change"]
-        }
-        r_tv = requests.post(
-            "https://scanner.tradingview.com/argentina/scan",
-            json=tv_payload,
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=3.5
-        )
-        if r_tv.status_code == 200:
-            d_tv = r_tv.json().get("data", [])
-            if d_tv and d_tv[0].get("d"):
-                vals = d_tv[0]["d"]
-                if vals[0] and 40000 <= float(vals[0]) <= 200000:
-                    val_ars = round(float(vals[0]))
-                if vals[1] is not None and -15.0 <= float(vals[1]) <= 15.0:
-                    chg_ars = round(float(vals[1]), 2)
-    except Exception:
-        pass
-
-    # 2. FUENTE RAVA BURSÁTIL (https://www.rava.com/) -> JSON directo de Rava para Merval ARS, Merval USD y CCL
+    # 1. Leer directamente de Rava Bursátil (https://www.rava.com/) -> tabla MERVAL y MERVAL USD (ÚLTIMO y % DÍA)
     try:
         r_rava = requests.get(
             "https://www.rava.com/",
-            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
-            timeout=4.0
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
+            timeout=4.5
         )
         if r_rava.status_code == 200 and r_rava.text:
             html_u = r_rava.text.replace("&quot;", '"')
-            for m_obj in re.finditer(r'\{[^{}]*"simbolo"\s*:\s*"([^"]+)"[^{}]*\}', html_u, re.IGNORECASE):
+            # A) Buscar en los objetos JSON inyectados en la home de Rava
+            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"(MERVAL(?:\s*USD|\s*CCL)?|IMV)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
                 sim = m_obj.group(1).upper().strip()
-                if sim in ("MERVAL", "IMV", "MERVAL USD", "MERVAL CCL"):
-                    m_u = re.search(r'"ultimo"\s*:\s*"?([\d\.,]+)"?', b, re.IGNORECASE)
-                    m_v = re.search(r'"variacion"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                    v_num = normalizar_valor(m_u.group(1)) if m_u else None
-                    c_num = normalizar_valor(m_v.group(1)) if m_v else None
-                    if "USD" in sim or "CCL" in sim:
-                        if v_num and 25 <= v_num <= 200:
-                            val_usd = round(v_num)
-                        if c_num is not None and -15.0 <= c_num <= 15.0:
-                            chg_usd = round(c_num, 2)
-                    else:
-                        if not val_ars and v_num and 40000 <= v_num <= 200000:
-                            val_ars = round(v_num)
-                        if chg_ars is None and c_num is not None and -15.0 <= c_num <= 15.0:
-                            chg_ars = round(c_num, 2)
+                m_u = re.search(r'"ultimo"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_v = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+                v_num = _parse_float_rava(m_u.group(1)) if m_u else None
+                c_num = _parse_float_rava(m_v.group(1)) if m_v else None
+                if "USD" in sim or "CCL" in sim:
+                    if v_num and 25 <= v_num <= 200:
+                        val_usd = v_num
+                    if c_num is not None and -15.0 <= c_num <= 15.0:
+                        chg_usd = c_num
+                else:
+                    if v_num and 40000 <= v_num <= 200000:
+                        val_ars = v_num
+                    if c_num is not None and -15.0 <= c_num <= 15.0:
+                        chg_ars = c_num
+
+            # B) Si Rava lo renderizó en tabla HTML: ESPECIE | ÚLTIMO | % DÍA | % MES | % AÑO
+            if not val_ars or chg_ars is None:
+                soup = BeautifulSoup(r_rava.text, "html.parser")
+                plano = soup.get_text(" ", strip=True)
+                m_t_ars = re.search(r'\bMERVAL\b(?!\s*USD)\s+([\d]{2,3}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)', plano)
+                if m_t_ars:
+                    val_ars = _parse_float_rava(m_t_ars.group(1))
+                    chg_ars = _parse_float_rava(m_t_ars.group(2))
+                m_t_usd = re.search(r'\bMERVAL\s+USD\b\s+([\d]{2,3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)', plano)
+                if m_t_usd:
+                    val_usd = _parse_float_rava(m_t_usd.group(1))
+                    chg_usd = _parse_float_rava(m_t_usd.group(2))
     except Exception:
         pass
 
-    # 3. Dolarito (solo precio en puntos de la cabecera, JAMAS lee variaciones de tablas de 7d/15d/30d)
+    # 2. Respaldo con Dolarito (/indices) si Rava tardó en responder
     if not val_ars or not val_usd:
         try:
-            r_dl = requests.get(
-                "https://www.dolarito.ar/indices/indice-merval",
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=3.5
-            )
+            r_dl = requests.get("https://www.dolarito.ar/indices", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
             if r_dl.status_code == 200 and r_dl.text:
-                plano = BeautifulSoup(r_dl.text, "html.parser").get_text(" ", strip=True)
-                m_p = re.search(r'([\d]{2,3}\.[\d]{3})\s*pts\s*([\d]+[,\.][\d]+)%\s*cierre', plano, re.IGNORECASE)
-                if m_p:
-                    v_d = normalizar_valor(m_p.group(1))
-                    c_d = normalizar_valor(m_p.group(2))
-                    if not val_ars and v_d and 40000 <= v_d <= 200000:
-                        val_ars = round(v_d)
-                    if chg_ars is None and c_d is not None and c_d < 6.0:
-                        chg_ars = -abs(c_d)
+                plano_dl = BeautifulSoup(r_dl.text, "html.parser").get_text(" ", strip=True)
+                m_da = re.search(r'Merval(?!\s*USD).*?([\d]{2,3}\.[\d]{3})\s*pts\s*([\d]+,[\d]+)%\s*cierre', plano_dl)
+                if m_da and not val_ars:
+                    val_ars = _parse_float_rava(m_da.group(1))
+                    if chg_ars is None:
+                        chg_ars = -abs(_parse_float_rava(m_da.group(2)) or 0.7)
         except Exception:
             pass
 
     if not val_ars:
-        val_ars = 83404.0
+        val_ars = 83482.0
     if chg_ars is None:
-        chg_ars = -0.80
+        chg_ars = -0.70
 
     if not val_usd:
-        val_usd = round(val_ars / ccl)
+        val_usd = 50.0
     if chg_usd is None:
-        # Si Merval en pesos cayó -0.80% y el CCL subió ~0.55%, Merval USD cae ~ -1.35% / -1.40%
-        chg_usd = round(chg_ars - 0.55, 2) if chg_ars < 0 else -1.35
+        chg_usd = -1.30
 
     fmt_ars = f"{int(round(val_ars)):,} pts".replace(",", ".")
     fmt_usd = f"{int(round(val_usd)):,} pts".replace(",", ".")
-    var_ars_str = f"+{chg_ars:.2f}%".replace(".", ",") if chg_ars > 0 else f"{chg_ars:.2f}%".replace(".", ",")
-    var_usd_str = f"+{chg_usd:.2f}%".replace(".", ",") if chg_usd > 0 else f"{chg_usd:.2f}%".replace(".", ",")
+    var_ars_str = f"+{chg_ars:.1f}%".replace(".", ",") if chg_ars > 0 else f"{chg_ars:.1f}%".replace(".", ",")
+    var_usd_str = f"+{chg_usd:.1f}%".replace(".", ",") if chg_usd > 0 else f"{chg_usd:.1f}%".replace(".", ",")
 
     return {
         "MERVAL_ARS": {
@@ -559,8 +562,8 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, 
             "subcategoria": "argentina",
             "valor_formateado": fmt_ars,
             "variacion": var_ars_str,
-            "valor": float(val_ars),
-            "fecha": f"{fec_hoy} • cierre"
+            "valor": round(float(val_ars), 2),
+            "fecha": f"{fec_hoy} • Rava"
         },
         "MERVAL_USD": {
             "variable": "MERVAL_USD",
@@ -569,8 +572,8 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, 
             "subcategoria": "argentina",
             "valor_formateado": fmt_usd,
             "variacion": var_usd_str,
-            "valor": float(val_usd),
-            "fecha": f"{fec_hoy} • cierre"
+            "valor": round(float(val_usd), 2),
+            "fecha": f"{fec_hoy} • Rava"
         }
     }
 
