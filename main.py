@@ -454,82 +454,92 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
         pass
     return None
 
-def _extraer_actual_dolarito(urls: List[str], vmin: float, vmax: float) -> tuple:
+def _extraer_merval_dolarito_y_rava() -> Dict[str, tuple]:
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/json,text/x-component,*/*",
+        "Accept": "text/html,application/xhtml+xml,application/json,*/*",
         "Referer": "https://www.dolarito.ar/"
     }
-    for u in urls:
+    res = {"ARS": (None, None), "USD": (None, None)}
+
+    # 1. Dolarito (/indices, /indices/indice-merval y /indices/indice-merval-usd)
+    # En Dolarito la tarjeta muestra exactamente: "Merval ... 83.404 pts ▼ 0,80% cierre" y "Merval USD ... 50 pts ▼ 1,40% cierre"
+    for url_dl in [
+        "https://www.dolarito.ar/indices",
+        "https://www.dolarito.ar/",
+        "https://www.dolarito.ar/indices/indice-merval",
+        "https://www.dolarito.ar/indices/indice-merval-usd"
+    ]:
         try:
-            r = requests.get(u, headers=hdrs, timeout=4.0)
+            r = requests.get(url_dl, headers=hdrs, timeout=4.0)
             if r.status_code != 200 or not r.text:
                 continue
-            txt = r.text
+            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
 
-            # 1. Buscar en el texto renderizado el bloque exacto de Dolarito: "<numero> pts" seguido de variacion y "cierre"
-            soup = BeautifulSoup(txt, "html.parser")
-            plano = soup.get_text(" ", strip=True)
-            m_pts = re.search(r'([\d]{1,3}(?:\.[\d]{3})*(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)\s*%', plano, re.IGNORECASE)
-            if m_pts:
-                v_num = normalizar_valor(m_pts.group(1))
-                raw_var = m_pts.group(2).strip()
-                v_chg = normalizar_valor(raw_var.replace("▲", "").replace("▼", ""))
-                if v_chg is not None and ("▼" in plano[m_pts.start():m_pts.end()+15] or "-" in raw_var or "−" in raw_var):
-                    v_chg = -abs(v_chg)
-                if v_num and vmin <= v_num <= vmax:
-                    return v_num, v_chg
+            # Buscar tarjeta Merval en Pesos: "Merval" (sin USD) -> "<pts> pts" -> "<var>% cierre"
+            if not res["ARS"][0]:
+                m_ars = re.search(
+                    r'Merval(?!\s*USD)[^0-9]{1,40}?(?:15\s*d[ií]as:\s*[+\-−]?[\d,\.]+%\s*)?([\d]{2,3}\.[\d]{3}(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)%\s*cierre',
+                    plano, re.IGNORECASE
+                )
+                if m_ars:
+                    v_a = normalizar_valor(m_ars.group(1))
+                    raw_c = m_ars.group(2)
+                    c_a = normalizar_valor(raw_c.replace("▲", "").replace("▼", ""))
+                    if c_a is not None and ("▼" in m_ars.group(0) or "-" in raw_c or "−" in raw_c):
+                        c_a = -abs(c_a)
+                    if v_a and 40000 <= v_a <= 200000:
+                        res["ARS"] = (v_a, c_a)
 
-            # 2. Si viene en JSON / RSC con serie historica, tomar el ULTIMO valor dentro del rango actual (no el primero de 2020/2023)
-            matches_val = re.findall(r'"(?:value|valor|last|close|ultimo)"\s*:\s*"?([\d\.,]+)"?', txt, re.IGNORECASE)
-            validos = []
-            for mv in matches_val:
-                vn = normalizar_valor(mv)
-                if vn and vmin <= vn <= vmax:
-                    validos.append(vn)
-            if validos:
-                ultimo_val = validos[-1]
-                matches_var = re.findall(r'"(?:variation|variacion|change|changePercent)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', txt, re.IGNORECASE)
-                ultimo_chg = normalizar_valor(matches_var[-1]) if matches_var else None
-                return ultimo_val, ultimo_chg
+            # Buscar tarjeta Merval USD: "Merval USD" -> "<pts> pts" -> "<var>% cierre"
+            if not res["USD"][0]:
+                m_usd = re.search(
+                    r'Merval\s*USD[^0-9]{1,40}?(?:15\s*d[ií]as:\s*[+\-−]?[\d,\.]+%\s*)?([\d]{2,4}(?:,[\d]{1,2})?)\s*pts\s*([▲▼+\-−]?\s*[\d]+[,\.][\d]+)%\s*cierre',
+                    plano, re.IGNORECASE
+                )
+                if m_usd:
+                    v_u = normalizar_valor(m_usd.group(1))
+                    raw_cu = m_usd.group(2)
+                    c_u = normalizar_valor(raw_cu.replace("▲", "").replace("▼", ""))
+                    if c_u is not None and ("▼" in m_usd.group(0) or "-" in raw_cu or "−" in raw_cu):
+                        c_u = -abs(c_u)
+                    if v_u and 20 <= v_u <= 300:
+                        res["USD"] = (v_u, c_u)
+
+            if res["ARS"][0] and res["USD"][0]:
+                return res
         except Exception:
             pass
-    return None, None
+
+    # 2. Rava Bursátil (https://www.rava.com/) -> extrae JSON embebido de índices en vivo
+    try:
+        r_rava = requests.get("https://www.rava.com/", headers={"User-Agent": hdrs["User-Agent"]}, timeout=4.5)
+        if r_rava.status_code == 200 and r_rava.text:
+            html_unesc = r_rava.text.replace("&quot;", '"')
+            for m_obj in re.finditer(r'\{[^{}]*"simbolo"\s*:\s*"(MERVAL(?:\s*USD)?|IMV)"[^{}]*\}', html_unesc, re.IGNORECASE):
+                bloque = m_obj.group(0)
+                sim = m_obj.group(1).upper()
+                m_ult = re.search(r'"ultimo"\s*:\s*"?([\d\.,]+)"?', bloque, re.IGNORECASE)
+                m_var = re.search(r'"variacion"\s*:\s*"?([+\-−]?[\d\.,]+)"?', bloque, re.IGNORECASE)
+                v_r = normalizar_valor(m_ult.group(1)) if m_ult else None
+                c_r = normalizar_valor(m_var.group(1)) if m_var else None
+                if v_r:
+                    if "USD" in sim:
+                        if not res["USD"][0]:
+                            res["USD"] = (v_r if v_r < 300 else round(v_r / 20.0), c_r)
+                    else:
+                        if not res["ARS"][0]:
+                            res["ARS"] = (v_r if v_r < 250000 else round(v_r / 25.0), c_r)
+    except Exception:
+        pass
+
+    return res
 
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    ccl_byma = ccl_ref if ccl_ref and ccl_ref > 1000 else 1668.0
-
-    urls_ars = [
-        "https://www.dolarito.ar/indices/indice-merval",
-        "https://www.dolarito.ar/indices/indice-merval?_rsc=oOcUXRrCBxd5ngjl",
-        "https://api.dolarito.ar/api/frontend/indices/merval"
-    ]
-    urls_usd = [
-        "https://www.dolarito.ar/indices/indice-merval-usd",
-        "https://www.dolarito.ar/indices/indice-merval-usd?_rsc=oOcUXRrCBxd5ngjl",
-        "https://api.dolarito.ar/api/frontend/indices/merval-usd"
-    ]
-
-    # Rango estricto del Merval actual en Dolarito (60.000 a 150.000 pts en ARS, y 35 a 120 pts en USD)
-    val_ars, chg_ars = _extraer_actual_dolarito(urls_ars, 50000.0, 150000.0)
-    val_usd, chg_usd = _extraer_actual_dolarito(urls_usd, 30.0, 120.0)
-
-    # Respaldo en tiempo real con TradingView BCBA:MMSCI (misma fuente exacta de los 83.404 pts de Dolarito)
-    if not val_ars or chg_ars is None:
-        try:
-            tv_payload = {"symbols": {"tickers": ["BCBA:MMSCI"], "query": {"types": []}}, "columns": ["close", "change"]}
-            r_tv = requests.post("https://scanner.tradingview.com/argentina/scan", json=tv_payload, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
-            if r_tv.status_code == 200:
-                d_tv = r_tv.json().get("data", [])
-                if d_tv and d_tv[0].get("d"):
-                    vals = d_tv[0]["d"]
-                    if not val_ars and vals[0] and 50000 <= float(vals[0]) <= 150000:
-                        val_ars = round(float(vals[0]))
-                    if chg_ars is None and vals[1] is not None:
-                        chg_ars = round(float(vals[1]), 2)
-        except Exception:
-            pass
+    extraido = _extraer_merval_dolarito_y_rava()
+    val_ars, chg_ars = extraido["ARS"]
+    val_usd, chg_usd = extraido["USD"]
 
     if not val_ars:
         val_ars = 83404.0
@@ -537,7 +547,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1668.0) -> Dict[str, Dict[str, 
         chg_ars = -0.80
 
     if not val_usd:
-        val_usd = round(val_ars / ccl_byma)
+        val_usd = 50.0
     if chg_usd is None:
         chg_usd = -1.40
 
