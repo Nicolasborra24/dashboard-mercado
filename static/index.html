@@ -267,9 +267,9 @@
 
     window.INDICES_ESTATICOS_BASE = [
       { variable: "TASA_CALL", descripcion: "TASA CALL INTERBANCARIA EN PESOS", subcategoria: "tasas", valor_formateado: "21,66% TNA", variacion: "0,0%", valor: 21.66, fecha: "Mercado" },
-      { variable: "MERVAL_ARS", descripcion: "MERVAL", subcategoria: "argentina", valor_formateado: "83.404 pts", variacion: "-0,80%", valor: 83404.0, fecha: "cierre" },
-      { variable: "MERVAL_USD", descripcion: "MERVAL USD", subcategoria: "argentina", valor_formateado: "50 pts", variacion: "-1,40%", valor: 50.0, fecha: "cierre" },
-      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "852 pb", variacion: "-0,30%", valor: 852.0, fecha: "En vivo" },
+      { variable: "MERVAL_ARS", descripcion: "MERVAL", subcategoria: "argentina", valor_formateado: "83.482 pts", variacion: "-0,7%", var_mes: "-9,3%", var_anio: "-22,1%", valor: 83482.0, fecha: "Mes: -9,3% | Año: -22,1%" },
+      { variable: "MERVAL_USD", descripcion: "MERVAL USD", subcategoria: "argentina", valor_formateado: "50 pts", variacion: "-1,3%", var_mes: "-10,0%", var_anio: "-28,7%", valor: 50.0, fecha: "Mes: -10,0% | Año: -28,7%" },
+      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "852 pb", variacion: "-0,1%", var_mes: "+8,3%", var_anio: "+49,2%", valor: 852.0, fecha: "Mes: +8,3% | Año: +49,2%" },
       { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
       { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
       { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
@@ -365,7 +365,7 @@
     window.CONFIG_SECCIONES = {
       home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-gauge-high", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario (BCRA)", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-landmark", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
-      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", sub: "9 Cotizaciones en Vivo (Dolarito)", icono: "fa-dollar-sign", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
+      dolar_y_cambiario: { titulo: "Mercado Cambiario y Cotizaciones", sub: "9 Cotizaciones en Vivo ", icono: "fa-dollar-sign", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       monedas: { titulo: "Divisas y Tipos de Cambio Internacionales", sub: "Pares de Monedas Globales", icono: "fa-money-bill-1-wave", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       cripto: { titulo: "Cotizaciones Criptomonedas en Vivo", sub: "Binance Spot Stream en Tiempo Real", icono: "fa-brands fa-bitcoin", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-400/40 text-amber-300" },
       cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina y Americana", sub: "Rendimientos BYMA y US Treasuries", icono: "fa-file-invoice-dollar", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
@@ -1017,9 +1017,14 @@
               return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valMostrar}</span></div>`;
             })()}
           </div>
-          <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+          <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between gap-1.5 text-[11px]">
             ${varBadge}
-            <span class="text-slate-400 text-[10px] font-mono">${fecha}</span>
+            ${item.var_mes && item.var_anio ? `
+              <div class="flex items-center gap-1.5 font-mono text-[10px]">
+                <span class="px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-300">Mes: <strong class="${String(item.var_mes).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${item.var_mes}</strong></span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-300">Año: <strong class="${String(item.var_anio).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${item.var_anio}</strong></span>
+              </div>
+            ` : `<span class="text-slate-400 text-[10px] font-mono">${fecha}</span>`}
           </div>
         </div>`;
     }
