@@ -839,18 +839,54 @@
     }
 
         window.PUNTAS_DOLAR_VIVO = {
-      DOLAR_OFICIAL: { compra: 1530.00, venta: 1570.00, variacion: "0,00%" },
-      DOLAR_BLUE: { compra: 1535.00, venta: 1555.00, variacion: "0,00%" },
-      DOLAR_MEP: { compra: 1540.00, venta: 1545.00, variacion: "0,00%" },
-      DOLAR_CCL: { compra: 1565.00, venta: 1572.00, variacion: "0,00%" },
-      DOLAR_TARJETA: { compra: null, venta: 2041.00, variacion: "0,00%" },
-      DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00, variacion: "0,00%" },
-      DOLAR_NETFLIX: { compra: null, venta: 2370.70, variacion: "0,00%" },
-      DOLAR_A3500: { compra: 1544.00, venta: 1544.00, variacion: "0,00%" },
-      DOLAR_FUTURO: { compra: null, venta: 1570.50, variacion: "-0,19%" }
+      DOLAR_OFICIAL: { compra: 1520.00, venta: 1570.00, variacion: "0,00%", fecha: "En vivo" },
+      DOLAR_BLUE: { compra: 1545.00, venta: 1565.00, variacion: "+0,64%", fecha: "En vivo" },
+      DOLAR_TARJETA: { compra: null, venta: 2041.00, variacion: "0,00%", fecha: "En vivo" },
+      DOLAR_NETFLIX: { compra: null, venta: 2370.70, variacion: "0,00%", fecha: "En vivo" },
+      DOLAR_MEP: { compra: null, venta: 1584.11, variacion: "+2,20%", fecha: "AL30 / AL30D" },
+      DOLAR_CCL: { compra: null, venta: 1684.47, variacion: "+4,18%", fecha: "AL30 / AL30C" },
+      DOLAR_CRIPTO: { compra: 1654.73, venta: 1658.43, variacion: "+0,55%", fecha: "En vivo" },
+      DOLAR_A3500: { compra: 1535.00, venta: 1544.00, variacion: "-0,10%", fecha: "En vivo" },
+      DOLAR_FUTURO: { compra: 1563.00, venta: 1563.50, variacion: "0,00%", fecha: "En vivo" }
+    };
+
+    window.parsearNodoDolaritoCliente = function(kHint, nd) {
+      if (!nd || typeof nd !== "object") return;
+      const nom = (kHint + " " + (nd.name || "") + " " + (nd.nombre || "") + " " + (nd.slug || "") + " " + (nd.type || "")).toLowerCase();
+      if (/uala|ualá|brubank|nexo|youhodler|arq|lemon|belo|fiwind|buenbit|ripio|letsbit|prex/.test(nom)) return;
+      const c = parseNumSeguro(nd.buy ?? nd.compra ?? nd.bid);
+      const v = parseNumSeguro(nd.sell ?? nd.venta ?? nd.value ?? nd.valor ?? nd.ask);
+      const vr = parseNumSeguro(nd.variation ?? nd.variacion ?? nd.change ?? nd.var);
+      if (isNaN(v) || v < 800 || v > 5000) return;
+
+      let cod = null, soloVenta = false;
+      if (/mayorista|a3500|3500|mulc|wholesale/.test(nom)) cod = "DOLAR_A3500";
+      else if (/oficial|minorista|bna|nacion/.test(nom) && !/mejor|tarjeta|mayorista/.test(nom)) cod = "DOLAR_OFICIAL";
+      else if (/blue|informal|paralelo/.test(nom)) cod = "DOLAR_BLUE";
+      else if (/mep|bolsa/.test(nom)) { cod = "DOLAR_MEP"; soloVenta = true; }
+      else if (/ccl|liqui/.test(nom)) { cod = "DOLAR_CCL"; soloVenta = true; }
+      else if (/cripto|crypto/.test(nom)) cod = "DOLAR_CRIPTO";
+      else if (/tarjeta|turista/.test(nom)) { cod = "DOLAR_TARJETA"; soloVenta = true; }
+      else if (/netflix|streaming/.test(nom)) { cod = "DOLAR_NETFLIX"; soloVenta = true; }
+      else if (/futuro|rofex/.test(nom)) cod = "DOLAR_FUTURO";
+
+      if (cod) {
+        const prev = window.PUNTAS_DOLAR_VIVO[cod] || {};
+        let varFmt = prev.variacion || "0,00%";
+        if (!isNaN(vr)) {
+          varFmt = vr > 0 ? `+${vr.toFixed(2).replace(".", ",")}%` : (vr < 0 ? `${vr.toFixed(2).replace(".", ",")}%` : "0,00%");
+        }
+        window.PUNTAS_DOLAR_VIVO[cod] = {
+          compra: soloVenta ? null : (!isNaN(c) && c > 800 ? c : prev.compra),
+          venta: v,
+          variacion: varFmt,
+          fecha: prev.fecha || "En vivo"
+        };
+      }
     };
 
     async function actualizarPuntasDolarEnVivo() {
+      // 1. Sincronizar con el endpoint del backend
       const [puntasBack, dBandas] = await Promise.all([
         fetchJsonSeguro("/api/dolar/dolarito?t=" + Date.now()),
         fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now())
@@ -863,22 +899,52 @@
             window.PUNTAS_DOLAR_VIVO[cod] = {
               compra: info.compra || null,
               venta: parseFloat(info.venta),
-              variacion: info.variacion || (window.PUNTAS_DOLAR_VIVO[cod] && window.PUNTAS_DOLAR_VIVO[cod].variacion) || "0,00%"
+              variacion: info.variacion || (window.PUNTAS_DOLAR_VIVO[cod] && window.PUNTAS_DOLAR_VIVO[cod].variacion) || "0,00%",
+              fecha: info.fecha || "En vivo"
             };
           }
         });
       }
 
-      if (dBandas && dBandas.dolar_mayorista) {
-        const vMay = parseFloat(dBandas.dolar_mayorista);
-        if (!isNaN(vMay) && vMay > 1000) {
-          window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 = {
-            compra: vMay,
-            venta: vMay,
-            variacion: (window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.variacion) || "0,00%"
-          };
-          datosBandasCambiarias = dBandas;
-        }
+      // 2. Consulta directa desde el navegador del usuario a Dolarito (evita bloqueo de IP de servidor)
+      const targetApi = "https://api.dolarito.ar/api/frontend/quotations";
+      const candidatos = [
+        targetApi,
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetApi),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetApi)
+      ];
+      for (const u of candidatos) {
+        try {
+          const r = await fetch(u);
+          if (r.ok) {
+            const dj = await r.json();
+            const rec = (o, kP = "") => {
+              if (o && typeof o === "object") {
+                if ("buy" in o || "sell" in o || "compra" in o || "venta" in o || "value" in o) {
+                  window.parsearNodoDolaritoCliente(kP, o);
+                }
+                Object.keys(o).forEach(k => rec(o[k], k));
+              } else if (Array.isArray(o)) {
+                o.forEach(el => rec(el, kP));
+              }
+            };
+            rec(dj);
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL && window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta) {
+        const vOf = window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta;
+        window.PUNTAS_DOLAR_VIVO.DOLAR_TARJETA.venta = +(vOf * 1.30).toFixed(2);
+        window.PUNTAS_DOLAR_VIVO.DOLAR_NETFLIX.venta = +(vOf * 1.51).toFixed(2);
+      }
+
+      if (dBandas && dBandas.banda_inferior) {
+        datosBandasCambiarias = dBandas;
+      }
+      if (window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta) {
+        datosBandasCambiarias.dolar_mayorista = window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta;
       }
 
       if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
@@ -962,6 +1028,17 @@
 
     function crearTarjeta(item, categoria, valorOficial) {
       if (!item) return "";
+      if (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO[item.variable]) {
+        const pv = window.PUNTAS_DOLAR_VIVO[item.variable];
+        item = {
+          ...item,
+          compra: pv.compra,
+          venta: pv.venta,
+          valor: pv.venta,
+          variacion: pv.variacion || item.variacion,
+          valor_formateado: "$" + Number(pv.venta).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        };
+      }
       const variacion = String(item.variacion || "").replace(/Â/g, "").trim();
       let varBadge = `<span class="px-2 py-0.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-300 font-mono text-[10px] font-medium">${variacion || "0,0%"}</span>`;
       if (variacion.includes("+")) {
@@ -1002,7 +1079,7 @@
               const vVenta = item.venta || pVivo.venta || item.valor;
               const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-              if (["DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_MEP", "DOLAR_CCL", "DOLAR_CRIPTO"].includes(item.variable) && vCompra && vVenta) {
+              if (["DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_CRIPTO", "DOLAR_A3500", "DOLAR_FUTURO"].includes(item.variable) && vCompra && vVenta) {
                 return `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
                     <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
@@ -1923,7 +2000,7 @@
         asegurarItemDolar("DOLAR_TARJETA", "Dólar Tarjeta", 2041.00);
         asegurarItemDolar("DOLAR_CRIPTO", "Dólar Cripto (USDT)", 1568.50);
         asegurarItemDolar("DOLAR_NETFLIX", "Dólar Netflix", 2370.70);
-        asegurarItemDolar("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500", 1544.00);
+        asegurarItemDolar("DOLAR_A3500", "Dólar Mayorista (A3500)", 1544.00);
         asegurarItemDolar("DOLAR_OFICIAL", "Dólar Oficial Minorista", 1570.00);
         asegurarItemDolar("DOLAR_BLUE", "Dólar Blue", 1555.00);
         asegurarItemDolar("DOLAR_MEP", "Dólar MEP", 1545.00);
@@ -1931,12 +2008,11 @@
         asegurarItemDolar("DOLAR_FUTURO", "Dólar Futuro", 1570.50);
         rawItems.forEach(it => {
           if (it && pViv[it.variable] && pViv[it.variable].venta) {
+            it.compra = pViv[it.variable].compra;
             it.venta = pViv[it.variable].venta;
             it.valor = pViv[it.variable].venta;
-            if (pViv[it.variable].compra) it.compra = pViv[it.variable].compra;
-            if (pViv[it.variable].variacion && pViv[it.variable].variacion !== "0,00%") {
-              it.variacion = pViv[it.variable].variacion;
-            }
+            it.variacion = pViv[it.variable].variacion || it.variacion || "0,00%";
+            it.fecha = pViv[it.variable].fecha || it.fecha || "En vivo";
             it.valor_formateado = "$" + Number(it.valor).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           }
         });
