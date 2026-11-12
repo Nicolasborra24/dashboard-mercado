@@ -340,7 +340,7 @@ SJB_CURVAS_URLS = {
 
 CACHE_CURVAS_SJB: Dict[str, Any] = {}
 CACHE_INFLACION_IMPLICITA: Any = None
-CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 703.82, "banda_superior": 1974.20, "dolar_mayorista": 1545.50}
+CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 703.82, "banda_superior": 1974.20, "dolar_mayorista": 1544.00}
 CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
@@ -1056,6 +1056,8 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                             res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
                         elif any(k in nom for k in ["netflix", "streaming"]) and "DOLAR_NETFLIX" not in res:
                             res["DOLAR_NETFLIX"] = {"compra": None, "venta": round(v, 2), "fecha": fec_hoy}
+                        elif any(k in nom for k in ["mayorista", "a3500", "comunicacion a 3500", "mayorista bna", "mulc"]) and "DOLAR_A3500" not in res:
+                            res["DOLAR_A3500"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
         except Exception:
             pass
 
@@ -1088,25 +1090,39 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
             "fecha": fec_hoy
         }
 
+    if "DOLAR_A3500" not in res:
+        try:
+            r_ html = requests.get("https://www.dolarito.ar/", headers=headers, timeout=3.5)
+            if r_html.status_code == 200:
+                m_may = re.search(r'mayorista[^\d]{1,60}(1[\.,]?\d{3}(?:[\.,]\d{1,2})?)', r_html.text, re.IGNORECASE)
+                if m_may:
+                    v_m = normalizar_valor(m_may.group(1))
+                    if v_m and 1300 < v_m < 2500:
+                        res["DOLAR_A3500"] = {"compra": round(v_m, 2), "venta": round(v_m, 2), "fecha": fec_hoy}
+        except Exception:
+            pass
+    if "DOLAR_A3500" not in res:
+        res["DOLAR_A3500"] = {"compra": 1544.00, "venta": 1544.00, "fecha": fec_hoy}
+
     return res
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    usd_oficial = 1015.50
-    try:
-        r_a = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=168.1_T_CAMBIOR_D_0_0_26&limit=1&sort=desc", timeout=3.0)
-        if r_a.status_code == 200:
-            d = r_a.json().get("data", [])
-            if d and len(d[0]) >= 2 and d[0][1]:
-                usd_oficial = float(d[0][1])
-                items.append({
-                    "variable": "DOLAR_A3500", "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
-                    "categoria": "dolar_y_cambiario", "valor_formateado": f"${usd_oficial:.2f}",
-                    "variacion": "0,0%", "valor": usd_oficial, "fecha": d[0][0]
-                })
-    except Exception:
-        pass
+    puntas_init = obtener_puntas_dolarito()
+    usd_oficial = float((puntas_init.get("DOLAR_A3500") or {}).get("venta") or 1544.00)
+    fmt_may = f"${usd_oficial:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    items.append({
+        "variable": "DOLAR_A3500",
+        "descripcion": "Tipo de Cambio Mayorista Comunicación A3500",
+        "categoria": "dolar_y_cambiario",
+        "compra": usd_oficial,
+        "venta": usd_oficial,
+        "valor_formateado": fmt_may,
+        "variacion": "0,0%",
+        "valor": usd_oficial,
+        "fecha": fec_hoy
+    })
 
     rates = {}
     try:
@@ -1291,18 +1307,18 @@ def fetch_inflacion_implicita_sjb():
     return None
 
 def fetch_bandas_dolarito() -> Dict[str, Any]:
-    b_inf, b_sup, d_may = 703.82, 1974.20, 1545.50
+    b_inf, b_sup, d_may = 703.82, 1974.20, 1544.00
     try:
-        h = {"User-Agent": "Mozilla/5.0"}
+        h = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=3.0)
         if r1.status_code == 200:
             b_inf = float(r1.json().get("value") or r1.json().get("valor") or b_inf)
         r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=3.0)
         if r2.status_code == 200:
             b_sup = float(r2.json().get("value") or r2.json().get("valor") or b_sup)
-        r_m = requests.get("https://dolarapi.com/v1/dolares/mayorista", headers=h, timeout=3.0)
-        if r_m.status_code == 200:
-            d_may = float(r_m.json().get("venta") or r_m.json().get("compra") or d_may)
+        puntas_dl = obtener_puntas_dolarito()
+        if "DOLAR_A3500" in puntas_dl and puntas_dl["DOLAR_A3500"].get("venta"):
+            d_may = float(puntas_dl["DOLAR_A3500"]["venta"])
     except Exception:
         pass
     return {"banda_inferior": round(b_inf, 2), "banda_superior": round(b_sup, 2), "dolar_mayorista": round(d_may, 2)}
@@ -1891,7 +1907,8 @@ def worker_refresco_continuo():
                 ("DOLAR_BLUE", "Dólar Blue"),
                 ("DOLAR_TARJETA", "Dólar Tarjeta"),
                 ("DOLAR_CRIPTO", "Dólar Cripto (USDT)"),
-                ("DOLAR_NETFLIX", "Dólar Netflix")
+                ("DOLAR_NETFLIX", "Dólar Netflix"),
+                ("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500")
             ]:
                 if cod_p in puntas_dl:
                     info_p = puntas_dl[cod_p]

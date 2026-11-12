@@ -424,7 +424,7 @@
     let datosGlobales = {};
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
-    let datosBandasCambiarias = { banda_inferior: 703.82, banda_superior: 1974.20, dolar_mayorista: 1545.50 };
+    let datosBandasCambiarias = { banda_inferior: 703.82, banda_superior: 1974.20, dolar_mayorista: 1544.00 };
     let datosFinvizSectores = null;
 
     let categoriaActiva = "home";
@@ -843,7 +843,8 @@
       DOLAR_BLUE: { compra: 1535.00, venta: 1555.00 },
       DOLAR_TARJETA: { compra: null, venta: 2041.00 },
       DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00 },
-      DOLAR_NETFLIX: { compra: null, venta: 2370.70 }
+      DOLAR_NETFLIX: { compra: null, venta: 2370.70 },
+      DOLAR_A3500: { compra: 1544.00, venta: 1544.00 }
     };
 
     async function actualizarPuntasDolarEnVivo() {
@@ -863,6 +864,15 @@
             window.PUNTAS_DOLAR_VIVO.DOLAR_CRIPTO = { compra: !isNaN(c) ? c : v, venta: v };
           }
         });
+      }
+
+      const dBandas = await fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now());
+      if (dBandas && dBandas.dolar_mayorista) {
+        const vMay = parseFloat(dBandas.dolar_mayorista);
+        if (!isNaN(vMay) && vMay > 1000) {
+          window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 = { compra: vMay, venta: vMay };
+          datosBandasCambiarias = dBandas;
+        }
       }
 
       if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
@@ -1908,6 +1918,7 @@
         asegurarItemDolar("DOLAR_TARJETA", "Dólar Tarjeta", 2041.00);
         asegurarItemDolar("DOLAR_CRIPTO", "Dólar Cripto (USDT)", 1568.50);
         asegurarItemDolar("DOLAR_NETFLIX", "Dólar Netflix", 2370.70);
+        asegurarItemDolar("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500", 1544.00);
         rawItems.forEach(it => {
           if (it && pViv[it.variable] && pViv[it.variable].venta) {
             it.venta = pViv[it.variable].venta;
@@ -1927,7 +1938,7 @@
 
         const bInf = datosBandasCambiarias.banda_inferior || 703.82;
         const bSup = datosBandasCambiarias.banda_superior || 1974.20;
-        const dMay = datosBandasCambiarias.dolar_mayorista || (valorOficial || 1545.50);
+        const dMay = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta) || datosBandasCambiarias.dolar_mayorista || 1544.00;
         const pMedio = (bInf + bSup) / 2;
         const ancho = bSup - bInf;
         const pctClamped = Math.max(0, Math.min(100, ancho > 0 ? ((dMay - bInf) / ancho) * 100 : 0));
