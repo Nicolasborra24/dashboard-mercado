@@ -409,41 +409,18 @@ CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
 }
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
-    "tasas_y_monetario": list(CACHE_TASAS_PERSISTENTE.values()) + [
-        {"variable": "TASA_TAMAR", "descripcion": "Tasa Referencia TAMAR", "categoria": "tasas_y_monetario", "valor_formateado": "34,25% TNA", "variacion": "0,0%", "valor": 34.25, "fecha": "En vivo"},
-        {"variable": "TASA_BADLAR", "descripcion": "Tasa BADLAR", "categoria": "tasas_y_monetario", "valor_formateado": "32,50% TNA", "variacion": "0,0%", "valor": 32.50, "fecha": "En vivo"}
-    ],
-    "dolar_y_cambiario": [
-        {"variable": "DOLAR_OFICIAL", "descripcion": "Dólar Oficial", "categoria": "dolar_y_cambiario", "compra": 1520.00, "venta": 1570.00, "valor": 1570.00, "valor_formateado": "$1.570,00", "variacion": "0,00%", "fecha": "En vivo"},
-        {"variable": "DOLAR_BLUE", "descripcion": "Dólar Blue", "categoria": "dolar_y_cambiario", "compra": 1545.00, "venta": 1565.00, "valor": 1565.00, "valor_formateado": "$1.565,00", "variacion": "+0,64%", "fecha": "En vivo"},
-        {"variable": "DOLAR_NETFLIX", "descripcion": "Dólar Netflix", "categoria": "dolar_y_cambiario", "compra": None, "venta": 2370.70, "valor": 2370.70, "valor_formateado": "$2.370,70", "variacion": "0,00%", "fecha": "En vivo"},
-        {"variable": "DOLAR_MEP", "descripcion": "Dólar MEP", "categoria": "dolar_y_cambiario", "compra": None, "venta": 1584.11, "valor": 1584.11, "valor_formateado": "$1.584,11", "variacion": "+2,20%", "fecha": "AL30 / AL30D"},
-        {"variable": "DOLAR_CCL", "descripcion": "Dólar CCL", "categoria": "dolar_y_cambiario", "compra": None, "venta": 1684.47, "valor": 1684.47, "valor_formateado": "$1.684,47", "variacion": "+4,18%", "fecha": "AL30 / AL30C"},
-        {"variable": "DOLAR_CRIPTO", "descripcion": "Dólar Cripto", "categoria": "dolar_y_cambiario", "compra": 1654.73, "venta": 1658.43, "valor": 1658.43, "valor_formateado": "$1.658,43", "variacion": "+0,55%", "fecha": "En vivo"},
-        {"variable": "DOLAR_TARJETA", "descripcion": "Dólar Tarjeta", "categoria": "dolar_y_cambiario", "compra": None, "venta": 2041.00, "valor": 2041.00, "valor_formateado": "$2.041,00", "variacion": "0,00%", "fecha": "En vivo"},
-        {"variable": "DOLAR_A3500", "descripcion": "Dólar Mayorista", "categoria": "dolar_y_cambiario", "compra": 1535.00, "venta": 1544.00, "valor": 1544.00, "valor_formateado": "$1.544,00", "variacion": "-0,10%", "fecha": "En vivo"},
-        {"variable": "DOLAR_FUTURO", "descripcion": "Dólar Futuro", "categoria": "dolar_y_cambiario", "compra": 1563.00, "venta": 1563.50, "valor": 1563.50, "valor_formateado": "$1.563,50", "variacion": "0,00%", "fecha": "En vivo"}
-    ],
+    "tasas_y_monetario": list(CACHE_TASAS_PERSISTENTE.values()),
+    "dolar_y_cambiario": [],
     "monedas": [],
     "cripto": [],
     "cotizacion_bonos": [],
     "indices": [dict(x) for x in INDICES_BASE_MEMORIA],
-    "inflacion_y_ajuste": [
-        {"variable": "INFLACION_MENSUAL", "descripcion": "Inflación Mensual", "categoria": "inflacion_y_ajuste", "valor_formateado": "2,4%", "variacion": "2,4%", "valor": 2.4, "fecha": "Último corte"},
-        {"variable": "INFLACION_INTERANUAL", "descripcion": "Inflación Interanual", "categoria": "inflacion_y_ajuste", "valor_formateado": "49,5%", "variacion": "49,5%", "valor": 49.5, "fecha": "Último corte"},
-        {"variable": "INFLACION_REM", "descripcion": "Inflación Esperada (12m)", "categoria": "inflacion_y_ajuste", "valor_formateado": "21,8%", "variacion": "Proyección 12m", "valor": 21.8, "fecha": "Proyección"}
-    ],
-    "metales": [
-        {"variable": "METALES_XAU", "descripcion": "ORO (XAU)", "categoria": "metales", "valor_formateado": "4.070,10 US$/ozt", "variacion": "+0,45%", "valor": 4070.10, "fecha": "En vivo"}
-    ],
-    "petroleo": [
-        {"variable": "PETROLEO_WTI", "descripcion": "Petróleo Crudo WTI", "categoria": "petroleo", "valor_formateado": "71,24 USD/bbl", "variacion": "+0,32%", "valor": 71.24, "fecha": "En vivo"}
-    ],
+    "inflacion_y_ajuste": [],
+    "metales": [],
+    "petroleo": [],
     "macro_y_fiscal": [],
     "micro_y_sectores": [],
-    "commodities_agro_energia": [
-        {"variable": "AGRO_SOJA", "descripcion": "Soja (Granos)", "categoria": "commodities_agro_energia", "precio_ars": "$ 461.035", "precio_usd": "US$ 298,50", "valor_ars": 461035.0, "valor_usd": 298.50, "valor_formateado": "$ 461.035 / US$ 298,50", "variacion": "+0,40%", "valor": 298.50, "fecha": "En vivo"}
-    ]
+    "commodities_agro_energia": []
 }
 CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
@@ -809,11 +786,11 @@ PETROLEO_TICKERS_TOTAL = [
 ]
 
 AGRO_GRANOS_BASE = [
-    ("AGRO_SOJA", "Soja (Granos)", "ZS=F", "zs.f", 0.367437, 0.72, 298.50),
-    ("AGRO_MAIZ", "Maíz (Granos)", "ZC=F", "zc.f", 0.393680, 1.08, 186.00),
-    ("AGRO_TRIGO", "Trigo (Granos)", "ZW=F", "zw.f", 0.367437, 0.96, 208.50),
-    ("AGRO_GIRASOL", "Girasol (Granos)", None, None, 1.0, 1.0, 365.00),
-    ("AGRO_SORGO", "Sorgo (Granos)", "ZC=F", "zc.f", 0.393680, 0.92, 162.00),
+    ("AGRO_SOJA", "Soja (Pizarra Rosario / Matba)", "ZS=F", "zs.f", 0.367437, 0.72, 298.50),
+    ("AGRO_MAIZ", "Maíz (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 1.08, 186.00),
+    ("AGRO_TRIGO", "Trigo (Pizarra Rosario / Matba)", "ZW=F", "zw.f", 0.367437, 0.96, 208.50),
+    ("AGRO_GIRASOL", "Girasol (Pizarra Rosario / Matba)", None, None, 1.0, 1.0, 365.00),
+    ("AGRO_SORGO", "Sorgo (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 0.92, 162.00),
 ]
 
 def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, Any]]:
@@ -985,7 +962,7 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
             encontrados["INFLACION_REM"] = {
                 "variable": "INFLACION_REM",
                 "descripcion": f"Inflación Esperada REM 12m ({mes_corte})" if mes_corte else "Inflación Esperada REM (12m)",
-                "categoria": "inflacion_y_ajuste", "valor_formateado": fmt_pct, "variacion": "Proyección 12m", "valor": v_num,
+                "categoria": "inflacion_y_ajuste", "valor_formateado": fmt_pct, "variacion": "REM BCRA", "valor": v_num,
                 "fecha": f"Corte: {mes_corte}" if mes_corte else "REM BCRA"
             }
         elif id_var == "27" or ("inflacion mensual" in desc_low and "esperada" not in desc_low and "rem" not in desc_low):
@@ -1030,7 +1007,7 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
     if "INFLACION_REM" not in encontrados:
         encontrados["INFLACION_REM"] = {
             "variable": "INFLACION_REM", "descripcion": "Inflación Esperada REM (12m)",
-            "categoria": "inflacion_y_ajuste", "valor_formateado": "21,8%", "variacion": "Proyección 12m", "valor": 21.8, "fecha": "Proyección Anual"
+            "categoria": "inflacion_y_ajuste", "valor_formateado": "21,8%", "variacion": "REM BCRA", "valor": 21.8, "fecha": "BCRA Oficial"
         }
     return encontrados
 
@@ -1697,7 +1674,7 @@ def fetch_finviz_sectores(res_usa: Optional[List[Dict[str, Any]]] = None) -> Opt
     return data_res
 
 
-CACHE_ESTADO_MAE: Dict[str, Any] = {"estado": "ABIERTO", "descripcion": "Mercado Abierto"}
+CACHE_ESTADO_MAE: Dict[str, Any] = {"estado": "ABIERTO", "descripcion": "A3 Mercados - Market Data"}
 
 LICITACIONES_MAE_BASE = [
     {"fecha": "2026-11-04", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXII - NUEVA"},
