@@ -368,6 +368,7 @@ SJB_CURVAS_URLS = {
     "soberanos": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=MEP",
     "soberanos_mep": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=MEP",
     "soberanos_ars": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS",
+    "soberanos_ccl": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=CCL",
     "duales": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=DUALES&moneda=ARS&incluir_cer_tamar=true&incluir_dl_tamar=true",
     "tamar": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LETAM&moneda=ARS",
     "dollar_linked": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=D%C3%B3lar%20Linked&moneda=ARS"
@@ -1156,8 +1157,8 @@ BASE_DOLARITO_EXACTA: Dict[str, Dict[str, Any]] = {
     "DOLAR_BLUE": {"compra": 1545.00, "venta": 1565.00, "variacion": "+0,64%", "fecha": "En vivo"},
     "DOLAR_TARJETA": {"compra": None, "venta": 2041.00, "variacion": "0,00%", "fecha": "En vivo"},
     "DOLAR_NETFLIX": {"compra": None, "venta": 2370.70, "variacion": "0,00%", "fecha": "En vivo"},
-    "DOLAR_MEP": {"compra": None, "venta": 1584.11, "variacion": "0,00%", "fecha": "AL30 / AL30D (Rava)"},
-    "DOLAR_CCL": {"compra": None, "venta": 1684.47, "variacion": "0,00%", "fecha": "AL30 / AL30C (Rava)"},
+    "DOLAR_MEP": {"compra": None, "venta": 1584.11, "variacion": "0,00%", "fecha": "AL30 / AL30D"},
+    "DOLAR_CCL": {"compra": None, "venta": 1684.47, "variacion": "0,00%", "fecha": "AL30 / AL30C"},
     "DOLAR_CRIPTO": {"compra": 1654.73, "venta": 1658.43, "variacion": "+0,55%", "fecha": "En vivo"},
     "DOLAR_A3500": {"compra": 1535.00, "venta": 1544.00, "variacion": "-0,10%", "fecha": "En vivo"},
     "DOLAR_FUTURO": {"compra": 1563.00, "venta": 1563.50, "variacion": "0,00%", "fecha": "En vivo"}
@@ -1175,7 +1176,6 @@ def _fmt_var_dolar(val_raw: Any, default_str: str = "0,00%") -> str:
 
 def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     res_rava: Dict[str, Dict[str, Any]] = {}
-    hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
     ts_ms = int(time.time() * 1000)
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -1188,21 +1188,26 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     bonos_ant: Dict[str, float] = {}
     rava_directo: Dict[str, Dict[str, Any]] = {}
 
-    # A) Consultar páginas de Rava (Home + Bonos + Dólares) para extraer AL30, AL30D, AL30C y paneles Rava
+    # A) Consultar Rava (Home + Dólares + Perfil Dólar CCL + Bonos)
     urls_rava = [
         obtener_html_rava_compartido(ttl=3.5),
+        f"https://www.rava.com/cotizaciones/dolares?_t={ts_ms}",
         f"https://www.rava.com/cotizaciones/bonos?_t={ts_ms}",
-        f"https://www.rava.com/cotizaciones/dolares?_t={ts_ms}"
+        f"https://www.rava.com/perfil/dolar%20ccl?_t={ts_ms}",
+        f"https://www.rava.com/perfil/dolar%20mep?_t={ts_ms}"
     ]
 
     for src in urls_rava:
         raw_html = ""
         if src and src.startswith("http"):
-            # Si ya tenemos las 3 patas de AL30 y el panel directo de Rava, no hace falta pedir otra URL
-            if all(k in bonos_px for k in ("AL30", "AL30D", "AL30C")) and "DOLAR_MEP" in rava_directo and "DOLAR_CCL" in rava_directo:
+            if (
+                all(k in bonos_px for k in ("AL30", "AL30D", "AL30C"))
+                and "DOLAR_MEP" in rava_directo
+                and "DOLAR_CCL" in rava_directo
+            ):
                 break
             try:
-                rr = GLOBAL_HTTP_SESSION.get(src, headers=hdrs, timeout=3.5)
+                rr = GLOBAL_HTTP_SESSION.get(src, headers=hdrs, timeout=3.2)
                 if rr.status_code == 200:
                     raw_html = rr.text
             except Exception:
@@ -1215,14 +1220,17 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
 
         html_u = raw_html.replace("&quot;", '"').replace("\\/", "/")
 
-        # 1. Extraer desde JSON embebido en Rava
-        for m_obj in re.finditer(r'\{[^{}]*?"(?:simbolo|especie|nombre|identificador|titulo)"\s*:\s*"([^"]+)"[^{}]*?\}', html_u, re.IGNORECASE):
+        # 1. Extraer objetos JSON de Rava (tanto con clave "simbolo"/"especie" en cualquier orden)
+        for m_obj in re.finditer(r'\{[^{}]*\}', html_u):
             b = m_obj.group(0)
-            sim = m_obj.group(1).upper().strip()
+            m_sim = re.search(r'"(?:simbolo|especie|nombre|identificador|titulo|name)"\s*:\s*"([^"]+)"', b, re.IGNORECASE)
+            if not m_sim:
+                continue
+            sim = m_sim.group(1).upper().strip()
 
-            m_u = re.search(r'"(?:ultimo|venta|valor|close|cierre|px_last)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+            m_u = re.search(r'"(?:ultimo|venta|valor|close|cierre|px_last|last)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
             m_c = re.search(r'"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
-            m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+            m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc|var)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
             m_ant = re.search(r'"(?:anterior|cierre_ant|prev)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
 
             vu = normalizar_valor(m_u.group(1)) if m_u else None
@@ -1230,10 +1238,8 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
             vd_num = normalizar_valor(m_d.group(1)) if m_d else None
             vant = normalizar_valor(m_ant.group(1)) if m_ant else None
 
-            # Capturar AL30 / GD30 y sus especies D y C en Contado Inmediato o 24hs
-            sim_clean = sim.replace(" CI", "").replace(" 24HS", "").replace(" 48HS", "").strip()
+            sim_clean = re.sub(r'\s+(CI|24HS|48HS|SPOT)$', '', sim).strip()
             if sim_clean in ("AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C") and vu and vu > 15:
-                # Priorizar especie exacta si aún no fue cargada
                 if sim_clean not in bonos_px or sim == sim_clean:
                     bonos_px[sim_clean] = vu
                     if vd_num is not None and -35 <= vd_num <= 35:
@@ -1245,10 +1251,10 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                 continue
 
             cod_t = None
-            if any(k in sim for k in ("MEP", "BOLSA")):
-                cod_t = "DOLAR_MEP"
-            elif any(k in sim for k in ("CCL", "LIQUI", "CONTADO")):
+            if any(k in sim for k in ("CCL", "LIQUI", "CONTADO CON LIQUI", "DOLAR CCL", "DÓLAR CCL")):
                 cod_t = "DOLAR_CCL"
+            elif any(k in sim for k in ("MEP", "BOLSA", "DOLAR MEP", "DÓLAR MEP")):
+                cod_t = "DOLAR_MEP"
             elif any(k in sim for k in ("MAYORISTA", "A3500", "3500")):
                 cod_t = "DOLAR_A3500"
             elif any(k in sim for k in ("BLUE", "INFORMAL", "PARALELO")):
@@ -1256,20 +1262,20 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
             elif any(k in sim for k in ("OFICIAL", "MINORISTA", "BNA")):
                 cod_t = "DOLAR_OFICIAL"
 
-            if cod_t and cod_t not in rava_directo:
+            if cod_t and (cod_t not in rava_directo or rava_directo[cod_t].get("var_num") is None):
                 rava_directo[cod_t] = {
                     "compra": None if cod_t in ("DOLAR_MEP", "DOLAR_CCL") else (round(vc, 2) if (vc and vc > 900) else None),
                     "venta": round(vu, 2),
                     "var_num": vd_num,
                     "variacion": _fmt_var_dolar(vd_num, "0,00%"),
-                    "fecha": f"Rava • {hora_vivo}"
+                    "fecha": "AL30 / AL30D" if cod_t == "DOLAR_MEP" else ("AL30 / AL30C" if cod_t == "DOLAR_CCL" else "En vivo")
                 }
 
-        # 2. Extraer desde tablas de texto renderizadas de Rava
+        # 2. Extraer desde texto plano renderizado de Rava
         plano = BeautifulSoup(raw_html, "html.parser").get_text(" ", strip=True)
         for tk_b in ("AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C"):
             if tk_b not in bonos_px:
-                mb = re.search(r'\b' + tk_b + r'\b\s+([\d\.]+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)', plano)
+                mb = re.search(r'\b' + tk_b + r'\b\s+([\d\.]+(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)', plano)
                 if mb:
                     u_b = normalizar_valor(mb.group(1))
                     d_b = normalizar_valor(mb.group(2))
@@ -1279,8 +1285,8 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                             bonos_var[tk_b] = d_b
 
         patrones_rava = [
-            ("DOLAR_MEP", r'D[ÓO]LAR\s+(?:MEP|BOLSA)\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
-            ("DOLAR_CCL", r'D[ÓO]LAR\s+(?:CCL|CONTADO\s+CON\s+LIQUI)\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)')
+            ("DOLAR_CCL", r'D[ÓO]LAR\s+(?:CCL|CONTADO\s+CON\s+LIQUI)(?:\s+GD30|\s+AL30|\s+CEDEAR)?\b[^\d]{1,30}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
+            ("DOLAR_MEP", r'D[ÓO]LAR\s+(?:MEP|BOLSA)(?:\s+GD30|\s+AL30|\s+SOBERANO)?\b[^\d]{1,30}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)')
         ]
         for cod_k, pat in patrones_rava:
             if cod_k not in rava_directo:
@@ -1294,26 +1300,43 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                             "venta": round(uv, 2),
                             "var_num": dv,
                             "variacion": _fmt_var_dolar(dv, "0,00%"),
-                            "fecha": f"Rava • {hora_vivo}"
+                            "fecha": "AL30 / AL30D" if cod_k == "DOLAR_MEP" else "AL30 / AL30C"
                         }
 
-    # B) Complementar precios y variaciones de AL30 y AL30D desde las curvas intradiarias en memoria si faltara alguno
+    # B) Complementar AL30, AL30D y AL30C desde las tablas intradiarias de bonos (ARS, MEP y CCL)
     try:
-        for k_c, mon_tag in (("soberanos_ars", "ARS"), ("soberanos_mep", "MEP")):
-            tabla_c = (CACHE_CURVAS_SJB.get(k_c) or {}).get("tabla") or []
+        urls_bonos_vivo = [
+            ("soberanos_ars", "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS", ""),
+            ("soberanos_mep", "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=MEP", "D"),
+            ("soberanos_ccl", "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=CCL", "C")
+        ]
+        for k_cache, url_b, sufijo_esp in urls_bonos_vivo:
+            tabla_c = (CACHE_CURVAS_SJB.get(k_cache) or {}).get("tabla") or []
+            if not tabla_c:
+                try:
+                    rb = GLOBAL_HTTP_SESSION.get(url_b, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.8)
+                    if rb.status_code == 200:
+                        norm_b = normalizar_respuesta_curva(rb.json())
+                        if norm_b and norm_b.get("tabla"):
+                            CACHE_CURVAS_SJB[k_cache] = norm_b
+                            tabla_c = norm_b["tabla"]
+                except Exception:
+                    pass
             for row in tabla_c:
-                tk_r = str(row.get("Ticker") or row.get("ticker") or "").upper().strip()
-                pr_r = normalizar_valor(row.get("Precio") or row.get("precio"))
-                vr_r = normalizar_valor(row.get("Variacion") or row.get("variacion"))
-                if tk_r in ("AL30", "AL30D", "GD30", "GD30D") and pr_r and pr_r > 15:
-                    if tk_r not in bonos_px:
-                        bonos_px[tk_r] = pr_r
-                    if tk_r not in bonos_var and vr_r is not None:
-                        bonos_var[tk_r] = vr_r
+                tk_raw = str(row.get("Ticker") or row.get("ticker") or "").upper().strip()
+                tk_base = re.sub(r'[DC]$', '', tk_raw)
+                if tk_base in ("AL30", "GD30"):
+                    tk_final = tk_base + sufijo_esp
+                    pr_r = normalizar_valor(row.get("Precio") or row.get("precio"))
+                    vr_r = normalizar_valor(row.get("Variacion") or row.get("variacion"))
+                    if pr_r and pr_r > 15:
+                        if tk_final not in bonos_px:
+                            bonos_px[tk_final] = pr_r
+                        if tk_final not in bonos_var and vr_r is not None:
+                            bonos_var[tk_final] = vr_r
     except Exception:
         pass
 
-    # Normalizar escala por si AL30 viene por cada 1 o 100 VN
     def _calcular_ratio_y_var(tk_pesos: str, tk_usd: str):
         p_ars = bonos_px.get(tk_pesos)
         p_usd = bonos_px.get(tk_usd)
@@ -1327,7 +1350,6 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
         if not (900 <= ratio <= 5000):
             return None, None
 
-        # Variación exacta del tipo de cambio implícito: ((1 + var_ars) / (1 + var_usd) - 1) * 100
         v_ars = bonos_var.get(tk_pesos)
         v_usd = bonos_var.get(tk_usd)
         var_pct = None
@@ -1341,31 +1363,30 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                 var_pct = ((ratio / ratio_ant) - 1.0) * 100.0
         return round(ratio, 2), (round(var_pct, 2) if var_pct is not None else None)
 
-    # C) Armar DOLAR_MEP priorizando AL30 / AL30D y contrastando con Rava
+    # C) Armar DOLAR_MEP (AL30 / AL30D + contraste Rava, sin citar fuente)
     mep_px, mep_var = _calcular_ratio_y_var("AL30", "AL30D")
     if not mep_px:
         mep_px, mep_var = _calcular_ratio_y_var("GD30", "GD30D")
 
     rava_mep = rava_directo.get("DOLAR_MEP")
     if mep_px:
-        # Si la variación no pudo calcularse por bonos, usamos la variación de Rava directo
         if mep_var is None and rava_mep and rava_mep.get("var_num") is not None:
             mep_var = rava_mep["var_num"]
         res_rava["DOLAR_MEP"] = {
             "compra": None,
             "venta": mep_px,
             "variacion": _fmt_var_dolar(mep_var, "0,00%"),
-            "fecha": f"AL30 / AL30D • {hora_vivo}"
+            "fecha": "AL30 / AL30D"
         }
     elif rava_mep:
         res_rava["DOLAR_MEP"] = {
             "compra": None,
             "venta": rava_mep["venta"],
             "variacion": rava_mep["variacion"],
-            "fecha": f"Rava • {hora_vivo}"
+            "fecha": "AL30 / AL30D"
         }
 
-    # D) Armar DOLAR_CCL priorizando AL30 / AL30C y contrastando con Rava
+    # D) Armar DOLAR_CCL (AL30 / AL30C + contraste Rava, sin citar fuente)
     ccl_px, ccl_var = _calcular_ratio_y_var("AL30", "AL30C")
     if not ccl_px:
         ccl_px, ccl_var = _calcular_ratio_y_var("GD30", "GD30C")
@@ -1378,24 +1399,23 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
             "compra": None,
             "venta": ccl_px,
             "variacion": _fmt_var_dolar(ccl_var, "0,00%"),
-            "fecha": f"AL30 / AL30C • {hora_vivo}"
+            "fecha": "AL30 / AL30C"
         }
     elif rava_ccl:
         res_rava["DOLAR_CCL"] = {
             "compra": None,
             "venta": rava_ccl["venta"],
             "variacion": rava_ccl["variacion"],
-            "fecha": f"Rava • {hora_vivo}"
+            "fecha": "AL30 / AL30C"
         }
 
-    # E) Copiar resto de dólares de Rava si vinieron (Mayorista, Oficial, Blue)
     for k_other in ("DOLAR_A3500", "DOLAR_OFICIAL", "DOLAR_BLUE"):
         if k_other in rava_directo:
             res_rava[k_other] = {
                 "compra": rava_directo[k_other].get("compra"),
                 "venta": rava_directo[k_other]["venta"],
                 "variacion": rava_directo[k_other]["variacion"],
-                "fecha": hora_vivo
+                "fecha": "En vivo"
             }
 
     return res_rava
