@@ -1322,7 +1322,7 @@
 
     window.datosLicitacionesMAE = [...window.LICITACIONES_A3_FALLBACK];
     window.estadoMercadoMAE = "ABIERTO";
-    window.fechaCursorCalendario = new Date(2026, 10, 10);
+    window.fechaCursorCalendario = new Date();
     window.vistaCalendarioMAE = "agenda";
     window.cargandoLicitaciones = false;
 
@@ -1436,7 +1436,7 @@
     window.navegarCalendarioMAE = function(accion) {
       const d = new Date(window.fechaCursorCalendario);
       if (accion === "hoy") {
-        window.fechaCursorCalendario = new Date(2026, 10, 10);
+        window.fechaCursorCalendario = new Date();
       } else if (accion === "prev") {
         if (window.vistaCalendarioMAE === "agenda") d.setDate(d.getDate() - 7);
         else d.setMonth(d.getMonth() - 1);
@@ -1532,7 +1532,7 @@
         for (let dia = 1; dia <= totalDias; dia++) {
           const fIso = inicio.getFullYear() + "-" + String(inicio.getMonth() + 1).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
           const evs = window.datosLicitacionesMAE.filter(e => e.fecha === fIso);
-          const esHoy = fIso === "2026-11-10";
+          const esHoy = fIso === window.fmtIsoDateMAE(new Date());
           celdas.push(`
             <div class="min-h-[115px] bg-[#0c1929] border border-slate-800/70 p-2 flex flex-col gap-1 hover:border-sky-500/50 transition">
               <div class="flex items-center justify-between">
@@ -1627,38 +1627,81 @@
       { fecha: "2026-12-16", hora: "16:00hs", publicacion: "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" }
     ];
 
-    window.CALENDARIO_USA_DATA = window.CALENDARIO_USA_DATA || [
+    window.obtenerFechaHoyArgentinaDate = function() {
+      const strAr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
+      return new Date(strAr);
+    };
+
+    window.formatearFechaISO = function(dt) {
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+
+    window.sumarDiasISO = function(dtBase, dias) {
+      const d = new Date(dtBase.getFullYear(), dtBase.getMonth(), dtBase.getDate());
+      d.setDate(d.getDate() + dias);
+      return window.formatearFechaISO(d);
+    };
+
+    window.obtenerRangoSemanaISO = function(dtBase, offsetSemanas = 0) {
+      const d = new Date(dtBase.getFullYear(), dtBase.getMonth(), dtBase.getDate());
+      d.setDate(d.getDate() + offsetSemanas * 7);
+      const day = d.getDay();
+      const diffLunes = day === 0 ? -6 : 1 - day;
+      const lunes = new Date(d);
+      lunes.setDate(d.getDate() + diffLunes);
+      const domingo = new Date(lunes);
+      domingo.setDate(lunes.getDate() + 6);
+      return { desde: window.formatearFechaISO(lunes), hasta: window.formatearFechaISO(domingo) };
+    };
+
+    window.CALENDARIO_USA_DATA = [
       { fecha: "2026-11-09", hora: "13:00", div: "US", evento: "Expectativas de inflación del consumidor (Oct)", importancia: 2, actual: "2,9%", prevision: "3,0%", anterior: "3,0%" },
       { fecha: "2026-11-09", hora: "15:00", div: "US", evento: "Subasta de letras a 3 y 6 meses del Tesoro", importancia: 2, actual: "4,42%", prevision: "-", anterior: "4,45%" },
       { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC (Mensual) (Oct)", importancia: 3, actual: "0,4%", prevision: "0,3%", anterior: "0,6%" },
       { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC subyacente (Mensual) (Oct)", importancia: 3, actual: "0,3%", prevision: "0,2%", anterior: "0,3%" },
       { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC (Anual) (Oct)", importancia: 3, actual: "2,6%", prevision: "2,6%", anterior: "2,4%" },
       { fecha: "2026-11-10", hora: "10:30", div: "US", evento: "IPC subyacente (Anual) (Oct)", importancia: 3, actual: "3,3%", prevision: "3,3%", anterior: "3,3%" },
-      { fecha: "2026-11-10", hora: "16:00", div: "US", evento: "Balance presupuestario federal (Oct)", importancia: 2, actual: "-", prevision: "-225,0B", anterior: "-64,3B" },
-      { fecha: "2026-11-11", hora: "09:00", div: "US", evento: "Solicitudes de hipoteca MBA (Semanal)", importancia: 2, actual: "-", prevision: "-", anterior: "-1,8%" },
-      { fecha: "2026-11-11", hora: "15:00", div: "US", evento: "Subasta de bonos del Tesoro a 10 años (UST 10Y)", importancia: 3, actual: "-", prevision: "4,30%", anterior: "4,26%" },
+      { fecha: "2026-11-10", hora: "16:00", div: "US", evento: "Balance presupuestario federal (Oct)", importancia: 2, actual: "-257,0B", prevision: "-225,0B", anterior: "-64,3B" },
+      { fecha: "2026-11-11", hora: "09:00", div: "US", evento: "Solicitudes de hipoteca MBA (Semanal)", importancia: 2, actual: "0,5%", prevision: "-", anterior: "-1,8%" },
+      { fecha: "2026-11-11", hora: "15:00", div: "US", evento: "Subasta de bonos del Tesoro a 10 años (UST 10Y)", importancia: 3, actual: "4,34%", prevision: "4,30%", anterior: "4,26%" },
       { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "IPP (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,2%", anterior: "0,0%" },
       { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "IPP subyacente (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,2%" },
       { fecha: "2026-11-12", hora: "10:30", div: "US", evento: "Nuevas peticiones de subsidio por desempleo", importancia: 3, actual: "-", prevision: "220K", anterior: "221K" },
       { fecha: "2026-11-12", hora: "13:00", div: "US", evento: "Inventarios de petróleo crudo de la AIE", importancia: 3, actual: "-", prevision: "1,100M", anterior: "2,149M" },
+      { fecha: "2026-11-12", hora: "15:00", div: "US", evento: "Subasta de bonos del Tesoro a 30 años (UST 30Y)", importancia: 3, actual: "-", prevision: "4,51%", anterior: "4,39%" },
       { fecha: "2026-11-12", hora: "17:00", div: "US", evento: "Comparecencia de Jerome Powell, presidente de la Fed", importancia: 3, actual: "-", prevision: "-", anterior: "-" },
       { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Ventas minoristas (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,4%" },
       { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Ventas minoristas subyacentes (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,5%" },
+      { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Índice manufacturero Empire State (Nov)", importancia: 2, actual: "-", prevision: "-0,50", anterior: "-11,90" },
+      { fecha: "2026-11-13", hora: "10:30", div: "US", evento: "Precios de importación y exportación (Mensual) (Oct)", importancia: 2, actual: "-", prevision: "-0,1%", anterior: "-0,4%" },
       { fecha: "2026-11-13", hora: "11:15", div: "US", evento: "Producción industrial (Mensual) (Oct)", importancia: 2, actual: "-", prevision: "-0,3%", anterior: "-0,3%" },
+      { fecha: "2026-11-16", hora: "18:00", div: "US", evento: "Flujos de capital TIC a largo plazo (Sep)", importancia: 2, actual: "-", prevision: "78,4B", anterior: "111,4B" },
+      { fecha: "2026-11-17", hora: "12:00", div: "US", evento: "Índice NAHB del mercado de la vivienda (Nov)", importancia: 2, actual: "-", prevision: "43", anterior: "43" },
       { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Permisos de construcción (Oct)", importancia: 3, actual: "-", prevision: "1,440M", anterior: "1,425M" },
+      { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Inicios de construcción de viviendas (Oct)", importancia: 2, actual: "-", prevision: "1,340M", anterior: "1,354M" },
       { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Nuevas peticiones de subsidio por desempleo", importancia: 3, actual: "-", prevision: "222K", anterior: "220K" },
+      { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Índice manufacturero de la Fed de Filadelfia (Nov)", importancia: 3, actual: "-", prevision: "8,0", anterior: "10,3" },
       { fecha: "2026-11-19", hora: "12:00", div: "US", evento: "Ventas de viviendas de segunda mano (Oct)", importancia: 3, actual: "-", prevision: "3,93M", anterior: "3,84M" },
-      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI manufacturero y de servicios S&P Global (Nov)", importancia: 3, actual: "-", prevision: "55,2", anterior: "55,0" }
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI manufacturero de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "48,8", anterior: "48,5" },
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI de servicios de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "55,2", anterior: "55,0" },
+      { fecha: "2026-11-20", hora: "12:00", div: "US", evento: "Confianza del consumidor de la Universidad de Michigan (Nov)", importancia: 3, actual: "-", prevision: "73,0", anterior: "70,5" },
+      { fecha: "2026-11-24", hora: "12:00", div: "US", evento: "Confianza del consumidor de The Conference Board (Nov)", importancia: 3, actual: "-", prevision: "111,8", anterior: "108,7" },
+      { fecha: "2026-11-25", hora: "10:30", div: "US", evento: "PIB (Trimestral) (3T) (Segunda estimación)", importancia: 3, actual: "-", prevision: "2,8%", anterior: "2,8%" },
+      { fecha: "2026-11-25", hora: "12:00", div: "US", evento: "Índice de precios PCE subyacente (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,3%" },
+      { fecha: "2026-11-25", hora: "16:00", div: "US", evento: "Actas de la reunión del FOMC de la Reserva Federal", importancia: 3, actual: "-", prevision: "-", anterior: "-" }
     ];
 
     if (!window.subCalEconomicoActivo) window.subCalEconomicoActivo = "argentina";
-    if (!window.indecMesCursor) window.indecMesCursor = new Date(2026, 10, 10);
-    if (!window.indecFechaSeleccionada) window.indecFechaSeleccionada = "2026-11-10";
+    window.indecMesCursor = window.obtenerFechaHoyArgentinaDate();
+    window.indecFechaSeleccionada = window.formatearFechaISO(window.obtenerFechaHoyArgentinaDate());
     if (!window.indecModoVista) window.indecModoVista = "mes";
     if (window.indecBusqueda === undefined) window.indecBusqueda = "";
     if (!window.usaFiltroActivo) window.usaFiltroActivo = "hoy";
-    if (!window.usaCustomDesde) window.usaCustomDesde = "2026-11-09";
-    if (!window.usaCustomHasta) window.usaCustomHasta = "2026-11-20";
+    window.usaCustomDesde = window.obtenerRangoSemanaISO(window.obtenerFechaHoyArgentinaDate(), 0).desde;
+    window.usaCustomHasta = window.obtenerRangoSemanaISO(window.obtenerFechaHoyArgentinaDate(), 1).hasta;
 
     window.cambiarSubCalEconomico = function(sub) {
       window.subCalEconomicoActivo = sub;
@@ -1849,13 +1892,20 @@
       const mesesLargos = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
       const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
-      let dIni = "2026-11-10", dFin = "2026-11-10";
-      if (window.usaFiltroActivo === "ayer") { dIni = "2026-11-09"; dFin = "2026-11-09"; }
-      else if (window.usaFiltroActivo === "hoy") { dIni = "2026-11-10"; dFin = "2026-11-10"; }
-      else if (window.usaFiltroActivo === "manana") { dIni = "2026-11-11"; dFin = "2026-11-11"; }
-      else if (window.usaFiltroActivo === "esta_semana") { dIni = "2026-11-09"; dFin = "2026-11-15"; }
-      else if (window.usaFiltroActivo === "proxima_semana") { dIni = "2026-11-16"; dFin = "2026-11-22"; }
-      else if (window.usaFiltroActivo === "custom") { dIni = window.usaCustomDesde; dFin = window.usaCustomHasta; }
+      const hoyAr = window.obtenerFechaHoyArgentinaDate();
+      const hoyIso = window.formatearFechaISO(hoyAr);
+      const ayerIso = window.sumarDiasISO(hoyAr, -1);
+      const mananaIso = window.sumarDiasISO(hoyAr, 1);
+      const semActual = window.obtenerRangoSemanaISO(hoyAr, 0);
+      const semProxima = window.obtenerRangoSemanaISO(hoyAr, 1);
+
+      let dIni = hoyIso, dFin = hoyIso;
+      if (window.usaFiltroActivo === "ayer") { dIni = ayerIso; dFin = ayerIso; }
+      else if (window.usaFiltroActivo === "hoy") { dIni = hoyIso; dFin = hoyIso; }
+      else if (window.usaFiltroActivo === "manana") { dIni = mananaIso; dFin = mananaIso; }
+      else if (window.usaFiltroActivo === "esta_semana") { dIni = semActual.desde; dFin = semActual.hasta; }
+      else if (window.usaFiltroActivo === "proxima_semana") { dIni = semProxima.desde; dFin = semProxima.hasta; }
+      else if (window.usaFiltroActivo === "custom") { dIni = window.usaCustomDesde || semActual.desde; dFin = window.usaCustomHasta || semProxima.hasta; }
 
       const eventos = window.CALENDARIO_USA_DATA.filter(ev => ev.fecha >= dIni && ev.fecha <= dFin);
       const porFecha = {};
@@ -2567,16 +2617,45 @@
         } catch (e) {}
       }
 
-      // 3. Extracción directa en vivo de Investing / AWS ECS para EE.UU.
-      const urlAws = "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no";
-      const proxiesUsa = [
-        urlAws,
-        "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlAws),
-        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(urlAws)
+      // 3. Extracción directa en vivo de Faireconomy (ForexFactory) + AWS Investing para EE.UU.
+      const tsNow = Date.now();
+      const urlsUsaVivo = [
+        "https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t=" + tsNow,
+        "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&_t=" + tsNow
       ];
+      const proxiesUsa = [];
+      urlsUsaVivo.forEach(uBase => {
+        proxiesUsa.push(uBase);
+        proxiesUsa.push("https://corsproxy.io/?" + encodeURIComponent(uBase));
+        proxiesUsa.push("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(uBase));
+      });
+      const tradMap = {
+        "Core CPI m/m": "IPC subyacente (Mensual)",
+        "CPI m/m": "IPC (Mensual)",
+        "CPI y/y": "IPC (Anual)",
+        "Core PPI m/m": "IPP subyacente (Mensual)",
+        "PPI m/m": "IPP (Mensual)",
+        "Unemployment Claims": "Nuevas peticiones de subsidio por desempleo",
+        "Core Retail Sales m/m": "Ventas minoristas subyacentes (Mensual)",
+        "Retail Sales m/m": "Ventas minoristas (Mensual)",
+        "Empire State Manufacturing Index": "Índice manufacturero Empire State",
+        "Industrial Production m/m": "Producción industrial (Mensual)",
+        "Fed Chair Powell Speaks": "Comparecencia de Jerome Powell, presidente de la Fed",
+        "Crude Oil Inventories": "Inventarios de petróleo crudo de la AIE",
+        "Philly Fed Manufacturing Index": "Índice manufacturero de la Fed de Filadelfia",
+        "Existing Home Sales": "Ventas de viviendas de segunda mano",
+        "Flash Manufacturing PMI": "PMI manufacturero de S&P Global (Preliminar)",
+        "Flash Services PMI": "PMI de servicios de S&P Global (Preliminar)",
+        "Revised UoM Consumer Sentiment": "Confianza del consumidor de la Universidad de Michigan",
+        "Prelim UoM Consumer Sentiment": "Confianza del consumidor de la Universidad de Michigan",
+        "Building Permits": "Permisos de construcción",
+        "Housing Starts": "Inicios de construcción de viviendas",
+        "10-y Bond Auction": "Subasta de bonos del Tesoro a 10 años (UST 10Y)",
+        "30-y Bond Auction": "Subasta de bonos del Tesoro a 30 años (UST 30Y)"
+      };
       for (const u of proxiesUsa) {
         try {
-          const rAws = await fetch(u);
+          const rAws = await fetch(u, { cache: "no-store" });
           if (rAws.ok) {
             const dAws = await rAws.json();
             const arr = Array.isArray(dAws) ? dAws : (dAws.events || dAws.data || []);
@@ -2584,18 +2663,29 @@
               const mapU = {};
               window.CALENDARIO_USA_DATA.forEach(x => { mapU[x.fecha + "|" + x.evento] = x; });
               arr.forEach(ev => {
-                const nom = String(ev.event || ev.title || ev.name || "").trim();
+                const cur = String(ev.country || ev.currency || ev.div || "").toUpperCase().trim();
+                if (cur && !["USD", "US", "UNITED STATES", "EE.UU."].includes(cur)) return;
+                const nomRaw = String(ev.title || ev.event || ev.name || "").trim();
+                const nom = tradMap[nomRaw] || nomRaw;
                 const fRaw = String(ev.date || ev.fecha || ev.datetime || "").slice(0, 10);
-                if (nom && fRaw.length === 10 && fRaw.startsWith("202")) {
-                  mapU[fRaw + "|" + nom] = {
+                const mHora = String(ev.date || ev.time || ev.hora || "").match(/(\d{2}:\d{2})/);
+                const impRaw = String(ev.impact || ev.importance || "Medium").toLowerCase();
+                if (impRaw === "holiday" || impRaw === "non-economic") return;
+                const impNum = (impRaw === "high" || impRaw === "3") ? 3 : ((impRaw === "low" || impRaw === "1") ? 1 : 2);
+                if (nom && /^202\d-\d{2}-\d{2}$/.test(fRaw)) {
+                  const kU = fRaw + "|" + nom;
+                  const actStr = ev.actual ? String(ev.actual).replace(".", ",") : ((mapU[kU] && mapU[kU].actual) || "-");
+                  const prevStr = ev.forecast ? String(ev.forecast).replace(".", ",") : ((mapU[kU] && mapU[kU].prevision) || "-");
+                  const antStr = ev.previous ? String(ev.previous).replace(".", ",") : ((mapU[kU] && mapU[kU].anterior) || "-");
+                  mapU[kU] = {
                     fecha: fRaw,
-                    hora: String(ev.time || ev.hora || "10:30").slice(0, 5),
+                    hora: mHora ? mHora[1] : ((mapU[kU] && mapU[kU].hora) || "10:30"),
                     div: "US",
                     evento: nom,
-                    importancia: Number(ev.importance || 2),
-                    actual: String(ev.actual || "-"),
-                    prevision: String(ev.forecast || "-"),
-                    anterior: String(ev.previous || "-")
+                    importancia: impNum,
+                    actual: actStr,
+                    prevision: prevStr,
+                    anterior: antStr
                   };
                 }
               });
@@ -2605,8 +2695,7 @@
           }
         } catch (e) {}
       }
-
-      if (categoriaActiva === "calendario_economico") renderizar(true);
+            if (categoriaActiva === "calendario_economico") renderizar(true);
     };
 
     function filtrarCategoria(cat, ev) {
@@ -2627,7 +2716,7 @@
     setInterval(cargarDatos, 8000);
     setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(sincronizarEndpointsSecundarios, 15000);
-    setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 30000);
+    setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 15000);
     setTimeout(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 800);
   </script>
 </body>
