@@ -409,9 +409,222 @@
     ];
 
     window.SUB_INDICES_INFO = {
-      argentina: { titulo: "Mercado Argentino — Índice MSCI Merval (MMSCI)", desc: "Bolsa de Buenos Aires (BCBA / BYMA) • En Pesos, Dólar CCL y Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
-      estados_unidos: { titulo: "Mercado Estadounidense — S&P 500", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
+      argentina: { titulo: "Índices Argentina — Índice MSCI Merval (MMSCI)", desc: "Bolsa de Buenos Aires (BCBA / BYMA) • En Pesos, Dólar CCL y Riesgo País EMBI+", icono: "fa-landmark-flag", color: "text-sky-400" },
+      acciones_argentinas: { titulo: "Acciones Argentinas — Panel Líder Merval, Lo Mejor y Lo Peor (Rava Bursátil)", desc: "Cotizaciones en Vivo BYMA / Rava • Ganadoras, Perdedoras y Panel Merval Completo", icono: "fa-arrow-trend-up", color: "text-cyan-400" },
+      estados_unidos: { titulo: "Índices Estados Unidos — S&P 500 & Wall Street", desc: "Wall Street: S&P 500, Nasdaq 100, VIX, Dow Jones, Russell 2000 y DXY", icono: "fa-flag-usa", color: "text-blue-400" },
       sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
+    };
+
+    window.ACCIONES_ARGENTINA_DATA = {
+      merval: [
+        { especie: "ALUA", ultimo: 915.0, dia: 1.44, mes: -4.20, anio: -12.50, anterior: 902.0, apertura: 905.0, minimo: 900.0, maximo: 920.0, hora: "17:00", vol_nominal: 1450200, vol_efectivo: 1326933000 },
+        { especie: "BBAR", ultimo: 14850.0, dia: 2.98, mes: 8.40, anio: 115.20, anterior: 14420.0, apertura: 14500.0, minimo: 14400.0, maximo: 14920.0, hora: "17:00", vol_nominal: 412300, vol_efectivo: 6122655000 },
+        { especie: "BMA", ultimo: 18200.0, dia: 2.54, mes: 6.80, anio: 124.60, anterior: 17750.0, apertura: 17800.0, minimo: 17700.0, maximo: 18350.0, hora: "17:00", vol_nominal: 389100, vol_efectivo: 7081620000 },
+        { especie: "BYMA", ultimo: 395.0, dia: 0.77, mes: 1.20, anio: 38.40, anterior: 392.0, apertura: 392.0, minimo: 390.0, maximo: 398.0, hora: "17:00", vol_nominal: 2890000, vol_efectivo: 1141550000 },
+        { especie: "CEPU", ultimo: 2410.0, dia: 1.90, mes: 4.10, anio: 64.20, anterior: 2365.0, apertura: 2370.0, minimo: 2360.0, maximo: 2425.0, hora: "17:00", vol_nominal: 1120400, vol_efectivo: 2700164000 },
+        { especie: "COME", ultimo: 298.5, dia: 3.47, mes: 11.20, anio: 142.80, anterior: 288.5, apertura: 290.0, minimo: 288.0, maximo: 301.0, hora: "17:00", vol_nominal: 8450000, vol_efectivo: 2522325000 },
+        { especie: "CRES", ultimo: 2180.0, dia: -0.91, mes: -2.40, anio: 29.80, anterior: 2200.0, apertura: 2195.0, minimo: 2170.0, maximo: 2210.0, hora: "17:00", vol_nominal: 540200, vol_efectivo: 1177636000 },
+        { especie: "CVH", ultimo: 9850.0, dia: -1.50, mes: -3.10, anio: 41.20, anterior: 10000.0, apertura: 9980.0, minimo: 9800.0, maximo: 10020.0, hora: "17:00", vol_nominal: 68400, vol_efectivo: 673740000 },
+        { especie: "EDN", ultimo: 3690.0, dia: 2.22, mes: 5.90, anio: 88.50, anterior: 3610.0, apertura: 3620.0, minimo: 3600.0, maximo: 3715.0, hora: "17:00", vol_nominal: 620100, vol_efectivo: 2288169000 },
+        { especie: "GGAL", ultimo: 12450.0, dia: 3.15, mes: 9.20, anio: 148.90, anterior: 12070.0, apertura: 12150.0, minimo: 12050.0, maximo: 12520.0, hora: "17:00", vol_nominal: 1850400, vol_efectivo: 23037480000 },
+        { especie: "IRSA", ultimo: 2640.0, dia: -0.56, mes: 1.80, anio: 52.10, anterior: 2655.0, apertura: 2650.0, minimo: 2625.0, maximo: 2670.0, hora: "17:00", vol_nominal: 410000, vol_efectivo: 1082400000 },
+        { especie: "LOMA", ultimo: 3890.0, dia: -1.77, mes: -5.10, anio: 19.40, anterior: 3960.0, apertura: 3950.0, minimo: 3875.0, maximo: 3965.0, hora: "17:00", vol_nominal: 495000, vol_efectivo: 1925550000 },
+        { especie: "METR", ultimo: 2950.0, dia: 4.24, mes: 14.50, anio: 118.40, anterior: 2830.0, apertura: 2850.0, minimo: 2830.0, maximo: 2975.0, hora: "17:00", vol_nominal: 530200, vol_efectivo: 1564090000 },
+        { especie: "MIRG", ultimo: 26800.0, dia: -2.19, mes: -6.80, anio: 8.90, anterior: 27400.0, apertura: 27300.0, minimo: 26700.0, maximo: 27400.0, hora: "17:00", vol_nominal: 19500, vol_efectivo: 522600000 },
+        { especie: "PAMP", ultimo: 6780.0, dia: 1.65, mes: 3.40, anio: 74.10, anterior: 6670.0, apertura: 6690.0, minimo: 6650.0, maximo: 6810.0, hora: "17:00", vol_nominal: 980500, vol_efectivo: 6647790000 },
+        { especie: "SUPV", ultimo: 4120.0, dia: 2.74, mes: 7.60, anio: 132.40, anterior: 4010.0, apertura: 4030.0, minimo: 4000.0, maximo: 4150.0, hora: "17:00", vol_nominal: 890300, vol_efectivo: 3668036000 },
+        { especie: "TECO2", ultimo: 3740.0, dia: -1.32, mes: -2.90, anio: 34.50, anterior: 3790.0, apertura: 3780.0, minimo: 3720.0, maximo: 3800.0, hora: "17:00", vol_nominal: 460200, vol_efectivo: 1721148000 },
+        { especie: "TGNO4", ultimo: 5490.0, dia: 3.78, mes: 12.10, anio: 96.40, anterior: 5290.0, apertura: 5310.0, minimo: 5280.0, maximo: 5520.0, hora: "17:00", vol_nominal: 415800, vol_efectivo: 2282742000 },
+        { especie: "TGSU2", ultimo: 9620.0, dia: 1.80, mes: 4.90, anio: 82.30, anterior: 9450.0, apertura: 9480.0, minimo: 9440.0, maximo: 9660.0, hora: "17:00", vol_nominal: 512000, vol_efectivo: 4925440000 },
+        { especie: "TRAN", ultimo: 3510.0, dia: 2.33, mes: 6.20, anio: 91.80, anterior: 3430.0, apertura: 3440.0, minimo: 3420.0, maximo: 3530.0, hora: "17:00", vol_nominal: 480900, vol_efectivo: 1687959000 },
+        { especie: "TXAR", ultimo: 845.0, dia: -1.97, mes: -5.80, anio: -14.20, anterior: 862.0, apertura: 860.0, minimo: 840.0, maximo: 864.0, hora: "17:00", vol_nominal: 1920000, vol_efectivo: 1622400000 },
+        { especie: "VALO", ultimo: 438.0, dia: 0.46, mes: 2.10, anio: 44.60, anterior: 436.0, apertura: 436.0, minimo: 434.0, maximo: 441.0, hora: "17:00", vol_nominal: 1350000, vol_efectivo: 591300000 },
+        { especie: "YPFD", ultimo: 58900.0, dia: 2.88, mes: 8.70, anio: 112.50, anterior: 57250.0, apertura: 57500.0, minimo: 57200.0, maximo: 59150.0, hora: "17:00", vol_nominal: 642000, vol_efectivo: 37813800000 }
+      ],
+      lo_mejor: [],
+      lo_peor: []
+    };
+
+    window.recalcularRankingsAccionesArg = function() {
+      const lista = window.ACCIONES_ARGENTINA_DATA.merval || [];
+      window.ACCIONES_ARGENTINA_DATA.lo_mejor = [...lista].filter(x => x.dia >= 0).sort((a, b) => b.dia - a.dia).slice(0, 7);
+      window.ACCIONES_ARGENTINA_DATA.lo_peor = [...lista].filter(x => x.dia < 0).sort((a, b) => a.dia - b.dia).slice(0, 7);
+      if (window.ACCIONES_ARGENTINA_DATA.lo_peor.length === 0) {
+        window.ACCIONES_ARGENTINA_DATA.lo_peor = [...lista].sort((a, b) => a.dia - b.dia).slice(0, 5);
+      }
+    };
+    window.recalcularRankingsAccionesArg();
+
+    window.sincronizarAccionesArgentinaRava = async function() {
+      const ts = Date.now();
+      const dBack = await fetchJsonSeguro("/api/acciones/argentina?t=" + ts);
+      if (dBack && Array.isArray(dBack.merval) && dBack.merval.length > 0) {
+        window.ACCIONES_ARGENTINA_DATA.merval = dBack.merval;
+        window.ACCIONES_ARGENTINA_DATA.lo_mejor = (dBack.lo_mejor && dBack.lo_mejor.length > 0) ? dBack.lo_mejor : [];
+        window.ACCIONES_ARGENTINA_DATA.lo_peor = (dBack.lo_peor && dBack.lo_peor.length > 0) ? dBack.lo_peor : [];
+        if (window.ACCIONES_ARGENTINA_DATA.lo_mejor.length === 0) window.recalcularRankingsAccionesArg();
+      }
+
+      // Contraste directo con Rava desde el navegador
+      const targetRava = "https://www.rava.com/?_t=" + ts;
+      const setTickers = new Set((window.ACCIONES_ARGENTINA_DATA.merval || []).map(x => x.especie));
+      for (const u of [
+        "https://corsproxy.io/?" + encodeURIComponent(targetRava),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetRava)
+      ]) {
+        try {
+          const r = await fetch(u, { cache: "no-store" });
+          if (r.ok) {
+            const txt = (await r.text()).replace(/&quot;/g, '"');
+            const mapM = {};
+            (window.ACCIONES_ARGENTINA_DATA.merval || []).forEach(x => { mapM[x.especie] = { ...x }; });
+            const regexObj = /\{[^{}]*"(?:simbolo|especie)"\s*:\s*"([A-Z0-9\.]{2,8})"[^{}]*\}/g;
+            let m, hubo = false;
+            while ((m = regexObj.exec(txt)) !== null) {
+              const b = m[0], sim = m[1].toUpperCase();
+              if (!setTickers.has(sim)) continue;
+              const mU = b.match(/"(?:ultimo|px_last|close|valor)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+              const mD = b.match(/"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+              const mM = b.match(/"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+              const mA = b.match(/"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+              const vu = mU ? parseNumSeguro(mU[1]) : NaN;
+              const vd = mD ? parseNumSeguro(mD[1]) : NaN;
+              const vm = mM ? parseNumSeguro(mM[1]) : NaN;
+              const va = mA ? parseNumSeguro(mA[1]) : NaN;
+              if (!isNaN(vu) && vu > 0 && !isNaN(vd) && vd >= -40 && vd <= 40) {
+                mapM[sim].ultimo = vu;
+                mapM[sim].dia = vd;
+                if (!isNaN(vm)) mapM[sim].mes = vm;
+                if (!isNaN(va)) mapM[sim].anio = va;
+                hubo = true;
+              }
+            }
+            if (hubo) {
+              window.ACCIONES_ARGENTINA_DATA.merval = Object.values(mapM).sort((a, b) => a.especie.localeCompare(b.especie));
+              window.recalcularRankingsAccionesArg();
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (categoriaActiva === "indices" && subIndiceActivo === "acciones_argentinas") {
+        const wrap = document.getElementById("acciones-argentinas-rava-wrapper");
+        if (wrap) wrap.innerHTML = window.renderizarSeccionAccionesArgentinasRava();
+      }
+    };
+
+    window.renderizarSeccionAccionesArgentinasRava = function() {
+      const fmtPrecio = n => Number(n || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtVol = n => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+      const fmtPct = n => {
+        const v = Number(n || 0);
+        return (v > 0 ? "+" : "") + v.toFixed(2).replace(".", ",") + "%";
+      };
+
+      const mejor = window.ACCIONES_ARGENTINA_DATA.lo_mejor || [];
+      const peor = window.ACCIONES_ARGENTINA_DATA.lo_peor || [];
+      let mervalRows = [...(window.ACCIONES_ARGENTINA_DATA.merval || [])];
+
+      const st = SORT_STATE["rava_merval"];
+      if (st && st.col) {
+        mervalRows.sort((a, b) => {
+          const va = a[st.col], vb = b[st.col];
+          if (typeof va === "string" && typeof vb === "string") return st.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+          return st.asc ? (Number(va || 0) - Number(vb || 0)) : (Number(vb || 0) - Number(va || 0));
+        });
+      }
+
+      const renderMiniCuadro = (titulo, sub, icono, colorClase, badgeClase, filas) => `
+        <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/95 shadow-2xl overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg ${badgeClase} flex items-center justify-center text-xs shadow-sm">
+                <i class="fa-solid ${icono}"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">${titulo}</h4>
+                <p class="text-[10px] text-slate-400 font-mono">${sub}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300">Rava Bursátil</span>
+          </div>
+          <table class="w-full text-xs font-mono">
+            <thead class="bg-slate-950/80 text-[10px] uppercase text-slate-400 border-b border-slate-800/80">
+              <tr>
+                <th class="py-2 px-4 text-left">Especie</th>
+                <th class="py-2 px-4 text-right">Último</th>
+                <th class="py-2 px-4 text-right">% Día</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              ${filas.map(r => `
+                <tr class="table-dark-row transition">
+                  <td class="py-2.5 px-4 font-extrabold text-white">${r.especie}</td>
+                  <td class="py-2.5 px-4 text-right text-slate-200 font-semibold">$ ${fmtPrecio(r.ultimo)}</td>
+                  <td class="py-2.5 px-4 text-right">${renderFilaTerminal(fmtPct(r.dia), "var")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`;
+
+      return `
+        <div class="space-y-5">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${renderMiniCuadro("Lo Mejor del Día — Argentina", "Mayores Alzas del Mercado Argentino", "fa-arrow-trend-up", "text-emerald-400", "bg-emerald-500/20 border border-emerald-400/40 text-emerald-300", mejor)}
+            ${renderMiniCuadro("Lo Peor del Día — Argentina", "Mayores Bajas del Mercado Argentino", "fa-arrow-trend-down", "text-rose-400", "bg-rose-500/20 border border-rose-400/40 text-rose-300", peor)}
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-[#090e1e]/95 shadow-2xl overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs shadow-sm">
+                  <i class="fa-solid fa-table-list"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">Panel Líder — Acciones Merval (${mervalRows.length} Especies)</h4>
+                  <p class="text-[10px] text-slate-400 font-mono">Precios en Pesos Argentinos (ARS) • Hacé clic en cualquier columna para ordenar</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2.5 py-1 rounded-full">Fuente: Rava Bursátil / BYMA</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs font-mono">
+                <thead class="bg-slate-950/90 text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <tr>
+                    ${renderTh("rava_merval", "especie", "ESPECIE", "text-left")}
+                    ${renderTh("rava_merval", "ultimo", "ÚLTIMO", "text-right")}
+                    ${renderTh("rava_merval", "dia", "% DÍA", "text-center")}
+                    ${renderTh("rava_merval", "mes", "% MES", "text-center")}
+                    ${renderTh("rava_merval", "anio", "% AÑO", "text-center")}
+                    ${renderTh("rava_merval", "anterior", "ANTERIOR", "text-right")}
+                    ${renderTh("rava_merval", "apertura", "APERTURA", "text-right")}
+                    ${renderTh("rava_merval", "minimo", "MÍNIMO", "text-right")}
+                    ${renderTh("rava_merval", "maximo", "MÁXIMO", "text-right")}
+                    ${renderTh("rava_merval", "vol_efectivo", "VOL. EFECTIVO ($)", "text-right")}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                  ${mervalRows.map(a => `
+                    <tr class="table-dark-row transition">
+                      <td class="py-2.5 px-3 font-extrabold text-white">${a.especie}</td>
+                      <td class="py-2.5 px-3 text-right font-bold text-white">$ ${fmtPrecio(a.ultimo)}</td>
+                      <td class="py-2.5 px-3 text-center">${renderFilaTerminal(fmtPct(a.dia), "var")}</td>
+                      <td class="py-2.5 px-3 text-center">${renderFilaTerminal(fmtPct(a.mes), "var")}</td>
+                      <td class="py-2.5 px-3 text-center">${renderFilaTerminal(fmtPct(a.anio), "var")}</td>
+                      <td class="py-2.5 px-3 text-right text-slate-300">$ ${fmtPrecio(a.anterior)}</td>
+                      <td class="py-2.5 px-3 text-right text-slate-300">$ ${fmtPrecio(a.apertura)}</td>
+                      <td class="py-2.5 px-3 text-right text-slate-400">$ ${fmtPrecio(a.minimo)}</td>
+                      <td class="py-2.5 px-3 text-right text-slate-400">$ ${fmtPrecio(a.maximo)}</td>
+                      <td class="py-2.5 px-3 text-right text-slate-300">$ ${fmtVol(a.vol_efectivo)}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
     };
 
     window.CURVAS_INFO = {
@@ -2109,7 +2322,14 @@
         }
       }
 
-      // 2. Si estamos en ÍNDICES (Argentina, EE.UU. o Sectores) y ya está montado, solo actualizamos tarjetas y barras sin tocar el <tv-heatmap>
+      // 2. Si estamos en ÍNDICES y ya está montado, solo actualizamos tarjetas/tablas sin tocar el <tv-heatmap>
+      if (!forzarReconstruccion && categoriaActiva === "indices" && subIndiceActivo === "acciones_argentinas" && vistaMontadaActual === claveVista) {
+        const wrapAcc = document.getElementById("acciones-argentinas-rava-wrapper");
+        if (wrapAcc) {
+          wrapAcc.innerHTML = window.renderizarSeccionAccionesArgentinasRava();
+          return;
+        }
+      }
       if (!forzarReconstruccion && categoriaActiva === "indices" && vistaMontadaActual === claveVista) {
         const gridIndices = document.getElementById("grid-indices-cards");
         if (gridIndices) {
@@ -2303,9 +2523,9 @@
       }
 
       if (categoriaActiva === "indices") {
-        const infoSub = window.SUB_INDICES_INFO[subIndiceActivo];
+        const infoSub = window.SUB_INDICES_INFO[subIndiceActivo] || window.SUB_INDICES_INFO.argentina;
         const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) ? datosGlobales.indices : window.INDICES_ESTATICOS_BASE;
-        const itemsSub = fuenteIndices.filter(item => {
+        const itemsSub = subIndiceActivo === "acciones_argentinas" ? [] : fuenteIndices.filter(item => {
           if (!item || item.variable === "BURCAP") return false;
           if (subIndiceActivo === "argentina") return item.subcategoria === "argentina" || ["MERVAL_ARS", "MERVAL_USD", "RIESGO_PAIS"].includes(item.variable);
           if (subIndiceActivo === "estados_unidos") return item.subcategoria === "estados_unidos" || ["INDICE_SP500", "INDICE_NASDAQ", "INDICE_VIX", "INDICE_DJI", "INDICE_RUSSELL", "MONEDA_DXY"].includes(item.variable);
@@ -2313,11 +2533,13 @@
         });
 
         let mapaCalorHtml = "";
-        if (subIndiceActivo === "argentina") {
+        if (subIndiceActivo === "argentina" || subIndiceActivo === "acciones_argentinas") {
           mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex items-center justify-between"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-sky-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Mapa de Calor — Acciones Argentinas (AllAR)</h3></div></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="AllAR" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
         } else if (subIndiceActivo === "estados_unidos") {
           mapaCalorHtml = `<div class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-5 shadow-2xl space-y-3"><div class="border-b border-slate-800/70 pb-2.5 flex flex-wrap items-center justify-between gap-2"><div class="flex items-center gap-2"><i class="fa-solid fa-fire-flame-curved text-blue-400 text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Stock Heatmap — S&P 500 (SPX500)</h3></div><span class="text-[10px] font-mono text-slate-400 bg-slate-900/90 border border-slate-700/70 px-2.5 py-0.5 rounded-full flex items-center gap-1.5"><i class="fa-regular fa-clock text-blue-400"></i>Actualiza al cierre de la rueda</span></div><div class="w-full h-[600px] rounded-xl overflow-hidden border border-slate-800/80 bg-[#030712]"><tv-heatmap heatmap-type="stock" data-source="SPX500" grouping="sector" block-size="market_cap_basic" block-color="change" theme="dark" style="width: 100%; height: 100%;"></tv-heatmap></div></div>`;
         }
+
+        const cantAcciones = (window.ACCIONES_ARGENTINA_DATA && window.ACCIONES_ARGENTINA_DATA.merval) ? window.ACCIONES_ARGENTINA_DATA.merval.length : 23;
 
         contenedor.innerHTML = `
           <div class="space-y-4">
@@ -2325,16 +2547,19 @@
             <div class="flex flex-col lg:flex-row gap-5 items-start">
               <aside class="w-full lg:w-64 shrink-0 space-y-2 bg-[#090e1e]/90 border border-slate-800 rounded-2xl p-3 shadow-xl">
                 <div class="px-2 py-1.5 border-b border-slate-800/80 mb-2"><span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clasificación</span></div>
-                <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-landmark-flag text-sky-400 mr-2"></i>Argentina</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">3</span></button>
-                <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-flag-usa text-blue-400 mr-2"></i>Estados Unidos</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">6</span></button>
+                <button onclick="cambiarSubIndice('argentina')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'argentina' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-landmark-flag text-sky-400 mr-2"></i>Índices Argentina</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">3</span></button>
+                <button onclick="cambiarSubIndice('acciones_argentinas')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'acciones_argentinas' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-arrow-trend-up text-cyan-400 mr-2"></i>Acciones Argentinas</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">${cantAcciones}</span></button>
+                <button onclick="cambiarSubIndice('estados_unidos')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'estados_unidos' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-flag-usa text-blue-400 mr-2"></i>Índices Estados Unidos</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">6</span></button>
                 <button onclick="cambiarSubIndice('sectores')" class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between border ${subIndiceActivo === 'sectores' ? 'bg-cyan-500/20 text-white border-cyan-400' : 'text-slate-400 hover:text-white border-slate-800/60'}"><span class="text-xs font-semibold"><i class="fa-solid fa-chart-pie text-amber-400 mr-2"></i>Sectores (SPDRs)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800">11</span></button>
               </aside>
               <section class="flex-1 w-full space-y-4 overflow-hidden">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div class="flex items-center gap-2"><i class="fa-solid ${infoSub.icono} ${infoSub.color} text-sm"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">${infoSub.titulo}</h3></div>
-                  
                 </div>
-                <div id="grid-indices-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}</div>
+                ${subIndiceActivo === "acciones_argentinas"
+                  ? `<div id="acciones-argentinas-rava-wrapper">${window.renderizarSeccionAccionesArgentinasRava()}</div>`
+                  : `<div id="grid-indices-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${itemsSub.map(item => crearTarjeta(item, "indices", valorOficial)).join("")}</div>`
+                }
                 <div id="finviz-sectores-wrapper">${subIndiceActivo === "sectores" ? renderizarBloqueFinvizSectores() : ""}</div>
                 ${mapaCalorHtml}
               </section>
@@ -2709,6 +2934,8 @@
     cargarDatos();
     actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
+    if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
+    setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
     window.sincronizarCalendarioEconomico();
     sincronizarLicitacionesA3();
 

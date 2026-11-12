@@ -483,6 +483,137 @@ def _fmt_pct_con_signo(val: Optional[float], def_val: float = 0.0) -> str:
     v = val if val is not None else def_val
     return f"+{v:.1f}%".replace(".", ",") if v > 0 else f"{v:.1f}%".replace(".", ",")
 
+
+ACCIONES_MERVAL_BASE = [
+    {"especie": "ALUA", "ultimo": 915.0, "dia": 1.44, "mes": -4.20, "anio": -12.50, "anterior": 902.0, "apertura": 905.0, "minimo": 900.0, "maximo": 920.0, "hora": "17:00", "vol_nominal": 1450200, "vol_efectivo": 1326933000},
+    {"especie": "BBAR", "ultimo": 14850.0, "dia": 2.98, "mes": 8.40, "anio": 115.20, "anterior": 14420.0, "apertura": 14500.0, "minimo": 14400.0, "maximo": 14920.0, "hora": "17:00", "vol_nominal": 412300, "vol_efectivo": 6122655000},
+    {"especie": "BMA", "ultimo": 18200.0, "dia": 2.54, "mes": 6.80, "anio": 124.60, "anterior": 17750.0, "apertura": 17800.0, "minimo": 17700.0, "maximo": 18350.0, "hora": "17:00", "vol_nominal": 389100, "vol_efectivo": 7081620000},
+    {"especie": "BYMA", "ultimo": 395.0, "dia": 0.77, "mes": 1.20, "anio": 38.40, "anterior": 392.0, "apertura": 392.0, "minimo": 390.0, "maximo": 398.0, "hora": "17:00", "vol_nominal": 2890000, "vol_efectivo": 1141550000},
+    {"especie": "CEPU", "ultimo": 2410.0, "dia": 1.90, "mes": 4.10, "anio": 64.20, "anterior": 2365.0, "apertura": 2370.0, "minimo": 2360.0, "maximo": 2425.0, "hora": "17:00", "vol_nominal": 1120400, "vol_efectivo": 2700164000},
+    {"especie": "COME", "ultimo": 298.5, "dia": 3.47, "mes": 11.20, "anio": 142.80, "anterior": 288.5, "apertura": 290.0, "minimo": 288.0, "maximo": 301.0, "hora": "17:00", "vol_nominal": 8450000, "vol_efectivo": 2522325000},
+    {"especie": "CRES", "ultimo": 2180.0, "dia": -0.91, "mes": -2.40, "anio": 29.80, "anterior": 2200.0, "apertura": 2195.0, "minimo": 2170.0, "maximo": 2210.0, "hora": "17:00", "vol_nominal": 540200, "vol_efectivo": 1177636000},
+    {"especie": "CVH", "ultimo": 9850.0, "dia": -1.50, "mes": -3.10, "anio": 41.20, "anterior": 10000.0, "apertura": 9980.0, "minimo": 9800.0, "maximo": 10020.0, "hora": "17:00", "vol_nominal": 68400, "vol_efectivo": 673740000},
+    {"especie": "EDN", "ultimo": 3690.0, "dia": 2.22, "mes": 5.90, "anio": 88.50, "anterior": 3610.0, "apertura": 3620.0, "minimo": 3600.0, "maximo": 3715.0, "hora": "17:00", "vol_nominal": 620100, "vol_efectivo": 2288169000},
+    {"especie": "GGAL", "ultimo": 12450.0, "dia": 3.15, "mes": 9.20, "anio": 148.90, "anterior": 12070.0, "apertura": 12150.0, "minimo": 12050.0, "maximo": 12520.0, "hora": "17:00", "vol_nominal": 1850400, "vol_efectivo": 23037480000},
+    {"especie": "IRSA", "ultimo": 2640.0, "dia": -0.56, "mes": 1.80, "anio": 52.10, "anterior": 2655.0, "apertura": 2650.0, "minimo": 2625.0, "maximo": 2670.0, "hora": "17:00", "vol_nominal": 410000, "vol_efectivo": 1082400000},
+    {"especie": "LOMA", "ultimo": 3890.0, "dia": -1.77, "mes": -5.10, "anio": 19.40, "anterior": 3960.0, "apertura": 3950.0, "minimo": 3875.0, "maximo": 3965.0, "hora": "17:00", "vol_nominal": 495000, "vol_efectivo": 1925550000},
+    {"especie": "METR", "ultimo": 2950.0, "dia": 4.24, "mes": 14.50, "anio": 118.40, "anterior": 2830.0, "apertura": 2850.0, "minimo": 2830.0, "maximo": 2975.0, "hora": "17:00", "vol_nominal": 530200, "vol_efectivo": 1564090000},
+    {"especie": "MIRG", "ultimo": 26800.0, "dia": -2.19, "mes": -6.80, "anio": 8.90, "anterior": 27400.0, "apertura": 27300.0, "minimo": 26700.0, "maximo": 27400.0, "hora": "17:00", "vol_nominal": 19500, "vol_efectivo": 522600000},
+    {"especie": "PAMP", "ultimo": 6780.0, "dia": 1.65, "mes": 3.40, "anio": 74.10, "anterior": 6670.0, "apertura": 6690.0, "minimo": 6650.0, "maximo": 6810.0, "hora": "17:00", "vol_nominal": 980500, "vol_efectivo": 6647790000},
+    {"especie": "SUPV", "ultimo": 4120.0, "dia": 2.74, "mes": 7.60, "anio": 132.40, "anterior": 4010.0, "apertura": 4030.0, "minimo": 4000.0, "maximo": 4150.0, "hora": "17:00", "vol_nominal": 890300, "vol_efectivo": 3668036000},
+    {"especie": "TECO2", "ultimo": 3740.0, "dia": -1.32, "mes": -2.90, "anio": 34.50, "anterior": 3790.0, "apertura": 3780.0, "minimo": 3720.0, "maximo": 3800.0, "hora": "17:00", "vol_nominal": 460200, "vol_efectivo": 1721148000},
+    {"especie": "TGNO4", "ultimo": 5490.0, "dia": 3.78, "mes": 12.10, "anio": 96.40, "anterior": 5290.0, "apertura": 5310.0, "minimo": 5280.0, "maximo": 5520.0, "hora": "17:00", "vol_nominal": 415800, "vol_efectivo": 2282742000},
+    {"especie": "TGSU2", "ultimo": 9620.0, "dia": 1.80, "mes": 4.90, "anio": 82.30, "anterior": 9450.0, "apertura": 9480.0, "minimo": 9440.0, "maximo": 9660.0, "hora": "17:00", "vol_nominal": 512000, "vol_efectivo": 4925440000},
+    {"especie": "TRAN", "ultimo": 3510.0, "dia": 2.33, "mes": 6.20, "anio": 91.80, "anterior": 3430.0, "apertura": 3440.0, "minimo": 3420.0, "maximo": 3530.0, "hora": "17:00", "vol_nominal": 480900, "vol_efectivo": 1687959000},
+    {"especie": "TXAR", "ultimo": 845.0, "dia": -1.97, "mes": -5.80, "anio": -14.20, "anterior": 862.0, "apertura": 860.0, "minimo": 840.0, "maximo": 864.0, "hora": "17:00", "vol_nominal": 1920000, "vol_efectivo": 1622400000},
+    {"especie": "VALO", "ultimo": 438.0, "dia": 0.46, "mes": 2.10, "anio": 44.60, "anterior": 436.0, "apertura": 436.0, "minimo": 434.0, "maximo": 441.0, "hora": "17:00", "vol_nominal": 1350000, "vol_efectivo": 591300000},
+    {"especie": "YPFD", "ultimo": 58900.0, "dia": 2.88, "mes": 8.70, "anio": 112.50, "anterior": 57250.0, "apertura": 57500.0, "minimo": 57200.0, "maximo": 59150.0, "hora": "17:00", "vol_nominal": 642000, "vol_efectivo": 37813800000}
+]
+
+TICKERS_PANEL_LIDER_SET = {x["especie"] for x in ACCIONES_MERVAL_BASE}
+CACHE_ACCIONES_ARGENTINA: Dict[str, Any] = {
+    "merval": list(ACCIONES_MERVAL_BASE),
+    "lo_mejor": sorted(ACCIONES_MERVAL_BASE, key=lambda x: x["dia"], reverse=True)[:7],
+    "lo_peor": sorted(ACCIONES_MERVAL_BASE, key=lambda x: x["dia"])[:7],
+    "updated": ""
+}
+
+def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
+    global CACHE_ACCIONES_ARGENTINA
+    ts_ms = int(time.time() * 1000)
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Referer": "https://www.rava.com/"
+    }
+    mapa_merval = {x["especie"]: dict(x) for x in CACHE_ACCIONES_ARGENTINA.get("merval", ACCIONES_MERVAL_BASE)}
+    candidatos_ranking = {}
+
+    urls = [
+        f"https://www.rava.com/?_t={ts_ms}",
+        f"https://www.rava.com/cotizaciones/acciones-argentinas?_t={ts_ms}"
+    ]
+    for u in urls:
+        try:
+            r = requests.get(u, headers=hdrs, timeout=4.5)
+            if r.status_code == 200 and r.text:
+                html_u = r.text.replace("&quot;", '"')
+                for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie)"\s*:\s*"([A-Z0-9\.]{2,10})"[^{}]*\}', html_u):
+                    b = m_obj.group(0)
+                    sim = m_obj.group(1).upper().strip()
+                    if sim in ("MERVAL", "IMV", "DOLAR", "RIESGO", "CAUCION"):
+                        continue
+                    def _ext(campo_regex):
+                        m_c = re.search(campo_regex, b, re.IGNORECASE)
+                        return _parse_float_limpio(m_c.group(1)) if m_c else None
+
+                    ult = _ext(r'"(?:ultimo|px_last|close|valor)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    dia = _ext(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?')
+                    mes = _ext(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?')
+                    anio = _ext(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?')
+                    ant = _ext(r'"(?:anterior|cierre_ant|prev)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    ape = _ext(r'"(?:apertura|open)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    min_v = _ext(r'"(?:minimo|min|low)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    max_v = _ext(r'"(?:maximo|max|high)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    vn = _ext(r'"(?:volumen|vol_nominal|nominal)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    ve = _ext(r'"(?:monto|vol_efectivo|efectivo)"\s*:\s*"?([+\-]?[\d\.,]+)"?')
+                    m_h = re.search(r'"hora"\s*:\s*"([^"]+)"', b, re.IGNORECASE)
+                    hora_s = m_h.group(1)[:5] if m_h else "17:00"
+
+                    if ult and ult > 0 and dia is not None and -40 <= dia <= 40:
+                        item_acc = {
+                            "especie": sim,
+                            "ultimo": round(ult, 2),
+                            "dia": round(dia, 2),
+                            "mes": round(mes if mes is not None else (mapa_merval.get(sim, {}).get("mes", 0.0)), 2),
+                            "anio": round(anio if anio is not None else (mapa_merval.get(sim, {}).get("anio", 0.0)), 2),
+                            "anterior": round(ant if ant else ult / (1 + (dia / 100.0) if dia != -100 else 1), 2),
+                            "apertura": round(ape if ape else ult, 2),
+                            "minimo": round(min_v if min_v else ult, 2),
+                            "maximo": round(max_v if max_v else ult, 2),
+                            "hora": hora_s,
+                            "vol_nominal": int(vn) if vn else mapa_merval.get(sim, {}).get("vol_nominal", 0),
+                            "vol_efectivo": int(ve) if ve else mapa_merval.get(sim, {}).get("vol_efectivo", 0)
+                        }
+                        if sim in TICKERS_PANEL_LIDER_SET:
+                            mapa_merval[sim] = item_acc
+                        if len(sim) <= 6 and not sim.endswith(("D", "C")):
+                            candidatos_ranking[sim] = item_acc
+
+                plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+                for tk in TICKERS_PANEL_LIDER_SET:
+                    mt = re.search(r'\b' + tk + r'\b\s+([\d\.]+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)', plano)
+                    if mt:
+                        u_v = _parse_float_limpio(mt.group(1))
+                        d_v = _parse_float_limpio(mt.group(2))
+                        m_v = _parse_float_limpio(mt.group(3))
+                        a_v = _parse_float_limpio(mt.group(4))
+                        if u_v and d_v is not None:
+                            prev = mapa_merval.get(tk, {})
+                            prev["ultimo"] = round(u_v, 2)
+                            prev["dia"] = round(d_v, 2)
+                            if m_v is not None: prev["mes"] = round(m_v, 2)
+                            if a_v is not None: prev["anio"] = round(a_v, 2)
+                            mapa_merval[tk] = prev
+                            candidatos_ranking[tk] = prev
+        except Exception:
+            pass
+
+    lista_merval = sorted(list(mapa_merval.values()), key=lambda x: x["especie"])
+    universo = list(candidatos_ranking.values()) if len(candidatos_ranking) >= 10 else list(lista_merval)
+    lo_mejor = sorted([x for x in universo if x["dia"] >= 0], key=lambda x: x["dia"], reverse=True)[:7]
+    lo_peor = sorted([x for x in universo if x["dia"] < 0], key=lambda x: x["dia"])[:7]
+    if not lo_peor:
+        lo_peor = sorted(universo, key=lambda x: x["dia"])[:5]
+
+    CACHE_ACCIONES_ARGENTINA = {
+        "merval": lista_merval,
+        "lo_mejor": lo_mejor,
+        "lo_peor": lo_peor,
+        "updated": datetime.utcnow().strftime("%H:%M:%S UTC")
+    }
+    return CACHE_ACCIONES_ARGENTINA
+
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, Any]]:
     datos = {
         "MERVAL_ARS": {"ult": 83482.0, "dia": -0.7, "mes": -9.3, "anio": -22.1},
@@ -1982,6 +2113,7 @@ def worker_refresco_continuo():
         try:
             with ThreadPoolExecutor(max_workers=16) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
+                f_acc_rava = executor.submit(obtener_acciones_rava_en_vivo)
                 f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra)
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
@@ -2177,6 +2309,11 @@ def ver_bcra(formato: str = Query("agrupado")):
                 lista_plana.extend(v)
             return lista_plana
         return CACHE_VARIABLES
+
+@app.get("/api/acciones/argentina")
+def ver_acciones_argentina():
+    with CACHE_LOCK:
+        return CACHE_ACCIONES_ARGENTINA
 
 @app.get("/api/sectores/finviz")
 def ver_sectores_finviz():
