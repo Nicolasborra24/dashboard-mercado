@@ -78,10 +78,18 @@
     .glow-flare-rose { background: linear-gradient(90deg, rgba(251, 113, 133, 0.8) 0%, rgba(244, 63, 94, 0.3) 60%, transparent 100%); }
     .glow-flare-emerald { background: linear-gradient(90deg, rgba(52, 211, 153, 0.8) 0%, rgba(16, 185, 129, 0.3) 60%, transparent 100%); }
 
-    @keyframes flash-up { 0% { color: #34d399; text-shadow: 0 0 14px rgba(52, 211, 153, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
-    @keyframes flash-down { 0% { color: #f43f5e; text-shadow: 0 0 14px rgba(244, 63, 94, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
-    .flash-green { animation: flash-up 1.3s ease; }
-    .flash-red { animation: flash-down 1.3s ease; }
+    @keyframes flash-up { 0% { color: #34d399; text-shadow: 0 0 18px rgba(52, 211, 153, 1); transform: scale(1.04); } 100% { color: #ffffff; text-shadow: none; transform: scale(1); } }
+    @keyframes flash-down { 0% { color: #f43f5e; text-shadow: 0 0 18px rgba(244, 63, 94, 1); transform: scale(1.04); } 100% { color: #ffffff; text-shadow: none; transform: scale(1); } }
+    @keyframes flash-sync { 0% { color: #38bdf8; text-shadow: 0 0 14px rgba(56, 189, 248, 0.85); } 100% { color: #ffffff; text-shadow: none; } }
+    @keyframes card-glow-up { 0% { border-color: rgba(52, 211, 153, 0.95); box-shadow: 0 0 22px rgba(16, 185, 129, 0.45); } 100% { border-color: rgba(56, 189, 248, 0.22); } }
+    @keyframes card-glow-down { 0% { border-color: rgba(244, 63, 94, 0.95); box-shadow: 0 0 22px rgba(244, 63, 94, 0.45); } 100% { border-color: rgba(56, 189, 248, 0.22); } }
+    @keyframes card-glow-sync { 0% { border-color: rgba(34, 211, 238, 0.75); box-shadow: 0 0 16px rgba(6, 182, 212, 0.3); } 100% { border-color: rgba(56, 189, 248, 0.22); } }
+    .flash-green { display: inline-block; animation: flash-up 1.4s ease-out; }
+    .flash-red { display: inline-block; animation: flash-down 1.4s ease-out; }
+    .flash-cyan { display: inline-block; animation: flash-sync 1.1s ease-out; }
+    .card-flash-green { animation: card-glow-up 1.4s ease-out; }
+    .card-flash-red { animation: card-glow-down 1.4s ease-out; }
+    .card-flash-cyan { animation: card-glow-sync 1.1s ease-out; }
   </style>
 </head>
 <body class="text-slate-100 antialiased min-h-screen pb-10">
@@ -850,6 +858,32 @@
       DOLAR_FUTURO: { compra: 1563.00, venta: 1563.50, variacion: "0,00%", fecha: "En vivo" }
     };
 
+    window.registrarCambioPrecioDolar = function(cod, nuevoCompra, nuevoVenta, varFmt, fecStr) {
+      const prevObj = window.PUNTAS_DOLAR_VIVO[cod] || {};
+      const prevVenta = PRECIOS_ANTERIORES[cod] !== undefined ? PRECIOS_ANTERIORES[cod] : prevObj.venta;
+      const prevCompra = prevObj.compra;
+
+      if (prevVenta !== undefined && !isNaN(nuevoVenta)) {
+        if (nuevoVenta > prevVenta || (nuevoCompra && prevCompra && nuevoCompra > prevCompra)) {
+          FLASH_REGISTRO[cod] = "flash-green";
+        } else if (nuevoVenta < prevVenta || (nuevoCompra && prevCompra && nuevoCompra < prevCompra)) {
+          FLASH_REGISTRO[cod] = "flash-red";
+        } else {
+          FLASH_REGISTRO[cod] = "flash-cyan";
+        }
+      } else {
+        FLASH_REGISTRO[cod] = "flash-cyan";
+      }
+
+      PRECIOS_ANTERIORES[cod] = nuevoVenta;
+      window.PUNTAS_DOLAR_VIVO[cod] = {
+        compra: nuevoCompra,
+        venta: nuevoVenta,
+        variacion: varFmt || prevObj.variacion || "0,00%",
+        fecha: fecStr || new Date().toLocaleTimeString()
+      };
+    };
+
     window.parsearNodoDolaritoCliente = function(kHint, nd) {
       if (!nd || typeof nd !== "object") return;
       const nom = (kHint + " " + (nd.name || "") + " " + (nd.nombre || "") + " " + (nd.slug || "") + " " + (nd.type || "")).toLowerCase();
@@ -876,46 +910,44 @@
         if (!isNaN(vr)) {
           varFmt = vr > 0 ? `+${vr.toFixed(2).replace(".", ",")}%` : (vr < 0 ? `${vr.toFixed(2).replace(".", ",")}%` : "0,00%");
         }
-        window.PUNTAS_DOLAR_VIVO[cod] = {
-          compra: soloVenta ? null : (!isNaN(c) && c > 800 ? c : prev.compra),
-          venta: v,
-          variacion: varFmt,
-          fecha: prev.fecha || "En vivo"
-        };
+        const cFinal = soloVenta ? null : (!isNaN(c) && c > 800 ? c : prev.compra);
+        window.registrarCambioPrecioDolar(cod, cFinal, v, varFmt, new Date().toLocaleTimeString());
       }
     };
 
     async function actualizarPuntasDolarEnVivo() {
-      // 1. Sincronizar con el endpoint del backend
-      const [puntasBack, dBandas] = await Promise.all([
-        fetchJsonSeguro("/api/dolar/dolarito?t=" + Date.now()),
-        fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now())
+      const ts = Date.now();
+      const [puntasBack, dBandas, criptoYa] = await Promise.all([
+        fetchJsonSeguro("/api/dolar/dolarito?t=" + ts),
+        fetchJsonSeguro("/api/dolar/bandas?t=" + ts),
+        fetchJsonSeguro("https://criptoya.com/api/usdt/ars/1?t=" + ts)
       ]);
 
       if (puntasBack && typeof puntasBack === "object") {
         Object.keys(puntasBack).forEach(cod => {
           const info = puntasBack[cod];
           if (info && info.venta) {
-            window.PUNTAS_DOLAR_VIVO[cod] = {
-              compra: info.compra || null,
-              venta: parseFloat(info.venta),
-              variacion: info.variacion || (window.PUNTAS_DOLAR_VIVO[cod] && window.PUNTAS_DOLAR_VIVO[cod].variacion) || "0,00%",
-              fecha: info.fecha || "En vivo"
-            };
+            window.registrarCambioPrecioDolar(
+              cod,
+              info.compra || null,
+              parseFloat(info.venta),
+              info.variacion,
+              new Date().toLocaleTimeString()
+            );
           }
         });
       }
 
-      // 2. Consulta directa desde el navegador del usuario a Dolarito (evita bloqueo de IP de servidor)
-      const targetApi = "https://api.dolarito.ar/api/frontend/quotations";
+      // Consulta directa sin caché a Dolarito desde el navegador
+      const targetApi = "https://api.dolarito.ar/api/frontend/quotations?_t=" + ts;
       const candidatos = [
         targetApi,
-        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetApi),
+        "https://corsproxy.io/?" + encodeURIComponent(targetApi),
         "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetApi)
       ];
       for (const u of candidatos) {
         try {
-          const r = await fetch(u);
+          const r = await fetch(u, { cache: "no-store" });
           if (r.ok) {
             const dj = await r.json();
             const rec = (o, kP = "") => {
@@ -934,10 +966,35 @@
         } catch (e) {}
       }
 
+      // Actualización tick a tick del DÓLAR CRIPTO (USDT/ARS en vivo)
+      if (criptoYa && typeof criptoYa === "object") {
+        const bids = [], asks = [];
+        ["binancep2p", "lemoncash", "belo", "fiwind", "buenbit", "letsbit", "ripio"].forEach(ex => {
+          if (criptoYa[ex]) {
+            const b = parseFloat(criptoYa[ex].totalBid || criptoYa[ex].bid);
+            const a = parseFloat(criptoYa[ex].totalAsk || criptoYa[ex].ask);
+            if (!isNaN(b) && b > 1350 && b < 2500) bids.push(b);
+            if (!isNaN(a) && a > 1350 && a < 2500) asks.push(a);
+          }
+        });
+        if (bids.length > 0 && asks.length > 0) {
+          bids.sort((x, y) => y - x);
+          asks.sort((x, y) => x - y);
+          const topB = bids.slice(0, 3);
+          const topA = asks.slice(0, 3);
+          const cVivo = +(topB.reduce((a, b) => a + b, 0) / topB.length).toFixed(2);
+          let vVivo = +(topA.reduce((a, b) => a + b, 0) / topA.length).toFixed(2);
+          if (vVivo <= cVivo) vVivo = +(cVivo + 3.70).toFixed(2);
+          const chgPct = (((vVivo - 1649.35) / 1649.35) * 100).toFixed(2).replace(".", ",");
+          const varStr = parseFloat(chgPct.replace(",", ".")) >= 0 ? `+${chgPct}%` : `${chgPct}%`;
+          window.registrarCambioPrecioDolar("DOLAR_CRIPTO", cVivo, vVivo, varStr, new Date().toLocaleTimeString());
+        }
+      }
+
       if (window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL && window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta) {
         const vOf = window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta;
-        window.PUNTAS_DOLAR_VIVO.DOLAR_TARJETA.venta = +(vOf * 1.30).toFixed(2);
-        window.PUNTAS_DOLAR_VIVO.DOLAR_NETFLIX.venta = +(vOf * 1.51).toFixed(2);
+        window.registrarCambioPrecioDolar("DOLAR_TARJETA", null, +(vOf * 1.30).toFixed(2), window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.variacion, new Date().toLocaleTimeString());
+        window.registrarCambioPrecioDolar("DOLAR_NETFLIX", null, +(vOf * 1.51).toFixed(2), window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.variacion, new Date().toLocaleTimeString());
       }
 
       if (dBandas && dBandas.banda_inferior) {
@@ -946,6 +1003,9 @@
       if (window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta) {
         datosBandasCambiarias.dolar_mayorista = window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta;
       }
+
+      const reloj = document.getElementById("last-update");
+      if (reloj) reloj.innerText = new Date().toLocaleTimeString();
 
       if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
         renderizar(false);
@@ -1067,7 +1127,7 @@
       if (item.variable === "RIESGO_PAIS" && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
 
       return `
-        <div class="neon-card rounded-2xl p-4 flex flex-col justify-between">
+        <div class="neon-card rounded-2xl p-4 flex flex-col justify-between ${animFlash ? 'card-' + animFlash : ''}">
           <div>
             <div class="flex items-center justify-between gap-1.5">
               <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
@@ -2468,9 +2528,9 @@
     window.sincronizarCalendarioEconomico();
     sincronizarLicitacionesA3();
 
-    setInterval(actualizarCriptosEnVivo, 5000);
+    setInterval(actualizarCriptosEnVivo, 8000);
     setInterval(cargarDatos, 8000);
-    setInterval(actualizarPuntasDolarEnVivo, 10000);
+    setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(sincronizarEndpointsSecundarios, 15000);
     setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 30000);
     setTimeout(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 800);

@@ -1007,9 +1007,13 @@ BASE_DOLARITO_EXACTA: Dict[str, Dict[str, Any]] = {
 
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     res: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in BASE_DOLARITO_EXACTA.items()}
+    ts_ms = int(time.time() * 1000)
+    hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
         "Referer": "https://www.dolarito.ar/",
         "Origin": "https://www.dolarito.ar"
     }
@@ -1026,7 +1030,6 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
 
     def _procesar_nodo_dolarito(k_hint: str, nd: Dict[str, Any]):
         nom = f"{k_hint} {nd.get('name', '')} {nd.get('nombre', '')} {nd.get('slug', '')} {nd.get('type', '')}".lower().strip()
-        # Evitar billeteras/sponsors (uala, brubank, nexo, youhodler, arq, lemon, belo, fiwind)
         if any(sp in nom for sp in ["uala", "ualá", "brubank", "nexo", "youhodler", "arq", "lemon", "belo", "fiwind", "buenbit", "ripio", "letsbit", "prex"]):
             return
 
@@ -1064,30 +1067,29 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
 
         if cod_dest:
             var_def = res[cod_dest].get("variacion", "0,00%")
-            fec_def = res[cod_dest].get("fecha", "En vivo")
             res[cod_dest] = {
                 "compra": None if es_un_valor else (round(c, 2) if (c and c > 800) else res[cod_dest].get("compra")),
                 "venta": round(v, 2),
                 "variacion": _fmt_var(var_raw, var_def),
-                "fecha": fec_def
+                "fecha": hora_vivo
             }
             BASE_DOLARITO_EXACTA[cod_dest] = dict(res[cod_dest])
 
-    # Consultar API y web de Dolarito directo y con puentes anti-Cloudflare
-    targets = [
-        "https://api.dolarito.ar/api/frontend/quotations",
-        "https://www.dolarito.ar/"
+    # 1. Consultar Dolarito con cache-busting en tiempo real
+    t1 = f"https://api.dolarito.ar/api/frontend/quotations?_t={ts_ms}"
+    t2 = f"https://www.dolarito.ar/?_t={ts_ms}"
+    urls_intento = [
+        t1,
+        f"https://corsproxy.io/?{quote(t1, safe='')}",
+        f"https://api.codetabs.com/v1/proxy?quest={quote(t1, safe='')}",
+        f"https://api.allorigins.win/raw?url={quote(t1, safe='')}&_t={ts_ms}",
+        t2,
+        f"https://corsproxy.io/?{quote(t2, safe='')}"
     ]
-    urls_intento = []
-    for t in targets:
-        urls_intento.append(t)
-        urls_intento.append(f"https://api.allorigins.win/raw?url={quote(t, safe='')}")
-        urls_intento.append(f"https://api.codetabs.com/v1/proxy?quest={quote(t, safe='')}")
-        urls_intento.append(f"https://corsproxy.io/?{quote(t, safe='')}")
 
     for u in urls_intento:
         try:
-            r = requests.get(u, headers=headers, timeout=3.8, verify=False)
+            r = requests.get(u, headers=headers, timeout=3.2, verify=False)
             if r.status_code != 200 or not r.text.strip():
                 continue
             txt = r.text.strip()
@@ -1114,7 +1116,36 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         except Exception:
             pass
 
-    # Sincronizar Tarjeta (Oficial Venta * 1.30) y Netflix (Oficial Venta * 1.51) como en Dolarito
+    # 2. Stream dinámico en vivo para DÓLAR CRIPTO (CriptoYa USDT/ARS tick a tick)
+    try:
+        r_cy = requests.get(f"https://criptoya.com/api/usdt/ars/1?_t={ts_ms}", headers=headers, timeout=2.5)
+        if r_cy.status_code == 200:
+            d_cy = r_cy.json()
+            bids, asks = [], []
+            for ex_k in ("binancep2p", "lemoncash", "belo", "fiwind", "buenbit", "letsbit", "ripio"):
+                ex_obj = d_cy.get(ex_k)
+                if isinstance(ex_obj, dict):
+                    b_v = normalizar_valor(ex_obj.get("totalBid") or ex_obj.get("bid"))
+                    a_v = normalizar_valor(ex_obj.get("totalAsk") or ex_obj.get("ask"))
+                    if b_v and 1350 < b_v < 2500: bids.append(b_v)
+                    if a_v and 1350 < a_v < 2500: asks.append(a_v)
+            if bids and asks:
+                c_vivo = round(sum(sorted(bids)[-3:]) / min(3, len(bids)), 2)
+                v_vivo = round(sum(sorted(asks)[:3]) / min(3, len(asks)), 2)
+                if v_vivo < c_vivo:
+                    v_vivo = round(c_vivo + 3.70, 2)
+                prev_v = BASE_DOLARITO_EXACTA["DOLAR_CRIPTO"]["venta"]
+                chg_c = ((v_vivo - 1649.35) / 1649.35) * 100
+                res["DOLAR_CRIPTO"] = {
+                    "compra": c_vivo,
+                    "venta": v_vivo,
+                    "variacion": _fmt_var(chg_c, "+0,55%"),
+                    "fecha": hora_vivo
+                }
+                BASE_DOLARITO_EXACTA["DOLAR_CRIPTO"] = dict(res["DOLAR_CRIPTO"])
+    except Exception:
+        pass
+
     v_of = res["DOLAR_OFICIAL"]["venta"]
     if v_of and v_of > 1000:
         res["DOLAR_TARJETA"]["venta"] = round(v_of * 1.30, 2)
@@ -1137,7 +1168,7 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
         "valor_formateado": f"${v_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
         "variacion": var_fut,
         "valor": v_fut,
-        "fecha": "En vivo"
+        "fecha": info_f.get("fecha", "En vivo")
     }
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
