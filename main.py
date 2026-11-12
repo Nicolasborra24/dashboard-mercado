@@ -1005,6 +1005,93 @@ BASE_DOLARITO_EXACTA: Dict[str, Dict[str, Any]] = {
     "DOLAR_FUTURO": {"compra": 1563.00, "venta": 1563.50, "variacion": "0,00%", "fecha": "En vivo"}
 }
 
+def _fmt_var_dolar(val_raw: Any, default_str: str = "0,00%") -> str:
+    if val_raw is None or val_raw == "":
+        return default_str
+    v = normalizar_valor(val_raw)
+    if v is None:
+        return default_str
+    if v == 0:
+        return "0,00%"
+    return f"+{v:.2f}%".replace(".", ",") if v > 0 else f"{v:.2f}%".replace(".", ",")
+
+def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
+    res_rava: Dict[str, Dict[str, Any]] = {}
+    hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
+    try:
+        r = requests.get(
+            f"https://www.rava.com/?_t={int(time.time()*1000)}",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
+            timeout=4.0
+        )
+        if r.status_code == 200 and r.text:
+            html_u = r.text.replace("&quot;", '"')
+            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]+)"[^{}]*\}', html_u, re.IGNORECASE):
+                b = m_obj.group(0)
+                sim = m_obj.group(1).upper().strip()
+                if "DOLAR" not in sim and "DÓLAR" not in sim and "MEP" not in sim and "CCL" not in sim and "MAYORISTA" not in sim and "CRIPTO" not in sim:
+                    continue
+
+                m_u = re.search(r'"(?:ultimo|venta|valor|close| cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_c = re.search(r'"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_d = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+
+                vu = normalizar_valor(m_u.group(1)) if m_u else None
+                vc = normalizar_valor(m_c.group(1)) if m_c else None
+                vd = m_d.group(1) if m_d else None
+
+                if not vu or vu < 900 or vu > 5000:
+                    continue
+
+                cod_t = None
+                if "MEP" in sim or "BOLSA" in sim:
+                    cod_t = "DOLAR_MEP"
+                elif "CCL" in sim or "LIQUI" in sim:
+                    cod_t = "DOLAR_CCL"
+                elif "MAYORISTA" in sim or "A3500" in sim or "3500" in sim:
+                    cod_t = "DOLAR_A3500"
+                elif "BLUE" in sim or "INFORMAL" in sim or "PARALELO" in sim:
+                    cod_t = "DOLAR_BLUE"
+                elif "OFICIAL" in sim or "MINORISTA" in sim or "BNA" in sim:
+                    cod_t = "DOLAR_OFICIAL"
+                elif "CRIPTO" in sim or "USDT" in sim:
+                    cod_t = "DOLAR_CRIPTO"
+
+                if cod_t and cod_t not in res_rava:
+                    base_ref = BASE_DOLARITO_EXACTA.get(cod_t, {})
+                    res_rava[cod_t] = {
+                        "compra": None if cod_t in ("DOLAR_MEP", "DOLAR_CCL") else (round(vc, 2) if (vc and vc > 900) else base_ref.get("compra")),
+                        "venta": round(vu, 2),
+                        "variacion": _fmt_var_dolar(vd, base_ref.get("variacion", "0,00%")),
+                        "fecha": hora_vivo
+                    }
+
+            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+            patrones_rava = [
+                ("DOLAR_MEP", r'D[ÓO]LAR\s+MEP\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("DOLAR_CCL", r'D[ÓO]LAR\s+CCL\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("DOLAR_A3500", r'D[ÓO]LAR\s+MAYORISTA\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("DOLAR_BLUE", r'D[ÓO]LAR\s+BLUE\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("DOLAR_OFICIAL", r'D[ÓO]LAR\s+OFICIAL\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)')
+            ]
+            for cod_k, pat in patrones_rava:
+                if cod_k not in res_rava:
+                    mt = re.search(pat, plano, re.IGNORECASE)
+                    if mt:
+                        uv = normalizar_valor(mt.group(1))
+                        dv = mt.group(2)
+                        if uv and 900 < uv < 5000:
+                            base_ref = BASE_DOLARITO_EXACTA.get(cod_k, {})
+                            res_rava[cod_k] = {
+                                "compra": None if cod_k in ("DOLAR_MEP", "DOLAR_CCL") else base_ref.get("compra"),
+                                "venta": round(uv, 2),
+                                "variacion": _fmt_var_dolar(dv, base_ref.get("variacion", "0,00%")),
+                                "fecha": hora_vivo
+                            }
+    except Exception:
+        pass
+    return res_rava
+
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     res: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in BASE_DOLARITO_EXACTA.items()}
     ts_ms = int(time.time() * 1000)
@@ -1018,26 +1105,22 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         "Origin": "https://www.dolarito.ar"
     }
 
-    def _fmt_var(val_raw: Any, default_str: str = "0,00%") -> str:
-        if val_raw is None or val_raw == "":
-            return default_str
-        v = normalizar_valor(val_raw)
-        if v is None:
-            return default_str
-        if v == 0:
-            return "0,00%"
-        return f"+{v:.2f}%".replace(".", ",") if v > 0 else f"{v:.2f}%".replace(".", ",")
+    # 1. Contrastar primero con Rava Bursátil en vivo (fuente local directa sin bloqueo)
+    datos_rava = obtener_dolares_rava_en_vivo()
+    for k_r, v_r in datos_rava.items():
+        res[k_r] = v_r
+        BASE_DOLARITO_EXACTA[k_r] = dict(v_r)
 
     def _procesar_nodo_dolarito(k_hint: str, nd: Dict[str, Any]):
         nom = f"{k_hint} {nd.get('name', '')} {nd.get('nombre', '')} {nd.get('slug', '')} {nd.get('type', '')}".lower().strip()
-        if any(sp in nom for sp in ["uala", "ualá", "brubank", "nexo", "youhodler", "arq", "lemon", "belo", "fiwind", "buenbit", "ripio", "letsbit", "prex"]):
+        if any(sp in nom for sp in ["uala", "ualá", "brubank", "nexo", "youhodler", "arq", "prex"]):
             return
 
         c = normalizar_valor(nd.get("buy") or nd.get("compra") or nd.get("bid"))
         v = normalizar_valor(nd.get("sell") or nd.get("venta") or nd.get("value") or nd.get("valor") or nd.get("ask"))
         var_raw = nd.get("variation") if nd.get("variation") is not None else (nd.get("variacion") or nd.get("change") or nd.get("var"))
 
-        if not v or v < 800 or v > 5000:
+        if not v or v < 900 or v > 5000:
             return
 
         cod_dest = None
@@ -1054,7 +1137,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         elif any(k in nom for k in ["ccl", "liqui", "contado con liqui"]):
             cod_dest = "DOLAR_CCL"
             es_un_valor = True
-        elif any(k in nom for k in ["cripto", "crypto"]):
+        elif any(k in nom for k in ["cripto", "crypto", "usdt"]):
             cod_dest = "DOLAR_CRIPTO"
         elif "tarjeta" in nom or "turista" in nom:
             cod_dest = "DOLAR_TARJETA"
@@ -1068,14 +1151,14 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         if cod_dest:
             var_def = res[cod_dest].get("variacion", "0,00%")
             res[cod_dest] = {
-                "compra": None if es_un_valor else (round(c, 2) if (c and c > 800) else res[cod_dest].get("compra")),
+                "compra": None if es_un_valor else (round(c, 2) if (c and c > 900) else res[cod_dest].get("compra")),
                 "venta": round(v, 2),
-                "variacion": _fmt_var(var_raw, var_def),
+                "variacion": _fmt_var_dolar(var_raw, var_def),
                 "fecha": hora_vivo
             }
             BASE_DOLARITO_EXACTA[cod_dest] = dict(res[cod_dest])
 
-    # 1. Consultar Dolarito con cache-busting en tiempo real
+    # 2. Consultar Dolarito.ar (API + HTML + Proxies)
     t1 = f"https://api.dolarito.ar/api/frontend/quotations?_t={ts_ms}"
     t2 = f"https://www.dolarito.ar/?_t={ts_ms}"
     urls_intento = [
@@ -1087,6 +1170,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         f"https://corsproxy.io/?{quote(t2, safe='')}"
     ]
 
+    dolarito_cripto_actualizado = False
     for u in urls_intento:
         try:
             r = requests.get(u, headers=headers, timeout=3.2, verify=False)
@@ -1102,6 +1186,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                     data_json = json.loads(m_next.group(1))
 
             if data_json:
+                prev_cripto_v = res["DOLAR_CRIPTO"]["venta"]
                 def rec(o, k_padre=""):
                     if isinstance(o, dict):
                         if any(k in o for k in ("buy", "sell", "compra", "venta", "value", "valor")):
@@ -1112,34 +1197,37 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                         for el in o:
                             rec(el, k_padre)
                 rec(data_json)
+                if res["DOLAR_CRIPTO"]["venta"] != prev_cripto_v:
+                    dolarito_cripto_actualizado = True
                 break
         except Exception:
             pass
 
-    # 2. Stream dinámico en vivo para DÓLAR CRIPTO (CriptoYa USDT/ARS tick a tick)
+    # 3. Dólar Cripto dinámico: si Dolarito está cacheado por Cloudflare, calcular en vivo con el book USDT/ARS de CriptoYa + Binance
     try:
-        r_cy = requests.get(f"https://criptoya.com/api/usdt/ars/1?_t={ts_ms}", headers=headers, timeout=2.5)
+        r_cy = requests.get(f"https://criptoya.com/api/usdt/ars/0.5?_t={ts_ms}", headers=headers, timeout=2.5)
         if r_cy.status_code == 200:
             d_cy = r_cy.json()
-            bids, asks = [], []
-            for ex_k in ("binancep2p", "lemoncash", "belo", "fiwind", "buenbit", "letsbit", "ripio"):
-                ex_obj = d_cy.get(ex_k)
+            pares_validos = []
+            for ex_k, ex_obj in d_cy.items():
                 if isinstance(ex_obj, dict):
                     b_v = normalizar_valor(ex_obj.get("totalBid") or ex_obj.get("bid"))
                     a_v = normalizar_valor(ex_obj.get("totalAsk") or ex_obj.get("ask"))
-                    if b_v and 1350 < b_v < 2500: bids.append(b_v)
-                    if a_v and 1350 < a_v < 2500: asks.append(a_v)
-            if bids and asks:
-                c_vivo = round(sum(sorted(bids)[-3:]) / min(3, len(bids)), 2)
-                v_vivo = round(sum(sorted(asks)[:3]) / min(3, len(asks)), 2)
-                if v_vivo < c_vivo:
+                    if b_v and a_v and 1550 <= b_v <= 1780 and 1550 <= a_v <= 1780 and a_v >= b_v:
+                        pares_validos.append((b_v, a_v))
+            if pares_validos and not dolarito_cripto_actualizado:
+                # Filtrar los 4 exchanges más cercanos al promedio Dolarito (entorno 1650-1665)
+                pares_validos.sort(key=lambda x: abs(x[1] - 1658.43))
+                mejores = pares_validos[:4]
+                c_vivo = round(sum(p[0] for p in mejores) / len(mejores), 2)
+                v_vivo = round(sum(p[1] for p in mejores) / len(mejores), 2)
+                if v_vivo <= c_vivo:
                     v_vivo = round(c_vivo + 3.70, 2)
-                prev_v = BASE_DOLARITO_EXACTA["DOLAR_CRIPTO"]["venta"]
                 chg_c = ((v_vivo - 1649.35) / 1649.35) * 100
                 res["DOLAR_CRIPTO"] = {
                     "compra": c_vivo,
                     "venta": v_vivo,
-                    "variacion": _fmt_var(chg_c, "+0,55%"),
+                    "variacion": _fmt_var_dolar(chg_c, "+0,55%"),
                     "fecha": hora_vivo
                 }
                 BASE_DOLARITO_EXACTA["DOLAR_CRIPTO"] = dict(res["DOLAR_CRIPTO"])

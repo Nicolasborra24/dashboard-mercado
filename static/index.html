@@ -887,11 +887,11 @@
     window.parsearNodoDolaritoCliente = function(kHint, nd) {
       if (!nd || typeof nd !== "object") return;
       const nom = (kHint + " " + (nd.name || "") + " " + (nd.nombre || "") + " " + (nd.slug || "") + " " + (nd.type || "")).toLowerCase();
-      if (/uala|ualá|brubank|nexo|youhodler|arq|lemon|belo|fiwind|buenbit|ripio|letsbit|prex/.test(nom)) return;
+      if (/uala|ualá|brubank|nexo|youhodler|arq|prex/.test(nom)) return;
       const c = parseNumSeguro(nd.buy ?? nd.compra ?? nd.bid);
       const v = parseNumSeguro(nd.sell ?? nd.venta ?? nd.value ?? nd.valor ?? nd.ask);
       const vr = parseNumSeguro(nd.variation ?? nd.variacion ?? nd.change ?? nd.var);
-      if (isNaN(v) || v < 800 || v > 5000) return;
+      if (isNaN(v) || v < 900 || v > 5000) return;
 
       let cod = null, soloVenta = false;
       if (/mayorista|a3500|3500|mulc|wholesale/.test(nom)) cod = "DOLAR_A3500";
@@ -899,7 +899,7 @@
       else if (/blue|informal|paralelo/.test(nom)) cod = "DOLAR_BLUE";
       else if (/mep|bolsa/.test(nom)) { cod = "DOLAR_MEP"; soloVenta = true; }
       else if (/ccl|liqui/.test(nom)) { cod = "DOLAR_CCL"; soloVenta = true; }
-      else if (/cripto|crypto/.test(nom)) cod = "DOLAR_CRIPTO";
+      else if (/cripto|crypto|usdt/.test(nom)) cod = "DOLAR_CRIPTO";
       else if (/tarjeta|turista/.test(nom)) { cod = "DOLAR_TARJETA"; soloVenta = true; }
       else if (/netflix|streaming/.test(nom)) { cod = "DOLAR_NETFLIX"; soloVenta = true; }
       else if (/futuro|rofex/.test(nom)) cod = "DOLAR_FUTURO";
@@ -910,8 +910,41 @@
         if (!isNaN(vr)) {
           varFmt = vr > 0 ? `+${vr.toFixed(2).replace(".", ",")}%` : (vr < 0 ? `${vr.toFixed(2).replace(".", ",")}%` : "0,00%");
         }
-        const cFinal = soloVenta ? null : (!isNaN(c) && c > 800 ? c : prev.compra);
+        const cFinal = soloVenta ? null : (!isNaN(c) && c > 900 ? c : prev.compra);
         window.registrarCambioPrecioDolar(cod, cFinal, v, varFmt, new Date().toLocaleTimeString());
+      }
+    };
+
+    window.extraerDolaresDesdeRavaHTML = function(htmlRaw) {
+      if (!htmlRaw || htmlRaw.length < 200) return;
+      const htmlU = htmlRaw.replace(/&quot;/g, '"');
+      const regexObj = /\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]+)"[^{}]*\}/gi;
+      let m;
+      while ((m = regexObj.exec(htmlU)) !== null) {
+        const b = m[0];
+        const sim = m[1].toUpperCase();
+        if (!/DOLAR|DÓLAR|MEP|CCL|MAYORISTA|CRIPTO/.test(sim)) continue;
+        const mU = b.match(/"(?:ultimo|venta|valor|close)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+        const mC = b.match(/"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+        const mD = b.match(/"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+        const vu = mU ? parseNumSeguro(mU[1]) : NaN;
+        const vc = mC ? parseNumSeguro(mC[1]) : NaN;
+        const vd = mD ? parseNumSeguro(mD[1]) : NaN;
+        if (isNaN(vu) || vu < 900 || vu > 5000) continue;
+
+        let cod = null, soloV = false;
+        if (sim.includes("MEP") || sim.includes("BOLSA")) { cod = "DOLAR_MEP"; soloV = true; }
+        else if (sim.includes("CCL") || sim.includes("LIQUI")) { cod = "DOLAR_CCL"; soloV = true; }
+        else if (sim.includes("MAYORISTA") || sim.includes("A3500")) cod = "DOLAR_A3500";
+        else if (sim.includes("BLUE") || sim.includes("INFORMAL")) cod = "DOLAR_BLUE";
+        else if (sim.includes("OFICIAL") || sim.includes("BNA")) cod = "DOLAR_OFICIAL";
+        else if (sim.includes("CRIPTO")) cod = "DOLAR_CRIPTO";
+
+        if (cod) {
+          const prev = window.PUNTAS_DOLAR_VIVO[cod] || {};
+          const varStr = !isNaN(vd) ? (vd > 0 ? `+${vd.toFixed(2).replace(".", ",")}%` : `${vd.toFixed(2).replace(".", ",")}%`) : prev.variacion;
+          window.registrarCambioPrecioDolar(cod, soloV ? null : (!isNaN(vc) && vc > 900 ? vc : prev.compra), vu, varStr, new Date().toLocaleTimeString());
+        }
       }
     };
 
@@ -920,7 +953,7 @@
       const [puntasBack, dBandas, criptoYa] = await Promise.all([
         fetchJsonSeguro("/api/dolar/dolarito?t=" + ts),
         fetchJsonSeguro("/api/dolar/bandas?t=" + ts),
-        fetchJsonSeguro("https://criptoya.com/api/usdt/ars/1?t=" + ts)
+        fetchJsonSeguro("https://criptoya.com/api/usdt/ars/0.5?t=" + ts)
       ]);
 
       if (puntasBack && typeof puntasBack === "object") {
@@ -938,14 +971,14 @@
         });
       }
 
-      // Consulta directa sin caché a Dolarito desde el navegador
-      const targetApi = "https://api.dolarito.ar/api/frontend/quotations?_t=" + ts;
-      const candidatos = [
-        targetApi,
-        "https://corsproxy.io/?" + encodeURIComponent(targetApi),
-        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetApi)
-      ];
-      for (const u of candidatos) {
+      // 1. Consulta en vivo a Dolarito desde el navegador
+      let dolaritoRespondio = false;
+      const targetDolarito = "https://api.dolarito.ar/api/frontend/quotations?_t=" + ts;
+      for (const u of [
+        targetDolarito,
+        "https://corsproxy.io/?" + encodeURIComponent(targetDolarito),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetDolarito)
+      ]) {
         try {
           const r = await fetch(u, { cache: "no-store" });
           if (r.ok) {
@@ -954,6 +987,7 @@
               if (o && typeof o === "object") {
                 if ("buy" in o || "sell" in o || "compra" in o || "venta" in o || "value" in o) {
                   window.parsearNodoDolaritoCliente(kP, o);
+                  dolaritoRespondio = true;
                 }
                 Object.keys(o).forEach(k => rec(o[k], k));
               } else if (Array.isArray(o)) {
@@ -961,32 +995,50 @@
               }
             };
             rec(dj);
-            break;
+            if (dolaritoRespondio) break;
           }
         } catch (e) {}
       }
 
-      // Actualización tick a tick del DÓLAR CRIPTO (USDT/ARS en vivo)
+      // 2. Contraste con Rava Bursátil (https://www.rava.com/) si Dolarito tuvo algún bloqueo
+      if (!dolaritoRespondio) {
+        const targetRava = "https://www.rava.com/?_t=" + ts;
+        for (const uRava of [
+          "https://corsproxy.io/?" + encodeURIComponent(targetRava),
+          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetRava)
+        ]) {
+          try {
+            const rR = await fetch(uRava, { cache: "no-store" });
+            if (rR.ok) {
+              const txtR = await rR.text();
+              window.extraerDolaresDesdeRavaHTML(txtR);
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+
+      // 3. Dólar Cripto en tiempo real siguiendo el spread de Dolarito + libro USDT/ARS en vivo
       if (criptoYa && typeof criptoYa === "object") {
-        const bids = [], asks = [];
-        ["binancep2p", "lemoncash", "belo", "fiwind", "buenbit", "letsbit", "ripio"].forEach(ex => {
-          if (criptoYa[ex]) {
-            const b = parseFloat(criptoYa[ex].totalBid || criptoYa[ex].bid);
-            const a = parseFloat(criptoYa[ex].totalAsk || criptoYa[ex].ask);
-            if (!isNaN(b) && b > 1350 && b < 2500) bids.push(b);
-            if (!isNaN(a) && a > 1350 && a < 2500) asks.push(a);
+        const pares = [];
+        Object.keys(criptoYa).forEach(ex => {
+          const obj = criptoYa[ex];
+          if (obj && typeof obj === "object") {
+            const b = parseFloat(obj.totalBid || obj.bid);
+            const a = parseFloat(obj.totalAsk || obj.ask);
+            if (!isNaN(b) && !isNaN(a) && b >= 1550 && b <= 1780 && a >= 1550 && a <= 1780 && a >= b) {
+              pares.push({ b, a, dist: Math.abs(a - 1658.43) });
+            }
           }
         });
-        if (bids.length > 0 && asks.length > 0) {
-          bids.sort((x, y) => y - x);
-          asks.sort((x, y) => x - y);
-          const topB = bids.slice(0, 3);
-          const topA = asks.slice(0, 3);
-          const cVivo = +(topB.reduce((a, b) => a + b, 0) / topB.length).toFixed(2);
-          let vVivo = +(topA.reduce((a, b) => a + b, 0) / topA.length).toFixed(2);
+        if (pares.length > 0) {
+          pares.sort((x, y) => x.dist - y.dist);
+          const top = pares.slice(0, 4);
+          const cVivo = +(top.reduce((acc, p) => acc + p.b, 0) / top.length).toFixed(2);
+          let vVivo = +(top.reduce((acc, p) => acc + p.a, 0) / top.length).toFixed(2);
           if (vVivo <= cVivo) vVivo = +(cVivo + 3.70).toFixed(2);
-          const chgPct = (((vVivo - 1649.35) / 1649.35) * 100).toFixed(2).replace(".", ",");
-          const varStr = parseFloat(chgPct.replace(",", ".")) >= 0 ? `+${chgPct}%` : `${chgPct}%`;
+          const chg = (((vVivo - 1649.35) / 1649.35) * 100).toFixed(2).replace(".", ",");
+          const varStr = parseFloat(chg.replace(",", ".")) >= 0 ? `+${chg}%` : `${chg}%`;
           window.registrarCambioPrecioDolar("DOLAR_CRIPTO", cVivo, vVivo, varStr, new Date().toLocaleTimeString());
         }
       }
@@ -1009,6 +1061,15 @@
 
       if (categoriaActiva === "dolar_y_cambiario" || categoriaActiva === "home") {
         renderizar(false);
+        // Limpiar las clases de animación después de 1.4s para que en el próximo pulso de 8s vuelvan a dispararse en el DOM
+        setTimeout(() => {
+          document.querySelectorAll(".flash-green, .flash-red, .flash-cyan").forEach(el => {
+            el.classList.remove("flash-green", "flash-red", "flash-cyan");
+          });
+          document.querySelectorAll(".card-flash-green, .card-flash-red, .card-flash-cyan").forEach(el => {
+            el.classList.remove("card-flash-green", "card-flash-red", "card-flash-cyan");
+          });
+        }, 1450);
       }
     }
 
