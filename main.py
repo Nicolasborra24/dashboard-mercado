@@ -1092,7 +1092,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
 
     if "DOLAR_A3500" not in res:
         try:
-            r_ html = requests.get("https://www.dolarito.ar/", headers=headers, timeout=3.5)
+            r_html = requests.get("https://www.dolarito.ar/", headers=headers, timeout=3.5)
             if r_html.status_code == 200:
                 m_may = re.search(r'mayorista[^\d]{1,60}(1[\.,]?\d{3}(?:[\.,]\d{1,2})?)', r_html.text, re.IGNORECASE)
                 if m_may:
