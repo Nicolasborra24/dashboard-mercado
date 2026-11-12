@@ -35,6 +35,39 @@ class MAEAdapter(HTTPAdapter):
         kwargs["ssl_context"] = ctx
         return super().init_poolmanager(*args, **kwargs)
 
+# --- SESIÓN HTTP GLOBAL CON CONNECTION POOLING Y CACHÉ DE CICLO ---
+GLOBAL_HTTP_SESSION = requests.Session()
+_adapter_pool = HTTPAdapter(pool_connections=32, pool_maxsize=32, max_retries=1)
+GLOBAL_HTTP_SESSION.mount("https://", _adapter_pool)
+GLOBAL_HTTP_SESSION.mount("http://", _adapter_pool)
+
+_RAVA_HTML_CACHE = {"ts": 0.0, "html": ""}
+_RAVA_CACHE_LOCK = threading.Lock()
+_DOLARITO_CICLO_CACHE = {"ts": 0.0, "data": {}}
+_DOLARITO_CACHE_LOCK = threading.Lock()
+
+def obtener_html_rava_compartido(ttl: float = 6.0) -> str:
+    """Descarga rava.com una única vez por ciclo y comparte el HTML entre Acciones, Merval, Cauciones y Dólares."""
+    now = time.time()
+    if now - _RAVA_HTML_CACHE["ts"] < ttl and _RAVA_HTML_CACHE["html"]:
+        return _RAVA_HTML_CACHE["html"]
+    with _RAVA_CACHE_LOCK:
+        if time.time() - _RAVA_HTML_CACHE["ts"] < ttl and _RAVA_HTML_CACHE["html"]:
+            return _RAVA_HTML_CACHE["html"]
+        try:
+            r = GLOBAL_HTTP_SESSION.get(
+                f"https://www.rava.com/?_t={int(now * 1000)}",
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
+                timeout=4.2
+            )
+            if r.status_code == 200 and len(r.text) > 500:
+                _RAVA_HTML_CACHE["html"] = r.text
+                _RAVA_HTML_CACHE["ts"] = time.time()
+        except Exception:
+            pass
+        return _RAVA_HTML_CACHE["html"]
+
+
 LICITACIONES_AGENDA_COMPLETA = [
     {"fecha": "2026-10-14", "horario": "10:00 - 15:00", "titulo": "LICITACIÓN SECRETARÍA DE FINANZAS — LECAP (S30O6 / S30N6) Y BONCAP - REAPERTURA"},
     {"fecha": "2026-10-15", "horario": "10:00 - 16:00", "titulo": "OBLIGACIONES NEGOCIABLES YPF S.A. CLASE XXXI"},
@@ -431,7 +464,7 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
     h = {"User-Agent": "Mozilla/5.0"}
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_y}?interval=1d&range=1d"
-        r = requests.get(url, headers=h, timeout=2.8)
+        r = GLOBAL_HTTP_SESSION.get(url, headers=h, timeout=2.8)
         if r.status_code == 200:
             res = r.json().get("chart", {}).get("result", [])
             if res:
@@ -446,7 +479,7 @@ def fetch_quote_externa(sym_y: str, sym_s: str) -> Optional[Dict[str, float]]:
 
     try:
         url_s = f"https://stooq.com/q/l/?s={sym_s}&f=sd2t2ohlcv&h&e=csv"
-        r_s = requests.get(url_s, headers=h, timeout=2.5)
+        r_s = GLOBAL_HTTP_SESSION.get(url_s, headers=h, timeout=2.5)
         if r_s.status_code == 200 and "Close" in r_s.text:
             lines = r_s.text.strip().split("\n")
             if len(lines) >= 2:
@@ -582,7 +615,7 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
                         if len(sim) <= 6 and not sim.endswith(("D", "C")):
                             candidatos_ranking[sim] = item_acc
 
-                plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+                plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
                 for tk in TICKERS_PANEL_LIDER_SET:
                     mt = re.search(r'\b' + tk + r'\b\s+([\d\.]+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)', plano)
                     if mt:
@@ -624,13 +657,9 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
     }
 
     try:
-        r = requests.get(
-            "https://www.rava.com/",
-            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
-            timeout=4.5
-        )
-        if r.status_code == 200 and r.text:
-            html_u = r.text.replace("&quot;", '"')
+        raw_rava_html = obtener_html_rava_compartido()
+        if raw_rava_html:
+            html_u = raw_rava_html.replace("&quot;", '"')
             # A) Extraer desde el JSON embebido (trae ultimo, variacion diaria, var_mes / mes y var_anio / anio)
             for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"(MERVAL(?:\s*USD|\s*CCL)?|IMV|RIESGO\s*PA[IÍ]S)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
@@ -662,7 +691,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
                     datos[k_target]["anio"] = va
 
             # B) Extraer desde las tablas renderizadas (ESPECIE | ÚLTIMO | % DÍA | % MES | % AÑO)
-            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+            plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
             patrones_tabla = [
                 ("MERVAL_ARS", r'\bMERVAL\b(?!\s*USD)\s+([\d]{2,3}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
                 ("MERVAL_USD", r'\bMERVAL\s+USD\b\s+([\d]{2,3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
@@ -1020,13 +1049,9 @@ def _actualizar_cauciones_en_vivo():
         "14D": {"desc": "Caución Bursátil 14 Días (Pesos)", "tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
     }
     try:
-        r = requests.get(
-            "https://www.rava.com/",
-            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
-            timeout=4.5
-        )
-        if r.status_code == 200 and r.text:
-            html_u = r.text.replace("&quot;", '"')
+        raw_rava_html = obtener_html_rava_compartido()
+        if raw_rava_html:
+            html_u = raw_rava_html.replace("&quot;", '"')
             for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"CAUCION\s*(1D|7D|14D)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
                 plz = m_obj.group(1).upper()
@@ -1049,7 +1074,7 @@ def _actualizar_cauciones_en_vivo():
                 if va is not None and -99.0 <= va <= 200.0:
                     base_c[plz]["anio"] = va
 
-            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+            plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
             for plz in ("1D", "7D", "14D"):
                 mt = re.search(
                     r'\bCAUCION\s+' + plz + r'\b\s+([\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)',
@@ -1152,13 +1177,9 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     res_rava: Dict[str, Dict[str, Any]] = {}
     hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
     try:
-        r = requests.get(
-            f"https://www.rava.com/?_t={int(time.time()*1000)}",
-            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
-            timeout=4.0
-        )
-        if r.status_code == 200 and r.text:
-            html_u = r.text.replace("&quot;", '"')
+        raw_rava_html = obtener_html_rava_compartido()
+        if raw_rava_html:
+            html_u = raw_rava_html.replace("&quot;", '"')
             for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]+)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
                 sim = m_obj.group(1).upper().strip()
@@ -1199,7 +1220,7 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                         "fecha": hora_vivo
                     }
 
-            plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+            plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
             patrones_rava = [
                 ("DOLAR_MEP", r'D[ÓO]LAR\s+MEP\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
                 ("DOLAR_CCL", r'D[ÓO]LAR\s+CCL\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
@@ -1226,6 +1247,8 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     return res_rava
 
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
+    if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 4.5 and _DOLARITO_CICLO_CACHE["data"]:
+        return {k: dict(v) for k, v in _DOLARITO_CICLO_CACHE["data"].items()}
     res: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in BASE_DOLARITO_EXACTA.items()}
     ts_ms = int(time.time() * 1000)
     hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
@@ -1372,6 +1395,8 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
         res["DOLAR_TARJETA"]["venta"] = round(v_of * 1.30, 2)
         res["DOLAR_NETFLIX"]["venta"] = round(v_of * 1.51, 2)
 
+    _DOLARITO_CICLO_CACHE["data"] = {k: dict(v) for k, v in res.items()}
+    _DOLARITO_CICLO_CACHE["ts"] = time.time()
     return res
 
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:

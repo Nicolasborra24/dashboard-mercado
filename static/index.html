@@ -160,6 +160,9 @@
   </main>
 
   <script>
+    // ============================================================================
+    // 1. ESTADO BASE Y TABLAS DE REFERENCIA (RENTA FIJA, ÍNDICES Y SECCIONES)
+    // ============================================================================
     window.TABLAS_BONOS_INTEGRAS = {
       lecaps: [
         { Ticker: "S13N6", Vencimiento: "2026-11-13", Dias: 4, Precio: 101.85, Variacion: "+0.08%", TIR: "13.35%", TEM: "1.05%", TNA: "12.80%", MD: 0.01 },
@@ -381,6 +384,9 @@
     };
 
     // Sin mención a SJB en ningún título ni subtítulo de la página
+    // ============================================================================
+    // 2. CONFIGURACIÓN VISUAL DE SECCIONES Y BLOQUES DEL HOME
+    // ============================================================================
     window.CONFIG_SECCIONES = {
       home: { titulo: "Resumen Ejecutivo de Mercado", sub: "Panel General", icono: "fa-solid fa-gauge-high", iconoDer: "fa-solid fa-bolt text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
       tasas_y_monetario: { titulo: "Tasas de Interés y Balance Monetario", sub: "Tasas de Referencia y Agregados Monetarios", icono: "fa-solid fa-landmark", iconoDer: "fa-solid fa-percent text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-400/40 text-cyan-300" },
@@ -427,6 +433,9 @@
       sectores: { titulo: "Sectores de Wall Street (SPDR ETFs)", desc: "Rendimiento y cotizaciones de los 11 ETFs sectoriales del S&P 500", icono: "fa-chart-pie", color: "text-amber-400" }
     };
 
+    // ============================================================================
+    // 3. MÓDULO: ACCIONES ARGENTINAS (PANEL LÍDER MERVAL, LO MEJOR Y LO PEOR)
+    // ============================================================================
     window.ACCIONES_ARGENTINA_DATA = {
       merval: [
         { especie: "ALUA", ultimo: 915.0, dia: 1.44, mes: -4.20, anio: -12.50, anterior: 902.0, apertura: 905.0, minimo: 900.0, maximo: 920.0, hora: "17:00", vol_nominal: 1450200, vol_efectivo: 1326933000 },
@@ -664,7 +673,6 @@
     let subIndiceActivo = "argentina";
     let curvaActiva = "lecaps";
     let monedaBonosActiva = "MEP"; // Predeterminado USD MEP para Soberanos y Bopreales
-    window.cambiarMonedaBonos = function(mon) { monedaBonosActiva = mon; renderizar(true); };
     let plazoFinvizActivo = "1D";
 
     // Registro de vista montada para no destruir ni recargar los mapas de calor <tv-heatmap>
@@ -840,6 +848,9 @@
       return NaN;
     }
 
+    // ============================================================================
+    // 4. MÓDULO: GRÁFICOS CHART.JS (CURVAS DE RENTA FIJA E INFLACIÓN IMPLÍCITA)
+    // ============================================================================
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
@@ -1048,7 +1059,12 @@
         }
         const fmt = p >= 1000 ? "US$ " + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (p >= 1 ? "US$ " + p.toFixed(2) : "US$ " + p.toFixed(4));
         if (PRECIOS_ANTERIORES[c.cod] !== undefined) {
-          FLASH_REGISTRO[c.cod] = p > PRECIOS_ANTERIORES[c.cod] ? "flash-green" : (p < PRECIOS_ANTERIORES[c.cod] ? "flash-red" : "");
+          if (Math.abs(p - PRECIOS_ANTERIORES[c.cod]) >= 0.0001) {
+            FLASH_REGISTRO[c.cod] = p > PRECIOS_ANTERIORES[c.cod] ? "flash-green" : "flash-red";
+            setTimeout(() => { FLASH_REGISTRO[c.cod] = ""; }, 1400);
+          } else {
+            FLASH_REGISTRO[c.cod] = "";
+          }
         }
         PRECIOS_ANTERIORES[c.cod] = p;
         const itemObj = { variable: c.cod, descripcion: c.desc, categoria: "cripto", valor_formateado: fmt, variacion: varStr, valor: p, fecha: fec };
@@ -1074,7 +1090,10 @@
       if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar(false);
     }
 
-        window.PUNTAS_DOLAR_VIVO = {
+        // ============================================================================
+    // 5. MÓDULO: MOTOR CAMBIARIO EN TIEMPO REAL (9 COTIZACIONES)
+    // ============================================================================
+    window.PUNTAS_DOLAR_VIVO = {
       DOLAR_OFICIAL: { compra: 1520.00, venta: 1570.00, variacion: "0,00%", fecha: "En vivo" },
       DOLAR_BLUE: { compra: 1545.00, venta: 1565.00, variacion: "+0,64%", fecha: "En vivo" },
       DOLAR_TARJETA: { compra: null, venta: 2041.00, variacion: "0,00%", fecha: "En vivo" },
@@ -1828,34 +1847,12 @@
 
     
     
-    // === DATOS Y RENDERIZADO DE CALENDARIO ECONÓMICO (ESTILO BONOS: LATERAL ARGENTINA / EE.UU.) ===
-    window.CALENDARIO_INDEC_DATA = window.CALENDARIO_INDEC_DATA || [
-      { fecha: "2026-11-03", hora: "16:00hs", publicacion: "Índices de precios y cantidades del comercio exterior. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Indicadores de condiciones de vida de los hogares (EPH). Primer semestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-04", hora: "16:00hs", publicacion: "Bases de microdatos de la Encuesta Permanente de Hogares. Segundo trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-05", hora: "16:00hs", publicacion: "Encuesta Nacional de Empresas (ENE). Resultados preliminares 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial minero (IPI minero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Indicadores de coyuntura de la actividad de la construcción (ISAC). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-06", hora: "16:00hs", publicacion: "Índice de producción industrial manufacturero (IPI manufacturero). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-11", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica alimentaria y total. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Utilización de la capacidad instalada en la industria. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-12", hora: "16:00hs", publicacion: "Índice de salarios. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Sistema de índices de precios mayoristas (SIPM). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-13", hora: "16:00hs", publicacion: "Índice del costo de la construcción en el Gran Buenos Aires (ICC). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-16", hora: "16:00hs", publicacion: "Encuesta de turismo internacional (ETI). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-17", hora: "16:00hs", publicacion: "Valorización mensual de la canasta de crianza. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-18", hora: "16:00hs", publicacion: "Intercambio comercial argentino (ICA). Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-19", hora: "16:00hs", publicacion: "Estimador mensual de actividad económica (EMAE). Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de supermercados y autoservicios mayoristas. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-24", hora: "16:00hs", publicacion: "Encuesta de centros de compras. Septiembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-25", hora: "16:00hs", publicacion: "Generación de energía eléctrica. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-27", hora: "16:00hs", publicacion: "Dotación de personal de la administración pública nacional, empresas y sociedades. Octubre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-11-30", hora: "16:00hs", publicacion: "Cuentas internacionales de la Argentina. Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-12-10", hora: "16:00hs", publicacion: "Índice de precios al consumidor (IPC) y Canasta básica. Noviembre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" },
-      { fecha: "2026-12-16", hora: "16:00hs", publicacion: "Informe de avance del nivel de actividad (PIB). Tercer trimestre de 2026", url: "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0" }
-    ];
+    // ============================================================================
+    // MÓDULO: CALENDARIO ECONÓMICO (ARGENTINA & ESTADOS UNIDOS)
+    // ============================================================================
+    window.CALENDARIO_INDEC_DATA = window.CALENDARIO_INDEC_DATA || [];
 
-    window.obtenerFechaHoyArgentinaDate = function() {
+        window.obtenerFechaHoyArgentinaDate = function() {
       const strAr = new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" });
       return new Date(strAr);
     };
@@ -2293,6 +2290,9 @@
         </div>`;
     };
 
+    // ============================================================================
+    // 6. MOTOR DE RENDERIZADO PRINCIPAL (CON PROTECCIÓN ANTI-PARPADEO DE WIDGETS)
+    // ============================================================================
     function renderizar(forzarReconstruccion = false) {
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
