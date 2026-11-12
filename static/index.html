@@ -1020,7 +1020,10 @@
 
     async function fetchJsonSeguro(url) {
       try {
-        const res = await fetch(url);
+        const ctrl = new AbortController();
+        const id = setTimeout(() => ctrl.abort(), 3500);
+        const res = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
+        clearTimeout(id);
         return res.ok ? await res.json() : null;
       } catch (e) {
         return null;
@@ -2291,7 +2294,6 @@
     };
 
     function renderizar(forzarReconstruccion = false) {
-      if (window.ARRANQUE_COMPLETO === false) return;
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
       if (categoriaActiva === "calendario_licitaciones") {
@@ -2948,21 +2950,22 @@
       renderizar(true);
     }
 
-    window.ARRANQUE_COMPLETO = false;
-    Promise.all([cargarDatos(), actualizarPuntasDolarEnVivo(), actualizarCriptosEnVivo()]).finally(() => { window.ARRANQUE_COMPLETO = true; renderizar(true); });
+    // Arranque inmediato: dibuja las tarjetas al instante y actualiza en segundo plano sin bloquear jamás
+    renderizar(true);
+    cargarDatos();
+    actualizarPuntasDolarEnVivo();
     actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
     if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
-    setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
-    window.sincronizarCalendarioEconomico();
-    sincronizarLicitacionesA3();
+    if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();
+    if (window.sincronizarLicitacionesA3) window.sincronizarLicitacionesA3();
 
     setInterval(actualizarCriptosEnVivo, 8000);
     setInterval(cargarDatos, 8000);
     setInterval(actualizarPuntasDolarEnVivo, 8000);
+    setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
     setInterval(sincronizarEndpointsSecundarios, 15000);
     setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 15000);
-    setTimeout(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 800);
   </script>
 </body>
 </html>
