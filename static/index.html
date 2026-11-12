@@ -839,38 +839,44 @@
     }
 
         window.PUNTAS_DOLAR_VIVO = {
-      DOLAR_OFICIAL: { compra: 1530.00, venta: 1570.00 },
-      DOLAR_BLUE: { compra: 1535.00, venta: 1555.00 },
-      DOLAR_TARJETA: { compra: null, venta: 2041.00 },
-      DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00 },
-      DOLAR_NETFLIX: { compra: null, venta: 2370.70 },
-      DOLAR_A3500: { compra: 1544.00, venta: 1544.00 }
+      DOLAR_OFICIAL: { compra: 1530.00, venta: 1570.00, variacion: "0,00%" },
+      DOLAR_BLUE: { compra: 1535.00, venta: 1555.00, variacion: "0,00%" },
+      DOLAR_MEP: { compra: 1540.00, venta: 1545.00, variacion: "0,00%" },
+      DOLAR_CCL: { compra: 1565.00, venta: 1572.00, variacion: "0,00%" },
+      DOLAR_TARJETA: { compra: null, venta: 2041.00, variacion: "0,00%" },
+      DOLAR_CRIPTO: { compra: 1558.00, venta: 1568.00, variacion: "0,00%" },
+      DOLAR_NETFLIX: { compra: null, venta: 2370.70, variacion: "0,00%" },
+      DOLAR_A3500: { compra: 1544.00, venta: 1544.00, variacion: "0,00%" },
+      DOLAR_FUTURO: { compra: null, venta: 1570.50, variacion: "-0,19%" }
     };
 
     async function actualizarPuntasDolarEnVivo() {
-      const data = await fetchJsonSeguro("https://dolarapi.com/v1/dolares");
-      if (Array.isArray(data)) {
-        data.forEach(d => {
-          const casa = String(d.casa || "").toLowerCase();
-          const c = parseFloat(d.compra), v = parseFloat(d.venta);
-          if (casa === "oficial" && !isNaN(v)) {
-            window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL = { compra: !isNaN(c) ? c : v, venta: v };
-            window.PUNTAS_DOLAR_VIVO.DOLAR_NETFLIX = { compra: null, venta: +(v * 1.51).toFixed(2) };
-          } else if (casa === "blue" && !isNaN(v)) {
-            window.PUNTAS_DOLAR_VIVO.DOLAR_BLUE = { compra: !isNaN(c) ? c : v, venta: v };
-          } else if (casa === "tarjeta" && !isNaN(v)) {
-            window.PUNTAS_DOLAR_VIVO.DOLAR_TARJETA = { compra: null, venta: v };
-          } else if (casa === "cripto" && !isNaN(v)) {
-            window.PUNTAS_DOLAR_VIVO.DOLAR_CRIPTO = { compra: !isNaN(c) ? c : v, venta: v };
+      const [puntasBack, dBandas] = await Promise.all([
+        fetchJsonSeguro("/api/dolar/dolarito?t=" + Date.now()),
+        fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now())
+      ]);
+
+      if (puntasBack && typeof puntasBack === "object") {
+        Object.keys(puntasBack).forEach(cod => {
+          const info = puntasBack[cod];
+          if (info && info.venta) {
+            window.PUNTAS_DOLAR_VIVO[cod] = {
+              compra: info.compra || null,
+              venta: parseFloat(info.venta),
+              variacion: info.variacion || (window.PUNTAS_DOLAR_VIVO[cod] && window.PUNTAS_DOLAR_VIVO[cod].variacion) || "0,00%"
+            };
           }
         });
       }
 
-      const dBandas = await fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now());
       if (dBandas && dBandas.dolar_mayorista) {
         const vMay = parseFloat(dBandas.dolar_mayorista);
         if (!isNaN(vMay) && vMay > 1000) {
-          window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 = { compra: vMay, venta: vMay };
+          window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 = {
+            compra: vMay,
+            venta: vMay,
+            variacion: (window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.variacion) || "0,00%"
+          };
           datosBandasCambiarias = dBandas;
         }
       }
@@ -880,7 +886,6 @@
       }
     }
 
-    
     async function cargarDatos() {
       const data = await fetchJsonSeguro("/bcra/variables?formato=agrupado&t=" + Date.now());
       if (!data) return;
@@ -997,7 +1002,7 @@
               const vVenta = item.venta || pVivo.venta || item.valor;
               const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-              if ((item.variable === "DOLAR_OFICIAL" || item.variable === "DOLAR_BLUE" || item.variable === "DOLAR_CRIPTO") && vCompra && vVenta) {
+              if (["DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_MEP", "DOLAR_CCL", "DOLAR_CRIPTO"].includes(item.variable) && vCompra && vVenta) {
                 return `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
                     <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
@@ -1919,11 +1924,19 @@
         asegurarItemDolar("DOLAR_CRIPTO", "Dólar Cripto (USDT)", 1568.50);
         asegurarItemDolar("DOLAR_NETFLIX", "Dólar Netflix", 2370.70);
         asegurarItemDolar("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500", 1544.00);
+        asegurarItemDolar("DOLAR_OFICIAL", "Dólar Oficial Minorista", 1570.00);
+        asegurarItemDolar("DOLAR_BLUE", "Dólar Blue", 1555.00);
+        asegurarItemDolar("DOLAR_MEP", "Dólar MEP", 1545.00);
+        asegurarItemDolar("DOLAR_CCL", "Dólar CCL", 1572.00);
+        asegurarItemDolar("DOLAR_FUTURO", "Dólar Futuro", 1570.50);
         rawItems.forEach(it => {
           if (it && pViv[it.variable] && pViv[it.variable].venta) {
             it.venta = pViv[it.variable].venta;
             it.valor = pViv[it.variable].venta;
             if (pViv[it.variable].compra) it.compra = pViv[it.variable].compra;
+            if (pViv[it.variable].variacion && pViv[it.variable].variacion !== "0,00%") {
+              it.variacion = pViv[it.variable].variacion;
+            }
             it.valor_formateado = "$" + Number(it.valor).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           }
         });

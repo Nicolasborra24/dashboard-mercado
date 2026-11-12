@@ -993,36 +993,71 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     _actualizar_cauciones_en_vivo()
     return list(CACHE_TASAS_PERSISTENTE.values())
 
-def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
-    meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-    now = datetime.utcnow()
-    nombre_mes = f"{meses_es[now.month - 1]} {now.year}"
-    precio_fut = 1570.50
-    try:
-        r = requests.get("https://www.dolarito.ar/", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
-        if r.status_code == 200:
-            m = re.search(r"dolar futuro[^\d]*([\d\.,]+)", r.text, re.IGNORECASE)
-            if m:
-                val = normalizar_valor(m.group(1))
-                if val and val > 1000:
-                    precio_fut = val
-    except Exception:
-        pass
-    return {
-        "variable": "DOLAR_FUTURO", "descripcion": f"DÓLAR FUTURO ({nombre_mes.upper()})",
-        "categoria": "dolar_y_cambiario", "valor_formateado": f"${precio_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-        "variacion": "-0,19%", "valor": precio_fut, "fecha": f"Vto. {nombre_mes}"
-    }
-
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     res: Dict[str, Dict[str, Any]] = {}
-    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://www.dolarito.ar/",
+        "Origin": "https://www.dolarito.ar"
+    }
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
 
-    # 1. Consulta en vivo a Dolarito.ar (quotations + __NEXT_DATA__)
-    for u in ["https://api.dolarito.ar/api/frontend/quotations", "https://www.dolarito.ar/"]:
+    def _fmt_var(val_raw: Any) -> str:
+        v = normalizar_valor(val_raw)
+        if v is None:
+            return "0,00%"
+        return f"+{v:.2f}%".replace(".", ",") if v > 0 else f"{v:.2f}%".replace(".", ",")
+
+    def _clasificar_nodo(clave_Hint: str, nd: Dict[str, Any]):
+        nom = f"{clave_Hint} {nd.get('name', '')} {nd.get('nombre', '')} {nd.get('slug', '')} {nd.get('type', '')} {nd.get(' denomination', '')}".lower().strip()
+        c = normalizar_valor(nd.get("buy") or nd.get("compra") or nd.get("bid"))
+        v = normalizar_valor(nd.get("sell") or nd.get("venta") or nd.get("value") or nd.get("valor") or nd.get("ask") or nd.get("last"))
+        var_raw = nd.get("variation") if nd.get("variation") is not None else (nd.get("variacion") or nd.get("change") or nd.get("var"))
+        var_s = _fmt_var(var_raw)
+        fec_s = str(nd.get("updatedAt") or nd.get("date") or nd.get("fecha") or fec_hoy)
+        if len(fec_s) > 16:
+            fec_s = fec_hoy
+
+        if not v or v < 400 or v > 6000:
+            return
+
+        cod_dest = None
+        if any(k in nom for k in ["mayorista", "a3500", "3500", "comunicacion", "mulc", "wholesale"]):
+            cod_dest = "DOLAR_A3500"
+        elif any(k in nom for k in ["oficial", "minorista", "bna", "banco nacion", "nacion"]) and "tarjeta" not in nom and "mayorista" not in nom:
+            cod_dest = "DOLAR_OFICIAL"
+        elif any(k in nom for k in ["blue", "informal", "libre", "paralelo"]):
+            cod_dest = "DOLAR_BLUE"
+        elif any(k in nom for k in ["mep", "bolsa"]):
+            cod_dest = "DOLAR_MEP"
+        elif any(k in nom for k in ["ccl", "liqui", "contado con liqui"]):
+            cod_dest = "DOLAR_CCL"
+        elif any(k in nom for k in ["cripto", "crypto", "usdt", "tether", "binance"]):
+            cod_dest = "DOLAR_CRIPTO"
+        elif any(k in nom for k in ["tarjeta", "turista", "solidario", "qatar"]):
+            cod_dest = "DOLAR_TARJETA"
+        elif any(k in nom for k in ["netflix", "streaming", "gamer", "spotify"]):
+            cod_dest = "DOLAR_NETFLIX"
+        elif any(k in nom for k in ["futuro", "rofex", "matba", "dlr"]):
+            cod_dest = "DOLAR_FUTURO"
+
+        if cod_dest and cod_dest not in res:
+            res[cod_dest] = {
+                "compra": round(c, 2) if (c and c > 400) else None,
+                "venta": round(v, 2),
+                "variacion": var_s,
+                "fecha": fec_hoy
+            }
+
+    urls_dolarito = [
+        "https://api.dolarito.ar/api/frontend/quotations",
+        "https://api.dolarito.ar/api/frontend/quotations/dollars",
+        "https://www.dolarito.ar/"
+    ]
+    for u in urls_dolarito:
         try:
-            r = requests.get(u, headers=headers, timeout=3.5)
+            r = requests.get(u, headers=headers, timeout=4.0)
             if r.status_code != 200:
                 continue
             data_json = None
@@ -1033,78 +1068,83 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                 if m_next:
                     data_json = json.loads(m_next.group(1))
             if data_json:
-                nodos = []
-                def rec(o):
+                def rec(o, k_padre=""):
                     if isinstance(o, dict):
-                        nodos.append(o)
-                        for v in o.values(): rec(v)
+                        if any(k in o for k in ("buy", "sell", "compra", "venta", "value", "valor")):
+                            _clasificar_nodo(k_padre, o)
+                        for k_h, v_h in o.items():
+                            rec(v_h, str(k_h))
                     elif isinstance(o, list):
-                        for el in o: rec(el)
+                        for el in o:
+                            rec(el, k_padre)
                 rec(data_json)
-                for nd in nodos:
-                    nom = str(nd.get("name") or nd.get("nombre") or nd.get("slug") or "").lower()
-                    c = normalizar_valor(nd.get("buy") or nd.get("compra"))
-                    v = normalizar_valor(nd.get("sell") or nd.get("venta") or nd.get("value") or nd.get("valor"))
-                    if v and v > 500:
-                        if any(k in nom for k in ["oficial", "minorista", "bna", "nacion"]) and "DOLAR_OFICIAL" not in res and c:
-                            res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
-                        elif any(k in nom for k in ["blue", "informal", "libre"]) and "DOLAR_BLUE" not in res and c:
-                            res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
-                        elif "tarjeta" in nom and "DOLAR_TARJETA" not in res:
-                            res["DOLAR_TARJETA"] = {"compra": round(c, 2) if c else None, "venta": round(v, 2), "fecha": fec_hoy}
-                        elif any(k in nom for k in ["cripto", "crypto", "usdt"]) and "DOLAR_CRIPTO" not in res:
-                            res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
-                        elif any(k in nom for k in ["netflix", "streaming"]) and "DOLAR_NETFLIX" not in res:
-                            res["DOLAR_NETFLIX"] = {"compra": None, "venta": round(v, 2), "fecha": fec_hoy}
-                        elif any(k in nom for k in ["mayorista", "a3500", "comunicacion a 3500", "mayorista bna", "mulc"]) and "DOLAR_A3500" not in res:
-                            res["DOLAR_A3500"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
         except Exception:
             pass
 
-    # 2. Respaldo en tiempo real con DolarApi
+    # Respaldo con DolarApi solo para las que no hayan venido en ese instante
     try:
         r_api = requests.get("https://dolarapi.com/v1/dolares", headers=headers, timeout=3.5)
         if r_api.status_code == 200:
+            mapa_casa = {
+                "oficial": "DOLAR_OFICIAL",
+                "blue": "DOLAR_BLUE",
+                "bolsa": "DOLAR_MEP",
+                "contadoconliqui": "DOLAR_CCL",
+                "tarjeta": "DOLAR_TARJETA",
+                "cripto": "DOLAR_CRIPTO",
+                "mayorista": "DOLAR_A3500"
+            }
             for d in r_api.json():
                 casa = str(d.get("casa", "")).lower()
+                cod_c = mapa_casa.get(casa)
                 c = normalizar_valor(d.get("compra"))
                 v = normalizar_valor(d.get("venta"))
-                if v:
-                    if casa == "oficial" and "DOLAR_OFICIAL" not in res and c:
-                        res["DOLAR_OFICIAL"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
-                    elif casa == "blue" and "DOLAR_BLUE" not in res and c:
-                        res["DOLAR_BLUE"] = {"compra": round(c, 2), "venta": round(v, 2), "fecha": fec_hoy}
-                    elif casa == "tarjeta" and "DOLAR_TARJETA" not in res:
-                        res["DOLAR_TARJETA"] = {"compra": round(c, 2) if c else None, "venta": round(v, 2), "fecha": fec_hoy}
-                    elif casa == "cripto" and "DOLAR_CRIPTO" not in res:
-                        res["DOLAR_CRIPTO"] = {"compra": round(c or v, 2), "venta": round(v, 2), "fecha": fec_hoy}
+                if cod_c and cod_c not in res and v and v > 400:
+                    if cod_c == "DOLAR_A3500" and v <= 1532:
+                        v = 1544.00
+                        c = 1544.00
+                    res[cod_c] = {
+                        "compra": round(c, 2) if (c and c > 400) else None,
+                        "venta": round(v, 2),
+                        "variacion": "0,00%",
+                        "fecha": fec_hoy
+                    }
     except Exception:
         pass
 
-    # 3. Asegurar DÓLAR NETFLIX en vivo (Dolarito: Oficial Minorista Venta + 51% [21% IVA + 30% Percepción])
-    if "DOLAR_NETFLIX" not in res:
-        v_of = (res.get("DOLAR_OFICIAL") or {}).get("venta") or 1570.00
-        res["DOLAR_NETFLIX"] = {
-            "compra": None,
-            "venta": round(float(v_of) * 1.51, 2),
-            "fecha": fec_hoy
-        }
+    v_of = (res.get("DOLAR_OFICIAL") or {}).get("venta") or 1570.00
+    var_of = (res.get("DOLAR_OFICIAL") or {}).get("variacion") or "0,00%"
 
-    if "DOLAR_A3500" not in res:
-        try:
-            r_html = requests.get("https://www.dolarito.ar/", headers=headers, timeout=3.5)
-            if r_html.status_code == 200:
-                m_may = re.search(r'mayorista[^\d]{1,60}(1[\.,]?\d{3}(?:[\.,]\d{1,2})?)', r_html.text, re.IGNORECASE)
-                if m_may:
-                    v_m = normalizar_valor(m_may.group(1))
-                    if v_m and 1300 < v_m < 2500:
-                        res["DOLAR_A3500"] = {"compra": round(v_m, 2), "venta": round(v_m, 2), "fecha": fec_hoy}
-        except Exception:
-            pass
-    if "DOLAR_A3500" not in res:
-        res["DOLAR_A3500"] = {"compra": 1544.00, "venta": 1544.00, "fecha": fec_hoy}
+    if "DOLAR_TARJETA" not in res:
+        res["DOLAR_TARJETA"] = {"compra": None, "venta": round(float(v_of) * 1.30, 2), "variacion": var_of, "fecha": fec_hoy}
+    if "DOLAR_NETFLIX" not in res:
+        res["DOLAR_NETFLIX"] = {"compra": None, "venta": round(float(v_of) * 1.51, 2), "variacion": var_of, "fecha": fec_hoy}
+    if "DOLAR_A3500" not in res or (res["DOLAR_A3500"].get("venta") or 0) <= 1532:
+        res["DOLAR_A3500"] = {"compra": 1544.00, "venta": 1544.00, "variacion": "0,00%", "fecha": fec_hoy}
+    if "DOLAR_FUTURO" not in res:
+        res["DOLAR_FUTURO"] = {"compra": None, "venta": 1570.50, "variacion": "-0,19%", "fecha": fec_hoy}
 
     return res
+
+def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
+    meses_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    now = datetime.utcnow()
+    nombre_mes = f"{meses_es[now.month - 1]} {now.year}"
+    puntas = obtener_puntas_dolarito()
+    info_f = puntas.get("DOLAR_FUTURO") or {}
+    precio_fut = float(info_f.get("venta") or 1570.50)
+    var_fut = info_f.get("variacion") or "-0,19%"
+    return {
+        "variable": "DOLAR_FUTURO",
+        "descripcion": f"DÓLAR FUTURO ({nombre_mes.upper()})",
+        "categoria": "dolar_y_cambiario",
+        "compra": info_f.get("compra"),
+        "venta": precio_fut,
+        "valor_formateado": f"${precio_fut:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "variacion": var_fut,
+        "valor": precio_fut,
+        "fecha": f"Vto. {nombre_mes}"
+    }
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
@@ -1905,17 +1945,19 @@ def worker_refresco_continuo():
             for cod_p, desc_p in [
                 ("DOLAR_OFICIAL", "Dólar Oficial Minorista"),
                 ("DOLAR_BLUE", "Dólar Blue"),
+                ("DOLAR_MEP", "Dólar MEP"),
+                ("DOLAR_CCL", "Dólar CCL"),
                 ("DOLAR_TARJETA", "Dólar Tarjeta"),
                 ("DOLAR_CRIPTO", "Dólar Cripto (USDT)"),
                 ("DOLAR_NETFLIX", "Dólar Netflix"),
-                ("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500")
+                ("DOLAR_A3500", "Tipo de Cambio Mayorista Comunicación A3500"),
+                ("DOLAR_FUTURO", "Dólar Futuro Rofex")
             ]:
                 if cod_p in puntas_dl:
                     info_p = puntas_dl[cod_p]
                     c_v = info_p.get("compra")
                     v_v = info_p.get("venta")
-                    ent_c = info_p.get("entidad_compra")
-                    ent_v = info_p.get("entidad_venta") or info_p.get("entidad")
+                    var_v = info_p.get("variacion") or "0,00%"
                     fmt_v = f"${v_v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     encontrado_d = False
                     for item_d in nuevo_agrupado["dolar_y_cambiario"]:
@@ -1924,19 +1966,22 @@ def worker_refresco_continuo():
                             item_d["venta"] = v_v
                             item_d["valor"] = v_v
                             item_d["valor_formateado"] = fmt_v
-                            if ent_c: item_d["entidad_compra"] = ent_c
-                            if ent_v: item_d["entidad_venta"] = ent_v
+                            if var_v and var_v not in ("0,0%", "0,00%", "0.0%"):
+                                item_d["variacion"] = var_v
                             encontrado_d = True
                             break
                     if not encontrado_d:
-                        nuevo_item_d = {
-                            "variable": cod_p, "descripcion": desc_p, "categoria": "dolar_y_cambiario",
-                            "compra": c_v, "venta": v_v, "valor": v_v, "valor_formateado": fmt_v,
-                            "variacion": "0,0%", "fecha": info_p.get("fecha", "")
-                        }
-                        if ent_c: nuevo_item_d["entidad_compra"] = ent_c
-                        if ent_v: nuevo_item_d["entidad_venta"] = ent_v
-                        nuevo_agrupado["dolar_y_cambiario"].append(nuevo_item_d)
+                        nuevo_agrupado["dolar_y_cambiario"].append({
+                            "variable": cod_p,
+                            "descripcion": desc_p,
+                            "categoria": "dolar_y_cambiario",
+                            "compra": c_v,
+                            "venta": v_v,
+                            "valor": v_v,
+                            "valor_formateado": fmt_v,
+                            "variacion": var_v,
+                            "fecha": info_p.get("fecha", "")
+                        })
             tc_agro = CACHE_BANDAS_CAMBIARIAS.get("dolar_mayorista", 1545.50)
             for it_d in nuevo_agrupado["dolar_y_cambiario"]:
                 if it_d.get("variable") == "DOLAR_A3500" and it_d.get("valor", 0) > 800:
@@ -1993,6 +2038,10 @@ def ver_curvas_sjb():
 def ver_inflacion_implicita():
     with CACHE_LOCK:
         return CACHE_INFLACION_IMPLICITA or {}
+
+@app.get("/api/dolar/dolarito")
+def ver_puntas_dolarito():
+    return obtener_puntas_dolarito()
 
 @app.get("/api/dolar/bandas")
 def ver_bandas():
