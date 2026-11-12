@@ -2372,7 +2372,7 @@
         contenedor.innerHTML = window.BLOQUES_HOME.map(bloque => {
           const itemsBloque = [];
           bloque.variables.forEach(cod => {
-            const it = todos.find(x => x && x.variable === cod) || window.INDICES_ESTATICOS_BASE.find(x => x.variable === cod);
+            const it = todos.find(x => x && x.variable === cod);
             if (it && !itemsBloque.some(y => y.variable === it.variable)) itemsBloque.push(it);
           });
           return `
@@ -2950,11 +2950,14 @@
       renderizar(true);
     }
 
-    // Arranque inmediato: dibuja las tarjetas al instante y actualiza en segundo plano sin bloquear jamás
-    renderizar(true);
-    cargarDatos();
+    // Arranque limpio: espera ~100ms a que responda el backend y dibuja directamente los datos reales en vivo
+    Promise.all([
+      cargarDatos(),
+      actualizarCriptosEnVivo()
+    ]).then(() => {
+      renderizar(false);
+    });
     actualizarPuntasDolarEnVivo();
-    actualizarCriptosEnVivo();
     sincronizarEndpointsSecundarios();
     if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
     if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();
