@@ -1169,24 +1169,31 @@
 
     window.extraerDolaresDesdeRavaHTML = function(htmlRaw) {
       if (!htmlRaw || htmlRaw.length < 200) return;
-      const htmlU = htmlRaw.replace(/&quot;/g, '"');
-      const regexObj = /\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]+)"[^{}]*\}/gi;
+      const htmlU = htmlRaw.replace(/&quot;/g, '"').replace(/\\\//g, '/');
+      const regexObj = /\{[^{}]*?"(?:simbolo|especie|nombre|identificador|titulo)"\s*:\s*"([^"]+)"[^{}]*?\}/gi;
       let m;
+      const bonosPrecio = {}, bonosVar = {};
       while ((m = regexObj.exec(htmlU)) !== null) {
         const b = m[0];
-        const sim = m[1].toUpperCase();
-        if (!/DOLAR|DÓLAR|MEP|CCL|MAYORISTA|CRIPTO/.test(sim)) continue;
-        const mU = b.match(/"(?:ultimo|venta|valor|close)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+        const sim = m[1].toUpperCase().trim();
+        const mU = b.match(/"(?:ultimo|venta|valor|close|cierre|px_last)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
         const mC = b.match(/"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
-        const mD = b.match(/"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+        const mD = b.match(/"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
         const vu = mU ? parseNumSeguro(mU[1]) : NaN;
         const vc = mC ? parseNumSeguro(mC[1]) : NaN;
         const vd = mD ? parseNumSeguro(mD[1]) : NaN;
+
+        if (["AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C"].includes(sim) && !isNaN(vu) && vu > 10) {
+          bonosPrecio[sim] = vu;
+          if (!isNaN(vd)) bonosVar[sim] = vd;
+        }
+
+        if (!/DOLAR|DÓLAR|MEP|CCL|LIQUI|BOLSA|MAYORISTA|CRIPTO/.test(sim)) continue;
         if (isNaN(vu) || vu < 900 || vu > 5000) continue;
 
         let cod = null, soloV = false;
         if (sim.includes("MEP") || sim.includes("BOLSA")) { cod = "DOLAR_MEP"; soloV = true; }
-        else if (sim.includes("CCL") || sim.includes("LIQUI")) { cod = "DOLAR_CCL"; soloV = true; }
+        else if (sim.includes("CCL") || sim.includes("LIQUI") || sim.includes("CONTADO")) { cod = "DOLAR_CCL"; soloV = true; }
         else if (sim.includes("MAYORISTA") || sim.includes("A3500")) cod = "DOLAR_A3500";
         else if (sim.includes("BLUE") || sim.includes("INFORMAL")) cod = "DOLAR_BLUE";
         else if (sim.includes("OFICIAL") || sim.includes("BNA")) cod = "DOLAR_OFICIAL";
@@ -1196,6 +1203,23 @@
           const prev = window.PUNTAS_DOLAR_VIVO[cod] || {};
           const varStr = !isNaN(vd) ? (vd > 0 ? `+${vd.toFixed(2).replace(".", ",")}%` : `${vd.toFixed(2).replace(".", ",")}%`) : prev.variacion;
           window.registrarCambioPrecioDolar(cod, soloV ? null : (!isNaN(vc) && vc > 900 ? vc : prev.compra), vu, varStr, new Date().toLocaleTimeString());
+        }
+      }
+
+      if (bonosPrecio["AL30"] && bonosPrecio["AL30D"] && bonosPrecio["AL30D"] > 15) {
+        const mepCalc = +(bonosPrecio["AL30"] / bonosPrecio["AL30D"]).toFixed(2);
+        if (mepCalc > 900 && mepCalc < 5000) {
+          const vDif = (bonosVar["AL30"] ?? 0) - (bonosVar["AL30D"] ?? 0);
+          const vStr = vDif > 0 ? `+${vDif.toFixed(2).replace(".", ",")}%` : `${vDif.toFixed(2).replace(".", ",")}%`;
+          window.registrarCambioPrecioDolar("DOLAR_MEP", null, mepCalc, vStr, new Date().toLocaleTimeString());
+        }
+      }
+      if (bonosPrecio["AL30"] && bonosPrecio["AL30C"] && bonosPrecio["AL30C"] > 15) {
+        const cclCalc = +(bonosPrecio["AL30"] / bonosPrecio["AL30C"]).toFixed(2);
+        if (cclCalc > 900 && cclCalc < 5000) {
+          const vDif = (bonosVar["AL30"] ?? 0) - (bonosVar["AL30C"] ?? 0);
+          const vStr = vDif > 0 ? `+${vDif.toFixed(2).replace(".", ",")}%` : `${vDif.toFixed(2).replace(".", ",")}%`;
+          window.registrarCambioPrecioDolar("DOLAR_CCL", null, cclCalc, vStr, new Date().toLocaleTimeString());
         }
       }
     };
@@ -1223,8 +1247,7 @@
         });
       }
 
-      // 1. Consulta en vivo a Dolarito desde el navegador
-      let dolaritoRespondio = false;
+      // 1. Consulta en vivo a Dolarito desde el navegador (excepto MEP y CCL que los manda Rava)
       const targetDolarito = "https://api.dolarito.ar/api/frontend/quotations?_t=" + ts;
       for (const u of [
         targetDolarito,
@@ -1239,7 +1262,6 @@
               if (o && typeof o === "object") {
                 if ("buy" in o || "sell" in o || "compra" in o || "venta" in o || "value" in o) {
                   window.parsearNodoDolaritoCliente(kP, o);
-                  dolaritoRespondio = true;
                 }
                 Object.keys(o).forEach(k => rec(o[k], k));
               } else if (Array.isArray(o)) {
@@ -1247,27 +1269,26 @@
               }
             };
             rec(dj);
-            if (dolaritoRespondio) break;
+            break;
           }
         } catch (e) {}
       }
 
-      // 2. Contraste con Rava Bursátil (https://www.rava.com/) si Dolarito tuvo algún bloqueo
-      if (!dolaritoRespondio) {
-        const targetRava = "https://www.rava.com/?_t=" + ts;
-        for (const uRava of [
-          "https://corsproxy.io/?" + encodeURIComponent(targetRava),
-          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetRava)
-        ]) {
-          try {
-            const rR = await fetch(uRava, { cache: "no-store" });
-            if (rR.ok) {
-              const txtR = await rR.text();
-              window.extraerDolaresDesdeRavaHTML(txtR);
-              break;
-            }
-          } catch (e) {}
-        }
+      // 2. Sincronización directa y permanente con Rava Bursátil para MEP y CCL
+      const targetRava = "https://www.rava.com/?_t=" + ts;
+      for (const uRava of [
+        "https://corsproxy.io/?" + encodeURIComponent(targetRava),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetRava),
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetRava)
+      ]) {
+        try {
+          const rR = await fetch(uRava, { cache: "no-store" });
+          if (rR.ok) {
+            const txtR = await rR.text();
+            window.extraerDolaresDesdeRavaHTML(txtR);
+            break;
+          }
+        } catch (e) {}
       }
 
       // 3. Dólar Cripto en tiempo real siguiendo el spread de Dolarito + libro USDT/ARS en vivo

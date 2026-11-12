@@ -615,7 +615,7 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
                         if len(sim) <= 6 and not sim.endswith(("D", "C")):
                             candidatos_ranking[sim] = item_acc
 
-                plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
+                plano = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
                 for tk in TICKERS_PANEL_LIDER_SET:
                     mt = re.search(r'\b' + tk + r'\b\s+([\d\.]+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)', plano)
                     if mt:
@@ -1176,74 +1176,161 @@ def _fmt_var_dolar(val_raw: Any, default_str: str = "0,00%") -> str:
 def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     res_rava: Dict[str, Dict[str, Any]] = {}
     hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
-    try:
-        raw_rava_html = obtener_html_rava_compartido()
-        if raw_rava_html:
-            html_u = raw_rava_html.replace("&quot;", '"')
-            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]+)"[^{}]*\}', html_u, re.IGNORECASE):
-                b = m_obj.group(0)
-                sim = m_obj.group(1).upper().strip()
-                if "DOLAR" not in sim and "DÓLAR" not in sim and "MEP" not in sim and "CCL" not in sim and "MAYORISTA" not in sim and "CRIPTO" not in sim:
-                    continue
+    ts_ms = int(time.time() * 1000)
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+        "Referer": "https://www.rava.com/"
+    }
 
-                m_u = re.search(r'"(?:ultimo|venta|valor|close| cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_c = re.search(r'"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_d = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+    urls_rava = [
+        obtener_html_rava_compartido(ttl=4.0),
+        f"https://www.rava.com/cotizaciones/dolares?_t={ts_ms}"
+    ]
+    precios_bonos_rava: Dict[str, float] = {}
+    vars_bonos_rava: Dict[str, float] = {}
 
-                vu = normalizar_valor(m_u.group(1)) if m_u else None
-                vc = normalizar_valor(m_c.group(1)) if m_c else None
-                vd = m_d.group(1) if m_d else None
+    for item_src in urls_rava:
+        raw_html = ""
+        if item_src and item_src.startswith("http"):
+            if "DOLAR_MEP" in res_rava and "DOLAR_CCL" in res_rava:
+                break
+            try:
+                rr = GLOBAL_HTTP_SESSION.get(item_src, headers=hdrs, timeout=3.8)
+                if rr.status_code == 200:
+                    raw_html = rr.text
+            except Exception:
+                pass
+        else:
+            raw_html = item_src or ""
 
-                if not vu or vu < 900 or vu > 5000:
-                    continue
+        if not raw_html:
+            continue
 
-                cod_t = None
-                if "MEP" in sim or "BOLSA" in sim:
-                    cod_t = "DOLAR_MEP"
-                elif "CCL" in sim or "LIQUI" in sim:
-                    cod_t = "DOLAR_CCL"
-                elif "MAYORISTA" in sim or "A3500" in sim or "3500" in sim:
-                    cod_t = "DOLAR_A3500"
-                elif "BLUE" in sim or "INFORMAL" in sim or "PARALELO" in sim:
-                    cod_t = "DOLAR_BLUE"
-                elif "OFICIAL" in sim or "MINORISTA" in sim or "BNA" in sim:
-                    cod_t = "DOLAR_OFICIAL"
-                elif "CRIPTO" in sim or "USDT" in sim:
-                    cod_t = "DOLAR_CRIPTO"
+        html_u = raw_html.replace("&quot;", '"').replace("\\/", "/")
 
-                if cod_t and cod_t not in res_rava:
-                    base_ref = BASE_DOLARITO_EXACTA.get(cod_t, {})
-                    res_rava[cod_t] = {
-                        "compra": None if cod_t in ("DOLAR_MEP", "DOLAR_CCL") else (round(vc, 2) if (vc and vc > 900) else base_ref.get("compra")),
-                        "venta": round(vu, 2),
-                        "variacion": _fmt_var_dolar(vd, base_ref.get("variacion", "0,00%")),
+        for m_obj in re.finditer(r'\{[^{}]*?"(?:simbolo|especie|nombre|identificador|titulo)"\s*:\s*"([^"]+)"[^{}]*?\}', html_u, re.IGNORECASE):
+            b = m_obj.group(0)
+            sim = m_obj.group(1).upper().strip()
+
+            m_u = re.search(r'"(?:ultimo|venta|valor|close|cierre|px_last)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+            m_c = re.search(r'"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+            m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+
+            vu = normalizar_valor(m_u.group(1)) if m_u else None
+            vc = normalizar_valor(m_c.group(1)) if m_c else None
+            vd = m_d.group(1) if m_d else None
+
+            if sim in ("AL30", "AL30D", "AL30C", "GD30", "GD30D", "GD30C") and vu and vu > 10:
+                precios_bonos_rava[sim] = vu
+                v_d_num = normalizar_valor(vd)
+                if v_d_num is not None:
+                    vars_bonos_rava[sim] = v_d_num
+
+            if not vu or vu < 900 or vu > 5000:
+                continue
+
+            cod_t = None
+            if any(k in sim for k in ("MEP", "BOLSA")):
+                cod_t = "DOLAR_MEP"
+            elif any(k in sim for k in ("CCL", "LIQUI", "CONTADO")):
+                cod_t = "DOLAR_CCL"
+            elif any(k in sim for k in ("MAYORISTA", "A3500", "3500")):
+                cod_t = "DOLAR_A3500"
+            elif any(k in sim for k in ("BLUE", "INFORMAL", "PARALELO")):
+                cod_t = "DOLAR_BLUE"
+            elif any(k in sim for k in ("OFICIAL", "MINORISTA", "BNA")):
+                cod_t = "DOLAR_OFICIAL"
+            elif any(k in sim for k in ("CRIPTO", "USDT")):
+                cod_t = "DOLAR_CRIPTO"
+
+            if cod_t:
+                base_ref = BASE_DOLARITO_EXACTA.get(cod_t, {})
+                res_rava[cod_t] = {
+                    "compra": None if cod_t in ("DOLAR_MEP", "DOLAR_CCL") else (round(vc, 2) if (vc and vc > 900) else base_ref.get("compra")),
+                    "venta": round(vu, 2),
+                    "variacion": _fmt_var_dolar(vd, base_ref.get("variacion", "0,00%")),
+                    "fecha": hora_vivo
+                }
+
+        plano = BeautifulSoup(raw_html, "html.parser").get_text(" ", strip=True)
+        patrones_rava = [
+            ("DOLAR_MEP", r'D[ÓO]LAR\s+(?:MEP|BOLSA)\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
+            ("DOLAR_CCL", r'D[ÓO]LAR\s+(?:CCL|CONTADO\s+CON\s+LIQUI)\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
+            ("DOLAR_A3500", r'D[ÓO]LAR\s+MAYORISTA\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
+            ("DOLAR_BLUE", r'D[ÓO]LAR\s+BLUE\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)'),
+            ("DOLAR_OFICIAL", r'D[ÓO]LAR\s+OFICIAL\b[^\d]{1,25}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+[\.,][\d]+)')
+        ]
+        for cod_k, pat in patrones_rava:
+            if cod_k not in res_rava:
+                mt = re.search(pat, plano, re.IGNORECASE)
+                if mt:
+                    uv = normalizar_valor(mt.group(1))
+                    dv = mt.group(2)
+                    if uv and 900 < uv < 5000:
+                        base_ref = BASE_DOLARITO_EXACTA.get(cod_k, {})
+                        res_rava[cod_k] = {
+                            "compra": None if cod_k in ("DOLAR_MEP", "DOLAR_CCL") else base_ref.get("compra"),
+                            "venta": round(uv, 2),
+                            "variacion": _fmt_var_dolar(dv, base_ref.get("variacion", "0,00%")),
+                            "fecha": hora_vivo
+                        }
+
+    # Cálculo implícito en vivo con bonos AL30 / GD30 de Rava
+    if "DOLAR_MEP" not in res_rava:
+        for base_tk in ("AL30", "GD30"):
+            p_ars = precios_bonos_rava.get(base_tk)
+            p_usd = precios_bonos_rava.get(base_tk + "D")
+            if p_ars and p_usd and p_usd > 15:
+                mep_imp = p_ars / p_usd
+                if 900 < mep_imp < 5000:
+                    var_imp = (vars_bonos_rava.get(base_tk, 0.0) - vars_bonos_rava.get(base_tk + "D", 0.0))
+                    res_rava["DOLAR_MEP"] = {
+                        "compra": None,
+                        "venta": round(mep_imp, 2),
+                        "variacion": _fmt_var_dolar(var_imp, BASE_DOLARITO_EXACTA["DOLAR_MEP"].get("variacion", "0,00%")),
                         "fecha": hora_vivo
                     }
+                    break
 
-            plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
-            patrones_rava = [
-                ("DOLAR_MEP", r'D[ÓO]LAR\s+MEP\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("DOLAR_CCL", r'D[ÓO]LAR\s+CCL\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("DOLAR_A3500", r'D[ÓO]LAR\s+MAYORISTA\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("DOLAR_BLUE", r'D[ÓO]LAR\s+BLUE\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("DOLAR_OFICIAL", r'D[ÓO]LAR\s+OFICIAL\b[^\d]{1,20}([\d]{1,2}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)')
-            ]
-            for cod_k, pat in patrones_rava:
-                if cod_k not in res_rava:
-                    mt = re.search(pat, plano, re.IGNORECASE)
-                    if mt:
-                        uv = normalizar_valor(mt.group(1))
-                        dv = mt.group(2)
-                        if uv and 900 < uv < 5000:
-                            base_ref = BASE_DOLARITO_EXACTA.get(cod_k, {})
-                            res_rava[cod_k] = {
-                                "compra": None if cod_k in ("DOLAR_MEP", "DOLAR_CCL") else base_ref.get("compra"),
-                                "venta": round(uv, 2),
-                                "variacion": _fmt_var_dolar(dv, base_ref.get("variacion", "0,00%")),
-                                "fecha": hora_vivo
-                            }
-    except Exception:
-        pass
+    if "DOLAR_CCL" not in res_rava:
+        for base_tk in ("AL30", "GD30"):
+            p_ars = precios_bonos_rava.get(base_tk)
+            p_ccl = precios_bonos_rava.get(base_tk + "C")
+            if p_ars and p_ccl and p_ccl > 15:
+                ccl_imp = p_ars / p_ccl
+                if 900 < ccl_imp < 5000:
+                    var_imp = (vars_bonos_rava.get(base_tk, 0.0) - vars_bonos_rava.get(base_tk + "C", 0.0))
+                    res_rava["DOLAR_CCL"] = {
+                        "compra": None,
+                        "venta": round(ccl_imp, 2),
+                        "variacion": _fmt_var_dolar(var_imp, BASE_DOLARITO_EXACTA["DOLAR_CCL"].get("variacion", "0,00%")),
+                        "fecha": hora_vivo
+                    }
+                    break
+
+    # Respaldo con DolarAPI si faltara alguno
+    if "DOLAR_MEP" not in res_rava or "DOLAR_CCL" not in res_rava:
+        try:
+            r_da = GLOBAL_HTTP_SESSION.get(f"https://dolarapi.com/v1/dolares?_t={ts_ms}", timeout=2.8)
+            if r_da.status_code == 200 and isinstance(r_da.json(), list):
+                mapa_da = {"bolsa": "DOLAR_MEP", "contadoconliqui": "DOLAR_CCL", "blue": "DOLAR_BLUE", "oficial": "DOLAR_OFICIAL", "mayorista": "DOLAR_A3500", "cripto": "DOLAR_CRIPTO"}
+                for d_item in r_da.json():
+                    casa = str(d_item.get("casa", "")).lower().strip()
+                    cod_m = mapa_da.get(casa)
+                    v_da = normalizar_valor(d_item.get("venta"))
+                    c_da = normalizar_valor(d_item.get("compra"))
+                    if cod_m and cod_m not in res_rava and v_da and 900 < v_da < 5000:
+                        base_ref = BASE_DOLARITO_EXACTA.get(cod_m, {})
+                        res_rava[cod_m] = {
+                            "compra": None if cod_m in ("DOLAR_MEP", "DOLAR_CCL") else (round(c_da, 2) if (c_da and c_da > 900) else base_ref.get("compra")),
+                            "venta": round(v_da, 2),
+                            "variacion": base_ref.get("variacion", "0,00%"),
+                            "fecha": hora_vivo
+                        }
+        except Exception:
+            pass
+
     return res_rava
 
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
@@ -1389,6 +1476,12 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                 BASE_DOLARITO_EXACTA["DOLAR_CRIPTO"] = dict(res["DOLAR_CRIPTO"])
     except Exception:
         pass
+
+    # Prioridad absoluta a Rava para Dólar MEP y CCL
+    for k_rv in ("DOLAR_MEP", "DOLAR_CCL"):
+        if k_rv in datos_rava and datos_rava[k_rv].get("venta"):
+            res[k_rv] = dict(datos_rava[k_rv])
+            BASE_DOLARITO_EXACTA[k_rv] = dict(datos_rava[k_rv])
 
     v_of = res["DOLAR_OFICIAL"]["venta"]
     if v_of and v_of > 1000:
