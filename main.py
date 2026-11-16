@@ -2414,16 +2414,18 @@ TRADUCCIONES_EVENTOS_USA = {
 
 def extraer_calendario_usa() -> List[Dict[str, Any]]:
     global CACHE_CALENDARIO_USA
+    from datetime import timezone, timedelta
+    tz_ar = timezone(timedelta(hours=-3))
     ts_now = int(time.time() * 1000)
     extraidos = []
     hdrs = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*"
     }
 
-    # 1. Feed en tiempo real de Faireconomy / ForexFactory + AWS Investing
     urls_live = [
         f"https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t={ts_now}",
+        f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}",
         f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&_t={ts_now}"
     ]
     candidatos = []
@@ -2434,24 +2436,36 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
 
     for u in candidatos:
         try:
-            r = requests.get(u, headers=hdrs, timeout=3.8, verify=False)
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.0, verify=False)
             if r.status_code == 200 and r.text.strip():
                 data = r.json()
                 lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or data.get("items") or [])
-                if isinstance(lista, list):
+                if isinstance(lista, list) and len(lista) > 0:
                     for ev in lista:
                         if not isinstance(ev, dict):
                             continue
                         cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or "").upper().strip()
                         if cur not in ("USD", "US", "UNITED STATES", "EE.UU."):
                             continue
-                        f_raw = str(ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "")
-                        m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
-                        if not m_f:
-                            continue
-                        f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
-                        m_h = re.search(r"(\d{2}:\d{2})", f_raw)
-                        hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
+                        f_raw = str(ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
+                        f_iso = ""
+                        hora = "10:30"
+                        try:
+                            dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
+                            if dt_parsed.tzinfo is not None:
+                                dt_ar = dt_parsed.astimezone(tz_ar)
+                            else:
+                                dt_ar = dt_parsed
+                            f_iso = dt_ar.strftime("%Y-%m-%d")
+                            hora = dt_ar.strftime("%H:%M")
+                        except Exception:
+                            m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
+                            if not m_f:
+                                continue
+                            f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
+                            m_h = re.search(r"(\d{2}:\d{2})", f_raw)
+                            hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
+
                         nom_raw = str(ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or "").strip()
                         if not nom_raw:
                             continue
