@@ -2386,90 +2386,173 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     d_hasta = (ahora_ar + timedelta(days=14)).strftime("%Y-%m-%d")
     ts_now = int(time.time() * 1000)
     extraidos = []
-    hdrs = {
+
+    hdrs_inv = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "es-ES,es;q=0.9",
+        "domain-id": "4",
         "Origin": "https://es.investing.com",
         "Referer": "https://es.investing.com/economic-calendar/"
     }
 
-    urls_live = [
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&start_date={d_desde}T00:00:00Z&end_date={d_hasta}T23:59:59Z&_t={ts_now}",
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&dateFrom={d_desde}&dateTo={d_hasta}&_t={ts_now}",
+    # Fuente 1: API oficial de calendario económico de Investing en español (domain-id: 4) con rango multi-día
+    urls_inv_api = [
+        f"https://endpoints.investing.com/pd-instruments/v1/calendars/economic/events/occurrences?domain-id=4&limit=250&start-date={d_desde}T00:00:00Z&end-date={d_hasta}T23:59:59Z&country-ids=5",
+        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
         f"https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t={ts_now}",
         f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}"
     ]
-    candidatos = []
-    for u_base in urls_live:
-        candidatos.append(u_base)
-        candidatos.append(f"https://corsproxy.io/?{quote(u_base, safe='')}")
-        candidatos.append(f"https://api.codetabs.com/v1/proxy?quest={quote(u_base, safe='')}")
 
-    for u in candidatos:
-        try:
-            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.2, verify=False)
-            if r.status_code == 200 and r.text.strip():
+    for u_base in urls_inv_api:
+        for u in [u_base, f"https://corsproxy.io/?{quote(u_base, safe='')}", f"https://api.codetabs.com/v1/proxy?quest={quote(u_base, safe='')}"]:
+            try:
+                r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs_inv, timeout=4.2, verify=False)
+                if r.status_code != 200 or not r.text.strip():
+                    continue
                 data = r.json()
-                lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or data.get("items") or data.get("calendar") or [])
-                if isinstance(lista, list) and len(lista) > 0:
-                    for ev in lista:
-                        if not isinstance(ev, dict):
-                            continue
-                        cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or ev.get("countryCode") or "").upper().strip()
-                        c_id = str(ev.get("country_id") or ev.get("countryId") or "")
-                        if cur not in ("USD", "US", "USA", "UNITED STATES", "EE.UU.", "ESTADOS UNIDOS") and c_id != "5":
-                            continue
-                        f_raw = str(ev.get("occurrence_time") or ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
-                        f_iso = ""
-                        hora = "10:30"
-                        if f_raw.isdigit() and len(f_raw) >= 10:
-                            dt_ar = datetime.fromtimestamp(int(f_raw[:10]), tz=tz_ar)
+                lista = []
+                if isinstance(data, list):
+                    lista = data
+                elif isinstance(data, dict):
+                    lista = data.get("occurrences") or data.get("events") or data.get("data") or data.get("items") or []
+                if not isinstance(lista, list) or len(lista) == 0:
+                    continue
+
+                for ev in lista:
+                    if not isinstance(ev, dict):
+                        continue
+                    cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or ev.get("country_code") or "").upper().strip()
+                    c_id = str(ev.get("country_id") or ev.get("countryId") or "")
+                    if cur and cur not in ("USD", "US", "USA", "UNITED STATES", "EE.UU.", "ESTADOS UNIDOS") and c_id != "5":
+                        continue
+                    if not cur and c_id and c_id != "5":
+                        continue
+
+                    f_raw = str(ev.get("occurrence_time") or ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
+                    f_iso = ""
+                    hora = "10:30"
+                    if f_raw.isdigit() and len(f_raw) >= 10:
+                        dt_ar = datetime.fromtimestamp(int(f_raw[:10]), tz=tz_ar)
+                        f_iso = dt_ar.strftime("%Y-%m-%d")
+                        hora = dt_ar.strftime("%H:%M")
+                    else:
+                        try:
+                            dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
+                            dt_ar = dt_parsed.astimezone(tz_ar) if dt_parsed.tzinfo is not None else dt_parsed
                             f_iso = dt_ar.strftime("%Y-%m-%d")
                             hora = dt_ar.strftime("%H:%M")
-                        else:
-                            try:
-                                dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
-                                dt_ar = dt_parsed.astimezone(tz_ar) if dt_parsed.tzinfo is not None else dt_parsed
-                                f_iso = dt_ar.strftime("%Y-%m-%d")
-                                hora = dt_ar.strftime("%H:%M")
-                            except Exception:
-                                m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
-                                if not m_f:
-                                    continue
-                                f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
-                                m_h = re.search(r"(\d{2}:\d{2})", f_raw)
-                                hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
+                        except Exception:
+                            m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
+                            if not m_f:
+                                continue
+                            f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
+                            m_h = re.search(r"(\d{2}:\d{2})", f_raw)
+                            hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
 
-                        nom_raw = str(ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or ev.get("description") or "").strip()
-                        if not nom_raw:
-                            continue
-                        nom = TRADUCCIONES_EVENTOS_USA.get(nom_raw, nom_raw)
-                        imp_raw = str(ev.get("impact") or ev.get("importance") or ev.get("importancia") or ev.get("volatility") or "2").lower()
-                        if imp_raw in ("holiday", "non-economic", "0"):
-                            continue
-                        imp = 3 if imp_raw in ("3", "high", "alta", "bull3") else (1 if imp_raw in ("1", "low", "baja", "bull1") else 2)
-                        act_v = str(ev.get("actual") if ev.get("actual") not in (None, "", "null") else "-").replace(".", ",")
-                        prev_v = str(ev.get("forecast") or ev.get("prevision") or ev.get("consensus") or "-").replace(".", ",")
-                        ant_v = str(ev.get("previous") or ev.get("anterior") or "-").replace(".", ",")
-                        extraidos.append({
-                            "fecha": f_iso,
-                            "hora": hora,
-                            "div": "US",
-                            "evento": nom,
-                            "importancia": imp,
-                            "actual": act_v,
-                            "prevision": prev_v,
-                            "anterior": ant_v
-                        })
-        except Exception:
-            pass
+                    nom_raw = str(ev.get("long_name") or ev.get("short_name") or ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or "").strip()
+                    if not nom_raw:
+                        continue
+                    nom = TRADUCCIONES_EVENTOS_USA.get(nom_raw, nom_raw)
+                    imp_raw = str(ev.get("importance") or ev.get("impact") or ev.get("importancia") or "2").lower()
+                    if imp_raw in ("holiday", "non-economic", "0"):
+                        continue
+                    imp = 3 if imp_raw in ("3", "high", "alta", "bull3") else (1 if imp_raw in ("1", "low", "baja", "bull1") else 2)
 
-    if extraidos:
-        mapa = {}
-        for item in extraidos:
+                    def _fmt_dato_inv(val_o, unit_o=""):
+                        if val_o in (None, "", "null"):
+                            return "-"
+                        s_v = str(val_o).replace(".", ",")
+                        if unit_o and str(unit_o) not in s_v:
+                            s_v += str(unit_o)
+                        return s_v
+
+                    unidad = ev.get("unit") or ""
+                    act_v = _fmt_dato_inv(ev.get("actual"), unidad)
+                    prev_v = _fmt_dato_inv(ev.get("forecast") or ev.get("prevision") or ev.get("consensus"), unidad)
+                    ant_v = _fmt_dato_inv(ev.get("previous") or ev.get("anterior"), unidad)
+
+                    extraidos.append({
+                        "fecha": f_iso,
+                        "hora": hora,
+                        "div": "US",
+                        "evento": nom,
+                        "importancia": imp,
+                        "actual": act_v,
+                        "prevision": prev_v,
+                        "anterior": ant_v
+                    })
+                break
+            except Exception:
+                pass
+
+    # Fuente 2: HTML AJAX de es.investing.com/economic-calendar/Service/getCalendarFilteredData (Ayer, Hoy, Mañana, Esta Semana, Próxima Semana)
+    try:
+        r_html = GLOBAL_HTTP_SESSION.post(
+            "https://es.investing.com/economic-calendar/Service/getCalendarFilteredData",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": "https://es.investing.com/economic-calendar/"
+            },
+            data={
+                "country[]": "5",
+                "dateFrom": d_desde,
+                "dateTo": d_hasta,
+                "timeZone": "12",
+                "timeFilter": "timeRemain",
+                "currentTab": "custom",
+                "limit_from": "0"
+            },
+            timeout=5.0,
+            verify=False
+        )
+        if r_html.status_code == 200:
+            html_cal = r_html.json().get("data", "") if r_html.text.strip().startswith("{") else r_html.text
+            if html_cal and "js-event-item" in html_cal:
+                soup = BeautifulSoup(html_cal, "html.parser")
+                for tr in soup.select("tr.js-event-item"):
+                    dt_attr = tr.get("data-event-datetime", "")
+                    m_dt = re.search(r"(20\d{2})[/\-](\d{2})[/\-](\d{2})\s+(\d{2}:\d{2})", dt_attr)
+                    if not m_dt:
+                        continue
+                    f_iso = f"{m_dt.group(1)}-{m_dt.group(2)}-{m_dt.group(3)}"
+                    hora = m_dt.group(4)
+                    td_ev = tr.select_one("td.event")
+                    nom = td_ev.get_text(" ", strip=True) if td_ev else ""
+                    if not nom:
+                        continue
+                    bulls = len(tr.select("td.sentiment i.grayFullBullishIcon"))
+                    imp = bulls if bulls in (1, 2, 3) else 2
+                    td_act = tr.select_one("td.act")
+                    td_fore = tr.select_one("td.fore")
+                    td_prev = tr.select_one("td.prev")
+                    act_v = (td_act.get_text(strip=True) if td_act else "") or "-"
+                    prev_v = (td_fore.get_text(strip=True) if td_fore else "") or "-"
+                    ant_v = (td_prev.get_text(strip=True) if td_prev else "") or "-"
+                    extraidos.append({
+                        "fecha": f_iso,
+                        "hora": hora,
+                        "div": "US",
+                        "evento": nom,
+                        "importancia": imp,
+                        "actual": act_v,
+                        "prevision": prev_v,
+                        "anterior": ant_v
+                    })
+    except Exception:
+        pass
+
+    mapa = {}
+    for item in extraidos:
+        if item.get("fecha") and item.get("evento"):
             clave = f"{item['fecha']}|{item['hora']}|{item['evento']}"
+            if clave in mapa and item.get("actual") in ("-", "", None) and mapa[clave].get("actual") not in ("-", "", None):
+                continue
             mapa[clave] = item
+
+    if mapa:
         res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
         CACHE_CALENDARIO_USA = res
         return res

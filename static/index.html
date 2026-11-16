@@ -3008,7 +3008,8 @@
       const dDesdeJs = window.sumarDiasISO(hoyDateJs, -7);
       const dHastaJs = window.sumarDiasISO(hoyDateJs, 14);
       const urlsUsaVivo = [
-        "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&start_date=" + dDesdeJs + "T00:00:00Z&end_date=" + dHastaJs + "T23:59:59Z&_t=" + tsNow,
+        "https://endpoints.investing.com/pd-instruments/v1/calendars/economic/events/occurrences?domain-id=4&limit=250&start-date=" + dDesdeJs + "T00:00:00Z&end-date=" + dHastaJs + "T23:59:59Z&country-ids=5",
+        "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t=" + tsNow,
         "https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t=" + tsNow,
         "https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t=" + tsNow
       ];
@@ -3050,17 +3051,17 @@
           const rAws = await fetch(u, { cache: "no-store" });
           if (rAws.ok) {
             const dAws = await rAws.json();
-            const arr = Array.isArray(dAws) ? dAws : (dAws.events || dAws.data || dAws.items || []);
+            const arr = Array.isArray(dAws) ? dAws : (dAws.occurrences || dAws.events || dAws.data || dAws.items || []);
             if (Array.isArray(arr) && arr.length > 0) {
               arr.forEach(ev => {
                 const cur = String(ev.country || ev.currency || ev.div || "").toUpperCase().trim();
                 if (cur && !["USD", "US", "UNITED STATES", "EE.UU."].includes(cur)) return;
-                const nomRaw = String(ev.title || ev.event || ev.name || "").trim();
+                const nomRaw = String(ev.long_name || ev.short_name || ev.title || ev.event || ev.name || "").trim();
                 const nom = tradMap[nomRaw] || nomRaw;
                 let fRaw = String(ev.date || ev.fecha || ev.datetime || "").slice(0, 10);
                 let horaAr = String(ev.hora || "10:30");
-                if (ev.date && String(ev.date).includes("T")) {
-                  const dtObj = new Date(ev.date);
+                const rawIsoEv = ev.occurrence_time || ev.date || ""; if (rawIsoEv && String(rawIsoEv).includes("T")) {
+                  const dtObj = new Date(rawIsoEv);
                   if (!isNaN(dtObj.getTime())) {
                     const strArIso = dtObj.toLocaleString("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" });
                     fRaw = strArIso.slice(0, 10);
