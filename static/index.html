@@ -3002,7 +3002,7 @@
         } catch (e) {}
       }
 
-      // 3. Extracción directa en vivo de Faireconomy (ForexFactory) + AWS Investing para EE.UU.
+      // 3. Extracción directa en vivo multi-día de Investing (endpoints.investing.com + AWS + ForexFactory)
       const tsNow = Date.now();
       const hoyDateJs = window.obtenerFechaHoyArgentinaDate();
       const dDesdeJs = window.sumarDiasISO(hoyDateJs, -7);
@@ -3044,7 +3044,7 @@
         "30-y Bond Auction": "Subasta de bonos del Tesoro a 30 años (UST 30Y)"
       };
       const mapU = {};
-      window.CALENDARIO_USA_DATA.forEach(x => { mapU[x.fecha + "|" + x.evento] = x; });
+      window.CALENDARIO_USA_DATA.forEach(x => { mapU[x.fecha + "|" + x.hora + "|" + x.evento] = x; });
       let huboNuevosUsa = false;
       for (const u of proxiesUsa) {
         try {
@@ -3054,34 +3054,35 @@
             const arr = Array.isArray(dAws) ? dAws : (dAws.occurrences || dAws.events || dAws.data || dAws.items || []);
             if (Array.isArray(arr) && arr.length > 0) {
               arr.forEach(ev => {
-                const cur = String(ev.country || ev.currency || ev.div || "").toUpperCase().trim();
-                if (cur && !["USD", "US", "UNITED STATES", "EE.UU."].includes(cur)) return;
+                const cur = String(ev.country || ev.currency || ev.div || ev.country_code || "").toUpperCase().trim();
+                const cId = String(ev.country_id || ev.countryId || "");
+                if (cur && !["USD", "US", "USA", "UNITED STATES", "EE.UU.", "ESTADOS UNIDOS"].includes(cur) && cId !== "5") return;
+                if (!cur && cId && cId !== "5") return;
                 const nomRaw = String(ev.long_name || ev.short_name || ev.title || ev.event || ev.name || "").trim();
                 const nom = tradMap[nomRaw] || nomRaw;
-                let fRaw = String(ev.date || ev.fecha || ev.datetime || "").slice(0, 10);
+                const rawIsoEv = String(ev.occurrence_time || ev.date || ev.fecha || ev.datetime || "");
+                let fRaw = rawIsoEv.slice(0, 10);
                 let horaAr = String(ev.hora || "10:30");
-                const rawIsoEv = ev.occurrence_time || ev.date || ""; if (rawIsoEv && String(rawIsoEv).includes("T")) {
+                if (rawIsoEv.includes("T")) {
                   const dtObj = new Date(rawIsoEv);
                   if (!isNaN(dtObj.getTime())) {
                     const strArIso = dtObj.toLocaleString("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" });
                     fRaw = strArIso.slice(0, 10);
                     horaAr = strArIso.slice(11, 16);
                   }
-                } else {
-                  const mHora = String(ev.time || ev.hora || "").match(/(\d{2}:\d{2})/);
-                  if (mHora) horaAr = mHora[1];
                 }
-                const impRaw = String(ev.impact || ev.importance || "Medium").toLowerCase();
-                if (impRaw === "holiday" || impRaw === "non-economic") return;
+                const impRaw = String(ev.importance || ev.impact || "2").toLowerCase();
+                if (impRaw === "holiday" || impRaw === "non-economic" || impRaw === "0") return;
                 const impNum = (impRaw === "high" || impRaw === "3") ? 3 : ((impRaw === "low" || impRaw === "1") ? 1 : 2);
                 if (nom && /^202\d-\d{2}-\d{2}$/.test(fRaw)) {
-                  const kU = fRaw + "|" + nom;
-                  const actStr = ev.actual ? String(ev.actual).replace(".", ",") : ((mapU[kU] && mapU[kU].actual) || "-");
-                  const prevStr = ev.forecast ? String(ev.forecast).replace(".", ",") : ((mapU[kU] && mapU[kU].prevision) || "-");
-                  const antStr = ev.previous ? String(ev.previous).replace(".", ",") : ((mapU[kU] && mapU[kU].anterior) || "-");
+                  const kU = fRaw + "|" + horaAr + "|" + nom;
+                  const un = ev.unit || "";
+                  const actStr = ev.actual !== null && ev.actual !== undefined && ev.actual !== "" ? String(ev.actual).replace(".", ",") + un : ((mapU[kU] && mapU[kU].actual) || "-");
+                  const prevStr = (ev.forecast || ev.consensus) ? String(ev.forecast || ev.consensus).replace(".", ",") + un : ((mapU[kU] && mapU[kU].prevision) || "-");
+                  const antStr = ev.previous ? String(ev.previous).replace(".", ",") + un : ((mapU[kU] && mapU[kU].anterior) || "-");
                   mapU[kU] = {
                     fecha: fRaw,
-                    hora: horaAr || ((mapU[kU] && mapU[kU].hora) || "10:30"),
+                    hora: horaAr,
                     div: "US",
                     evento: nom,
                     importancia: impNum,
@@ -3089,9 +3090,9 @@
                     prevision: prevStr,
                     anterior: antStr
                   };
+                  huboNuevosUsa = true;
                 }
               });
-              huboNuevosUsa = true;
             }
           }
         } catch (e) {}

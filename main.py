@@ -2396,7 +2396,6 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
         "Referer": "https://es.investing.com/economic-calendar/"
     }
 
-    # Fuente 1: API oficial de calendario económico de Investing en español (domain-id: 4) con rango multi-día
     urls_inv_api = [
         f"https://endpoints.investing.com/pd-instruments/v1/calendars/economic/events/occurrences?domain-id=4&limit=250&start-date={d_desde}T00:00:00Z&end-date={d_hasta}T23:59:59Z&country-ids=5",
         f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
@@ -2411,11 +2410,7 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
                 if r.status_code != 200 or not r.text.strip():
                     continue
                 data = r.json()
-                lista = []
-                if isinstance(data, list):
-                    lista = data
-                elif isinstance(data, dict):
-                    lista = data.get("occurrences") or data.get("events") or data.get("data") or data.get("items") or []
+                lista = data if isinstance(data, list) else (data.get("occurrences") or data.get("events") or data.get("data") or data.get("items") or [])
                 if not isinstance(lista, list) or len(lista) == 0:
                     continue
 
@@ -2468,25 +2463,20 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
                         return s_v
 
                     unidad = ev.get("unit") or ""
-                    act_v = _fmt_dato_inv(ev.get("actual"), unidad)
-                    prev_v = _fmt_dato_inv(ev.get("forecast") or ev.get("prevision") or ev.get("consensus"), unidad)
-                    ant_v = _fmt_dato_inv(ev.get("previous") or ev.get("anterior"), unidad)
-
                     extraidos.append({
                         "fecha": f_iso,
                         "hora": hora,
                         "div": "US",
                         "evento": nom,
                         "importancia": imp,
-                        "actual": act_v,
-                        "prevision": prev_v,
-                        "anterior": ant_v
+                        "actual": _fmt_dato_inv(ev.get("actual"), unidad),
+                        "prevision": _fmt_dato_inv(ev.get("forecast") or ev.get("prevision") or ev.get("consensus"), unidad),
+                        "anterior": _fmt_dato_inv(ev.get("previous") or ev.get("anterior"), unidad)
                     })
                 break
             except Exception:
                 pass
 
-    # Fuente 2: HTML AJAX de es.investing.com/economic-calendar/Service/getCalendarFilteredData (Ayer, Hoy, Mañana, Esta Semana, Próxima Semana)
     try:
         r_html = GLOBAL_HTTP_SESSION.post(
             "https://es.investing.com/economic-calendar/Service/getCalendarFilteredData",
@@ -2517,29 +2507,20 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
                     m_dt = re.search(r"(20\d{2})[/\-](\d{2})[/\-](\d{2})\s+(\d{2}:\d{2})", dt_attr)
                     if not m_dt:
                         continue
-                    f_iso = f"{m_dt.group(1)}-{m_dt.group(2)}-{m_dt.group(3)}"
-                    hora = m_dt.group(4)
                     td_ev = tr.select_one("td.event")
                     nom = td_ev.get_text(" ", strip=True) if td_ev else ""
                     if not nom:
                         continue
                     bulls = len(tr.select("td.sentiment i.grayFullBullishIcon"))
-                    imp = bulls if bulls in (1, 2, 3) else 2
-                    td_act = tr.select_one("td.act")
-                    td_fore = tr.select_one("td.fore")
-                    td_prev = tr.select_one("td.prev")
-                    act_v = (td_act.get_text(strip=True) if td_act else "") or "-"
-                    prev_v = (td_fore.get_text(strip=True) if td_fore else "") or "-"
-                    ant_v = (td_prev.get_text(strip=True) if td_prev else "") or "-"
                     extraidos.append({
-                        "fecha": f_iso,
-                        "hora": hora,
+                        "fecha": f"{m_dt.group(1)}-{m_dt.group(2)}-{m_dt.group(3)}",
+                        "hora": m_dt.group(4),
                         "div": "US",
                         "evento": nom,
-                        "importancia": imp,
-                        "actual": act_v,
-                        "prevision": prev_v,
-                        "anterior": ant_v
+                        "importancia": bulls if bulls in (1, 2, 3) else 2,
+                        "actual": (tr.select_one("td.act").get_text(strip=True) if tr.select_one("td.act") else "") or "-",
+                        "prevision": (tr.select_one("td.fore").get_text(strip=True) if tr.select_one("td.fore") else "") or "-",
+                        "anterior": (tr.select_one("td.prev").get_text(strip=True) if tr.select_one("td.prev") else "") or "-"
                     })
     except Exception:
         pass
