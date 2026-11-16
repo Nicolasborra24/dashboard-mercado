@@ -1460,6 +1460,85 @@
       }
     };
 
+    window.sincronizarMonedasEnVivo = async function() {
+      const ts = Date.now();
+      const syms = ["BRL=X", "EURUSD=X", "CLP=X"];
+      const quotes = {};
+
+      await Promise.all(syms.map(async sym => {
+        const yUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(sym) + "?interval=1d&range=1d&_t=" + ts;
+        for (const u of [
+          "https://corsproxy.io/?" + encodeURIComponent(yUrl),
+          "https://api.allorigins.win/raw?url=" + encodeURIComponent(yUrl)
+        ]) {
+          try {
+            const r = await fetch(u, { cache: "no-store" });
+            if (!r.ok) continue;
+            const dj = await r.json();
+            const meta = dj?.chart?.result?.[0]?.meta;
+            if (meta && meta.regularMarketPrice) {
+              const p = parseFloat(meta.regularMarketPrice);
+              const prev = parseFloat(meta.chartPreviousClose || meta.previousClose || p);
+              const chg = prev ? ((p - prev) / prev) * 100 : 0;
+              quotes[sym] = { price: p, chg: chg };
+              break;
+            }
+          } catch (e) {}
+        }
+      }));
+
+      const mayObj = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500) || {};
+      const usdArs = parseFloat(mayObj.venta) || 1544.00;
+      const chgUsdArs = parseNumSeguro(mayObj.variacion) || 0;
+      const horaStr = new Date().toLocaleTimeString();
+
+      const actualizarItemMoneda = (cod, desc, valNum, fmtStr, chgPct) => {
+        if (!valNum || isNaN(valNum)) return;
+        const varStr = chgPct > 0 ? `+${chgPct.toFixed(2).replace(".", ",")}%` : (chgPct < 0 ? `${chgPct.toFixed(2).replace(".", ",")}%` : "0,00%");
+        if (PRECIOS_ANTERIORES[cod] !== undefined && Math.abs(valNum - PRECIOS_ANTERIORES[cod]) >= 0.0001) {
+          FLASH_REGISTRO[cod] = valNum > PRECIOS_ANTERIORES[cod] ? "flash-green" : "flash-red";
+          setTimeout(() => { FLASH_REGISTRO[cod] = ""; }, 1400);
+        }
+        PRECIOS_ANTERIORES[cod] = valNum;
+        if (!datosGlobales.monedas) datosGlobales.monedas = [];
+        const idx = datosGlobales.monedas.findIndex(x => x && x.variable === cod);
+        const item = {
+          variable: cod,
+          descripcion: desc,
+          categoria: "monedas",
+          valor_formateado: fmtStr,
+          variacion: varStr,
+          valor: valNum,
+          fecha: horaStr
+        };
+        if (idx >= 0) datosGlobales.monedas[idx] = item;
+        else datosGlobales.monedas.push(item);
+      };
+
+      const fmtArs = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ARS";
+      actualizarItemMoneda("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", usdArs, fmtArs(usdArs), chgUsdArs);
+
+      if (quotes["BRL=X"]) {
+        const pBrl = +quotes["BRL=X"].price.toFixed(4);
+        actualizarItemMoneda("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", pBrl, "R$ " + pBrl.toFixed(4).replace(".", ","), quotes["BRL=X"].chg);
+      }
+      if (quotes["EURUSD=X"]) {
+        const pEur = +quotes["EURUSD=X"].price.toFixed(4);
+        const cEur = quotes["EURUSD=X"].chg;
+        actualizarItemMoneda("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", pEur, pEur.toFixed(4).replace(".", ",") + " USD", cEur);
+        const pEurArs = +(pEur * usdArs).toFixed(2);
+        const cEurArs = ((1 + cEur / 100) * (1 + chgUsdArs / 100) - 1) * 100;
+        actualizarItemMoneda("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", pEurArs, fmtArs(pEurArs), cEurArs);
+      }
+      if (quotes["CLP=X"]) {
+        const pClp = +quotes["CLP=X"].price.toFixed(2);
+        const fmtClp = "CLP$ " + pClp.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        actualizarItemMoneda("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", pClp, fmtClp, quotes["CLP=X"].chg);
+      }
+
+      if (categoriaActiva === "monedas") renderizar(false);
+    };
+
     async function cargarDatos() {
       const data = await fetchJsonSeguro("/bcra/variables?formato=agrupado&t=" + Date.now());
       if (!data) return;
@@ -3145,6 +3224,8 @@
     setInterval(actualizarCriptosEnVivo, 8000);
     setInterval(cargarDatos, 8000);
     setInterval(window.sincronizarCaucionesRava, 8000);
+    setInterval(window.sincronizarMonedasEnVivo, 8000);
+    window.sincronizarMonedasEnVivo();
     window.sincronizarCaucionesRava();
     setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);

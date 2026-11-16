@@ -1662,9 +1662,12 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
 
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
     puntas_init = obtener_puntas_dolarito()
-    usd_oficial = float((puntas_init.get("DOLAR_A3500") or {}).get("venta") or 1544.00)
+    info_may = puntas_init.get("DOLAR_A3500") or {}
+    usd_oficial = float(info_may.get("venta") or 1544.00)
+    var_may_str = info_may.get("variacion") or "0,00%"
+    var_may_num = normalizar_valor(var_may_str) or 0.0
     fmt_may = f"${usd_oficial:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     items.append({
         "variable": "DOLAR_A3500",
@@ -1673,40 +1676,55 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
         "compra": usd_oficial,
         "venta": usd_oficial,
         "valor_formateado": fmt_may,
-        "variacion": "0,0%",
+        "variacion": var_may_str,
         "valor": usd_oficial,
-        "fecha": fec_hoy
+        "fecha": hora_vivo
     })
 
-    rates = {}
-    try:
-        r_fx = requests.get("https://open.er-api.com/v6/latest/USD", timeout=3.0)
-        if r_fx.status_code == 200:
-            rates = r_fx.json().get("rates", {})
-    except Exception:
-        pass
+    # Consultar cotizaciones y variaciones diarias en vivo en paralelo desde Yahoo Finance / Stooq
+    pares_fx = [
+        ("BRL=X", "usdbrl"),
+        ("EURUSD=X", "eurusd"),
+        ("CLP=X", "usdclp")
+    ]
+    with ThreadPoolExecutor(max_workers=3) as ex_fx:
+        res_fx = dict(zip([p[0] for p in pares_fx], ex_fx.map(lambda p: fetch_quote_externa(p[0], p[1]), pares_fx)))
 
-    val_brl = round(float(rates.get("BRL", 5.76)), 2)
-    val_clp = round(float(rates.get("CLP", 958.40)), 2)
-    eur_rate = float(rates.get("EUR", 0.921))
-    val_eurusd = round(1.0 / eur_rate, 4) if eur_rate > 0 else 1.0855
-    usd_ars_val = round(float(rates.get("ARS", usd_oficial)), 2)
+    q_brl = res_fx.get("BRL=X") or {}
+    q_eur = res_fx.get("EURUSD=X") or {}
+    q_clp = res_fx.get("CLP=X") or {}
+
+    val_brl = round(float(q_brl.get("price") or 5.76), 4)
+    chg_brl = float(q_brl.get("change_pct") or 0.0)
+
+    val_eurusd = round(float(q_eur.get("price") or 1.0855), 4)
+    chg_eurusd = float(q_eur.get("change_pct") or 0.0)
+
+    val_clp = round(float(q_clp.get("price") or 958.40), 2)
+    chg_clp = float(q_clp.get("change_pct") or 0.0)
+
+    usd_ars_val = round(usd_oficial, 2)
     val_eurars = round(val_eurusd * usd_ars_val, 2)
+    chg_eurars = round(((1.0 + chg_eurusd / 100.0) * (1.0 + var_may_num / 100.0) - 1.0) * 100.0, 2)
+
+    def _fmt_v_fx(v):
+        if v == 0:
+            return "0,00%"
+        return f"+{v:.2f}%".replace(".", ",") if v > 0 else f"{v:.2f}%".replace(".", ",")
 
     MONEDAS = [
-        ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,05%", usd_ars_val),
-        ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.2f}".replace(".", ","), "+0,32%", val_brl),
-        ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), "+0,18%", val_eurusd),
-        ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), "+0,22%", val_eurars),
-        ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), "-0,25%", val_clp)
+        ("MONEDA_USDARS", "Dólar vs Peso Argentino (USD/ARS)", f"${usd_ars_val:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), _fmt_v_fx(var_may_num), usd_ars_val),
+        ("MONEDA_USDBRL", "Dólar vs Real Brasileño (USD/BRL)", f"R$ {val_brl:.4f}".replace(".", ","), _fmt_v_fx(chg_brl), val_brl),
+        ("MONEDA_EURUSD", "Euro vs Dólar (EUR/USD)", f"{val_eurusd:.4f} USD".replace(".", ","), _fmt_v_fx(chg_eurusd), val_eurusd),
+        ("MONEDA_EURARS", "Euro vs Peso Argentino (EUR/ARS)", f"${val_eurars:,.2f} ARS".replace(",", "X").replace(".", ",").replace("X", "."), _fmt_v_fx(chg_eurars), val_eurars),
+        ("MONEDA_USDCLP", "Dólar vs Peso Chileno (USD/CLP)", f"CLP$ {val_clp:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), _fmt_v_fx(chg_clp), val_clp)
     ]
     for cod, desc, fmt, var_str, val_n in MONEDAS:
-        items.append({"variable": cod, "descripcion": desc, "categoria": "monedas", "valor_formateado": fmt, "variacion": var_str, "valor": val_n, "fecha": fec_hoy})
+        items.append({"variable": cod, "descripcion": desc, "categoria": "monedas", "valor_formateado": fmt, "variacion": var_str, "valor": val_n, "fecha": hora_vivo})
 
-    puntas = obtener_puntas_dolarito()
     for cod_d, desc_d in [("DOLAR_OFICIAL", "Dólar Oficial Minorista"), ("DOLAR_BLUE", "Dólar Blue")]:
-        if cod_d in puntas:
-            p_info = puntas[cod_d]
+        if cod_d in puntas_init:
+            p_info = puntas_init[cod_d]
             c_val = p_info["compra"]
             v_val = p_info["venta"]
             fmt_v = f"${v_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -1717,9 +1735,9 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
                 "compra": c_val,
                 "venta": v_val,
                 "valor_formateado": fmt_v,
-                "variacion": p_info.get("variacion", "0,0%"),
+                "variacion": p_info.get("variacion", "0,00%"),
                 "valor": v_val,
-                "fecha": p_info.get("fecha", fec_hoy)
+                "fecha": p_info.get("fecha", hora_vivo)
             })
     return items
 
