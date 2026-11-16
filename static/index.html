@@ -721,6 +721,8 @@
       renderizar(true);
       if (curvaKey === "soberanos" || curvaKey === "bopreales") {
         window.cambiarMonedaBonos(monedaBonosActiva);
+      } else if (curvaKey === "cer" || curvaKey === "lecaps") {
+        sincronizarEndpointsSecundarios().then(() => renderizar(true));
       }
     }
 
@@ -1087,7 +1089,8 @@
       if (infImp && Object.keys(infImp).length > 0) datosInflacionImplicitaSJB = infImp;
       if (bandas && bandas.banda_inferior) datosBandasCambiarias = bandas;
       if (finviz && (finviz["1D"] || finviz["1W"])) datosFinvizSectores = finviz;
-      if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar(false);
+      if (["cotizacion_bonos", "inflacion_y_ajuste"].includes(categoriaActiva)) renderizar(true);
+      else if (["dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar(false);
     }
 
         // ============================================================================
