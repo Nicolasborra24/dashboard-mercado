@@ -2381,6 +2381,9 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     global CACHE_CALENDARIO_USA
     from datetime import timezone, timedelta
     tz_ar = timezone(timedelta(hours=-3))
+    ahora_ar = datetime.now(tz_ar)
+    d_desde = (ahora_ar - timedelta(days=7)).strftime("%Y-%m-%d")
+    d_hasta = (ahora_ar + timedelta(days=14)).strftime("%Y-%m-%d")
     ts_now = int(time.time() * 1000)
     extraidos = []
     hdrs = {
@@ -2392,8 +2395,8 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     }
 
     urls_live = [
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&_t={ts_now}",
+        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&start_date={d_desde}T00:00:00Z&end_date={d_hasta}T23:59:59Z&_t={ts_now}",
+        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&dateFrom={d_desde}&dateTo={d_hasta}&_t={ts_now}",
         f"https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t={ts_now}",
         f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}"
     ]
@@ -2421,8 +2424,7 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
                         f_iso = ""
                         hora = "10:30"
                         if f_raw.isdigit() and len(f_raw) >= 10:
-                            ts_s = int(f_raw[:10])
-                            dt_ar = datetime.fromtimestamp(ts_s, tz=tz_ar)
+                            dt_ar = datetime.fromtimestamp(int(f_raw[:10]), tz=tz_ar)
                             f_iso = dt_ar.strftime("%Y-%m-%d")
                             hora = dt_ar.strftime("%H:%M")
                         else:
@@ -2466,7 +2468,7 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     if extraidos:
         mapa = {}
         for item in extraidos:
-            clave = f"{item['fecha']}|{item['evento']}"
+            clave = f"{item['fecha']}|{item['hora']}|{item['evento']}"
             mapa[clave] = item
         res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
         CACHE_CALENDARIO_USA = res
