@@ -1049,14 +1049,52 @@ def _actualizar_cauciones_en_vivo():
         "7D": {"desc": "Caución Bursátil 7 Días (Pesos)", "tasa": 19.00, "dia": -57.8, "mes": -2.1, "anio": -13.6},
         "14D": {"desc": "Caución Bursátil 14 Días (Pesos)", "tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
     }
+    ts_ms = int(time.time() * 1000)
+    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+
+    # A) Consultar SJB tasas/tablas para cauciones si están disponibles
     try:
-        raw_rava_html = obtener_html_rava_compartido()
-        if raw_rava_html:
+        r_sjb = GLOBAL_HTTP_SESSION.get(f"https://sjbdashboards.up.railway.app/api/tasas/tablas?_t={ts_ms}", headers=hdrs, timeout=3.5)
+        if r_sjb.status_code == 200:
+            d_sjb = r_sjb.json()
+            for sec_k in ("principales", "otras", "cauciones"):
+                for row in d_sjb.get(sec_k, []):
+                    nom = str(row.get("Tasa") or row.get("Plazo") or row.get("Instrumento") or "").upper()
+                    if "CAUCI" in nom or any(p in nom for p in ("1D", "7D", "14D", "1 D", "7 D", "14 D")):
+                        plz = "14D" if "14" in nom else ("7D" if "7" in nom else ("1D" if "1" in nom else None))
+                        if plz:
+                            t_v = normalizar_valor(row.get("TNA") or row.get("Tasa") or row.get("Ultimo"))
+                            v_d = normalizar_valor(row.get("Variacion") or row.get("Dia"))
+                            if t_v is not None and 0.5 <= t_v <= 150.0:
+                                base_c[plz]["tasa"] = t_v
+                            if v_d is not None:
+                                base_c[plz]["dia"] = v_d
+    except Exception:
+        pass
+
+    # B) Consultar Rava Home + Rava Cauciones en vivo
+    htmls_rava = [obtener_html_rava_compartido(ttl=4.0)]
+    try:
+        r_rc = GLOBAL_HTTP_SESSION.get(f"https://www.rava.com/cotizaciones/cauciones?_t={ts_ms}", headers=hdrs, timeout=3.5)
+        if r_rc.status_code == 200 and len(r_rc.text) > 400:
+            htmls_rava.append(r_rc.text)
+    except Exception:
+        pass
+
+    for raw_rava_html in htmls_rava:
+        if not raw_rava_html:
+            continue
+        try:
             html_u = raw_rava_html.replace("&quot;", '"')
-            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"CAUCION\s*(1D|7D|14D)"[^{}]*\}', html_u, re.IGNORECASE):
+            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]*CAUCI[OÓ]N[^"]*)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
-                plz = m_obj.group(1).upper()
-                m_u = re.search(r'"ultimo"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                nom_c = m_obj.group(1).upper()
+                if "USD" in nom_c or "DOLAR" in nom_c:
+                    continue
+                plz = "14D" if "14" in nom_c else ("7D" if "7" in nom_c else ("1D" if "1" in nom_c else None))
+                if not plz:
+                    continue
+                m_u = re.search(r'"(?:ultimo|tasa|valor|close)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
                 m_d = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
                 m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
                 m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
@@ -1076,9 +1114,9 @@ def _actualizar_cauciones_en_vivo():
                     base_c[plz]["anio"] = va
 
             plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
-            for plz in ("1D", "7D", "14D"):
+            for plz, pat_plz in [("1D", r"1\s*D(?:[IÍ]A)?"), ("7D", r"7\s*D(?:[IÍ]AS)?"), ("14D", r"14\s*D(?:[IÍ]AS)?")]:
                 mt = re.search(
-                    r'\bCAUCION\s+' + plz + r'\b\s+([\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)',
+                    r'CAUCI[OÓ]N(?:\s+PESOS)?\s+' + pat_plz + r'\b\s+([\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)',
                     plano, re.IGNORECASE
                 )
                 if mt:
@@ -1086,17 +1124,18 @@ def _actualizar_cauciones_en_vivo():
                     d_v = normalizar_valor(mt.group(2))
                     m_v = normalizar_valor(mt.group(3))
                     a_v = normalizar_valor(mt.group(4))
-                    if u_v is not None: base_c[plz]["tasa"] = u_v
+                    if u_v is not None and 0.5 <= u_v <= 150.0: base_c[plz]["tasa"] = u_v
                     if d_v is not None: base_c[plz]["dia"] = d_v
                     if m_v is not None: base_c[plz]["mes"] = m_v
                     if a_v is not None: base_c[plz]["anio"] = a_v
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     def _f_pct(v):
         return f"+{v:.1f}%".replace(".", ",") if v > 0 else f"{v:.1f}%".replace(".", ",")
 
     CACHE_TASAS_PERSISTENTE.pop("TASA_CAUCIONES", None)
+    hora_c = datetime.utcnow().strftime("%H:%M:%S UTC")
 
     for plz in ("1D", "7D", "14D"):
         d_p = base_c[plz]
@@ -1529,6 +1568,38 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
                 break
         except Exception:
             pass
+
+    # 2b. Sincronizar Blue, Oficial y Mayorista (A3500) en vivo desde DolarApi
+    try:
+        r_da = GLOBAL_HTTP_SESSION.get(f"https://dolarapi.com/v1/dolares?_t={ts_ms}", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+        if r_da.status_code == 200:
+            for item_da in r_da.json():
+                casa = str(item_da.get("casa", "")).lower().strip()
+                c_da = normalizar_valor(item_da.get("compra"))
+                v_da = normalizar_valor(item_da.get("venta"))
+                if not v_da or v_da < 900 or v_da > 5000:
+                    continue
+                cod_da = None
+                if casa == "blue":
+                    cod_da = "DOLAR_BLUE"
+                elif casa == "oficial":
+                    cod_da = "DOLAR_OFICIAL"
+                elif casa == "mayorista":
+                    cod_da = "DOLAR_A3500"
+                if cod_da:
+                    prev_v = res[cod_da].get("venta") or v_da
+                    var_da = res[cod_da].get("variacion", "0,00%")
+                    if prev_v and prev_v > 0 and abs(v_da - prev_v) >= 0.01:
+                        var_da = _fmt_var_dolar(((v_da - prev_v) / prev_v) * 100.0, var_da)
+                    res[cod_da] = {
+                        "compra": round(c_da, 2) if (c_da and c_da > 900) else (round(v_da, 2) if cod_da == "DOLAR_A3500" else res[cod_da].get("compra")),
+                        "venta": round(v_da, 2),
+                        "variacion": var_da,
+                        "fecha": hora_vivo
+                    }
+                    BASE_DOLARITO_EXACTA[cod_da] = dict(res[cod_da])
+    except Exception:
+        pass
 
     # 3. Asegurar que MEP y CCL queden blindados con los valores de AL30/Rava
     for k_rv in ("DOLAR_MEP", "DOLAR_CCL"):

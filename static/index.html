@@ -1251,10 +1251,11 @@
 
     async function actualizarPuntasDolarEnVivo() {
       const ts = Date.now();
-      const [puntasBack, dBandas, criptoYa] = await Promise.all([
+      const [puntasBack, dBandas, criptoYa, dolarApiVivo] = await Promise.all([
         fetchJsonSeguro("/api/dolar/dolarito?t=" + ts),
         fetchJsonSeguro("/api/dolar/bandas?t=" + ts),
-        fetchJsonSeguro("https://criptoya.com/api/usdt/ars/0.5?t=" + ts)
+        fetchJsonSeguro("https://criptoya.com/api/usdt/ars/0.5?t=" + ts),
+        fetchJsonSeguro("https://dolarapi.com/v1/dolares?_t=" + ts)
       ]);
 
       if (puntasBack && typeof puntasBack === "object") {
@@ -1269,6 +1270,29 @@
               info.variacion,
               fecLimpia
             );
+          }
+        });
+      }
+
+      // 0. DolarApi directo en vivo para Blue, Oficial y Mayorista A3500
+      if (Array.isArray(dolarApiVivo)) {
+        dolarApiVivo.forEach(it => {
+          const casa = String(it.casa || "").toLowerCase();
+          const c = parseFloat(it.compra), v = parseFloat(it.venta);
+          if (isNaN(v) || v < 900 || v > 5000) return;
+          let cod = null;
+          if (casa === "blue") cod = "DOLAR_BLUE";
+          else if (casa === "oficial") cod = "DOLAR_OFICIAL";
+          else if (casa === "mayorista") cod = "DOLAR_A3500";
+          if (cod) {
+            const prev = window.PUNTAS_DOLAR_VIVO[cod] || {};
+            let varFmt = prev.variacion || "0,00%";
+            if (prev.venta && Math.abs(v - prev.venta) >= 0.01) {
+              const pct = ((v - prev.venta) / prev.venta) * 100;
+              varFmt = pct > 0 ? `+${pct.toFixed(2).replace(".", ",")}%` : `${pct.toFixed(2).replace(".", ",")}%`;
+            }
+            const cOk = !isNaN(c) && c > 900 ? c : (cod === "DOLAR_A3500" ? v : prev.compra);
+            window.registrarCambioPrecioDolar(cod, cOk, v, varFmt, new Date().toLocaleTimeString());
           }
         });
       }
