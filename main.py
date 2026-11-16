@@ -2309,7 +2309,27 @@ CALENDARIO_INDEC_BASE = [
 ]
 
 CALENDARIO_USA_BASE = [
-    {"fecha": "2026-11-16", "hora": "14:00", "div": "US", "evento": "Declaraciones de Warsh, del Consejo de Gobierno de la Fed", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"}
+    {"fecha": "2026-11-16", "hora": "14:00", "div": "US", "evento": "Declaraciones de Warsh, del Consejo de Gobierno de la Fed", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"},
+    {"fecha": "2026-11-17", "hora": "10:30", "div": "US", "evento": "Ventas minoristas (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,4%"},
+    {"fecha": "2026-11-17", "hora": "10:30", "div": "US", "evento": "Ventas minoristas subyacentes (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,5%"},
+    {"fecha": "2026-11-17", "hora": "11:15", "div": "US", "evento": "Producción industrial (Mensual) (Oct)", "importancia": 2, "actual": "-", "prevision": "-0,2%", "anterior": "-0,3%"},
+    {"fecha": "2026-11-17", "hora": "12:00", "div": "US", "evento": "Índice NAHB del mercado de la vivienda (Nov)", "importancia": 2, "actual": "-", "prevision": "43", "anterior": "43"},
+    {"fecha": "2026-11-18", "hora": "09:00", "div": "US", "evento": "Solicitudes de hipoteca MBA (Semanal)", "importancia": 2, "actual": "-", "prevision": "-", "anterior": "0,5%"},
+    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Permisos de construcción (Oct)", "importancia": 3, "actual": "-", "prevision": "1,440M", "anterior": "1,425M"},
+    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Inicios de construcción de viviendas (Oct)", "importancia": 2, "actual": "-", "prevision": "1,340M", "anterior": "1,354M"},
+    {"fecha": "2026-11-18", "hora": "12:30", "div": "US", "evento": "Inventarios de petróleo crudo de la AIE", "importancia": 3, "actual": "-", "prevision": "1,200M", "anterior": "2,149M"},
+    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Nuevas peticiones de subsidio por desempleo", "importancia": 3, "actual": "-", "prevision": "222K", "anterior": "220K"},
+    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Índice manufacturero de la Fed de Filadelfia (Nov)", "importancia": 3, "actual": "-", "prevision": "8,0", "anterior": "10,3"},
+    {"fecha": "2026-11-19", "hora": "12:00", "div": "US", "evento": "Ventas de viviendas de segunda mano (Oct)", "importancia": 3, "actual": "-", "prevision": "3,93M", "anterior": "3,84M"},
+    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI manufacturero de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "48,8", "anterior": "48,5"},
+    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI de servicios de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "55,2", "anterior": "55,0"},
+    {"fecha": "2026-11-20", "hora": "12:00", "div": "US", "evento": "Confianza del consumidor de la Universidad de Michigan (Nov)", "importancia": 3, "actual": "-", "prevision": "73,0", "anterior": "70,5"},
+    {"fecha": "2026-11-24", "hora": "12:00", "div": "US", "evento": "Confianza del consumidor de The Conference Board (Nov)", "importancia": 3, "actual": "-", "prevision": "111,8", "anterior": "108,7"},
+    {"fecha": "2026-11-24", "hora": "12:00", "div": "US", "evento": "Ventas de viviendas nuevas (Oct)", "importancia": 3, "actual": "-", "prevision": "725K", "anterior": "738K"},
+    {"fecha": "2026-11-25", "hora": "10:30", "div": "US", "evento": "PIB (Trimestral) (3T) (Segunda estimación)", "importancia": 3, "actual": "-", "prevision": "2,8%", "anterior": "2,8%"},
+    {"fecha": "2026-11-25", "hora": "10:30", "div": "US", "evento": "Pedidos de bienes duraderos (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,5%", "anterior": "-0,7%"},
+    {"fecha": "2026-11-25", "hora": "12:00", "div": "US", "evento": "Índice de precios PCE subyacente (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,3%"},
+    {"fecha": "2026-11-25", "hora": "16:00", "div": "US", "evento": "Actas de la reunión del FOMC de la Reserva Federal", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"}
 ]
 
 CACHE_CALENDARIO_INDEC: List[Dict[str, Any]] = list(CALENDARIO_INDEC_BASE)
@@ -2382,163 +2402,109 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     from datetime import timezone, timedelta
     tz_ar = timezone(timedelta(hours=-3))
     ahora_ar = datetime.now(tz_ar)
-    d_desde = (ahora_ar - timedelta(days=7)).strftime("%Y-%m-%d")
-    d_hasta = (ahora_ar + timedelta(days=14)).strftime("%Y-%m-%d")
+    d_desde = (ahora_ar - timedelta(days=7)).strftime("%Y-%m-%dT00:00:00Z")
+    d_hasta = (ahora_ar + timedelta(days=14)).strftime("%Y-%m-%dT23:59:59Z")
     ts_now = int(time.time() * 1000)
     extraidos = []
 
-    hdrs_inv = {
+    hdrs_std = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "es-ES,es;q=0.9",
-        "domain-id": "4",
-        "Origin": "https://es.investing.com",
-        "Referer": "https://es.investing.com/economic-calendar/"
+        "Accept-Language": "es-ES,es;q=0.9"
     }
 
-    urls_inv_api = [
-        f"https://endpoints.investing.com/pd-instruments/v1/calendars/economic/events/occurrences?domain-id=4&limit=250&start-date={d_desde}T00:00:00Z&end-date={d_hasta}T23:59:59Z&country-ids=5",
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
-        f"https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t={ts_now}",
-        f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}"
-    ]
-
-    for u_base in urls_inv_api:
-        for u in [u_base, f"https://corsproxy.io/?{quote(u_base, safe='')}", f"https://api.codetabs.com/v1/proxy?quest={quote(u_base, safe='')}"]:
-            try:
-                r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs_inv, timeout=4.2, verify=False)
-                if r.status_code != 200 or not r.text.strip():
-                    continue
-                data = r.json()
-                lista = data if isinstance(data, list) else (data.get("occurrences") or data.get("events") or data.get("data") or data.get("items") or [])
-                if not isinstance(lista, list) or len(lista) == 0:
-                    continue
-
-                for ev in lista:
-                    if not isinstance(ev, dict):
+    # Fuente 1: FXStreet Calendar API en español (multi-semana abierta sin Cloudflare)
+    try:
+        url_fxs = f"https://calendar-api.fxstreet.com/en/api/v1/eventDates/{d_desde}/{d_hasta}?&volatilities=LOW&volatilities=MEDIUM&volatilities=HIGH&countries=US&rows=250"
+        r_fxs = GLOBAL_HTTP_SESSION.get(url_fxs, headers={**hdrs_std, "Origin": "https://www.fxstreet.es", "Referer": "https://www.fxstreet.es/calendario-economico"}, timeout=5.0)
+        if r_fxs.status_code == 200:
+            lista_fxs = r_fxs.json()
+            if isinstance(lista_fxs, list):
+                for ev in lista_fxs:
+                    dt_str = str(ev.get("dateUtc") or "")
+                    if not dt_str:
                         continue
-                    cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or ev.get("country_code") or "").upper().strip()
-                    c_id = str(ev.get("country_id") or ev.get("countryId") or "")
-                    if cur and cur not in ("USD", "US", "USA", "UNITED STATES", "EE.UU.", "ESTADOS UNIDOS") and c_id != "5":
-                        continue
-                    if not cur and c_id and c_id != "5":
-                        continue
-
-                    f_raw = str(ev.get("occurrence_time") or ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
-                    f_iso = ""
-                    hora = "10:30"
-                    if f_raw.isdigit() and len(f_raw) >= 10:
-                        dt_ar = datetime.fromtimestamp(int(f_raw[:10]), tz=tz_ar)
+                    try:
+                        dt_ar = datetime.fromisoformat(dt_str.replace("Z", "+00:00")).astimezone(tz_ar)
                         f_iso = dt_ar.strftime("%Y-%m-%d")
                         hora = dt_ar.strftime("%H:%M")
-                    else:
-                        try:
-                            dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
-                            dt_ar = dt_parsed.astimezone(tz_ar) if dt_parsed.tzinfo is not None else dt_parsed
-                            f_iso = dt_ar.strftime("%Y-%m-%d")
-                            hora = dt_ar.strftime("%H:%M")
-                        except Exception:
-                            m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
-                            if not m_f:
-                                continue
-                            f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
-                            m_h = re.search(r"(\d{2}:\d{2})", f_raw)
-                            hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
-
-                    nom_raw = str(ev.get("long_name") or ev.get("short_name") or ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or "").strip()
+                    except Exception:
+                        continue
+                    nom_raw = str(ev.get("name") or "").strip()
                     if not nom_raw:
                         continue
                     nom = TRADUCCIONES_EVENTOS_USA.get(nom_raw, nom_raw)
-                    imp_raw = str(ev.get("importance") or ev.get("impact") or ev.get("importancia") or "2").lower()
-                    if imp_raw in ("holiday", "non-economic", "0"):
-                        continue
-                    imp = 3 if imp_raw in ("3", "high", "alta", "bull3") else (1 if imp_raw in ("1", "low", "baja", "bull1") else 2)
-
-                    def _fmt_dato_inv(val_o, unit_o=""):
-                        if val_o in (None, "", "null"):
+                    vol = str(ev.get("volatility") or "MEDIUM").upper()
+                    imp = 3 if vol == "HIGH" else (1 if vol == "LOW" else 2)
+                    un = str(ev.get("unit") or "")
+                    def _fv(v):
+                        if v is None or v == "":
                             return "-"
-                        s_v = str(val_o).replace(".", ",")
-                        if unit_o and str(unit_o) not in s_v:
-                            s_v += str(unit_o)
-                        return s_v
-
-                    unidad = ev.get("unit") or ""
+                        s = str(v).replace(".", ",")
+                        return s + un if un and un not in s else s
                     extraidos.append({
                         "fecha": f_iso,
                         "hora": hora,
                         "div": "US",
                         "evento": nom,
                         "importancia": imp,
-                        "actual": _fmt_dato_inv(ev.get("actual"), unidad),
-                        "prevision": _fmt_dato_inv(ev.get("forecast") or ev.get("prevision") or ev.get("consensus"), unidad),
-                        "anterior": _fmt_dato_inv(ev.get("previous") or ev.get("anterior"), unidad)
-                    })
-                break
-            except Exception:
-                pass
-
-    try:
-        r_html = GLOBAL_HTTP_SESSION.post(
-            "https://es.investing.com/economic-calendar/Service/getCalendarFilteredData",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Referer": "https://es.investing.com/economic-calendar/"
-            },
-            data={
-                "country[]": "5",
-                "dateFrom": d_desde,
-                "dateTo": d_hasta,
-                "timeZone": "12",
-                "timeFilter": "timeRemain",
-                "currentTab": "custom",
-                "limit_from": "0"
-            },
-            timeout=5.0,
-            verify=False
-        )
-        if r_html.status_code == 200:
-            html_cal = r_html.json().get("data", "") if r_html.text.strip().startswith("{") else r_html.text
-            if html_cal and "js-event-item" in html_cal:
-                soup = BeautifulSoup(html_cal, "html.parser")
-                for tr in soup.select("tr.js-event-item"):
-                    dt_attr = tr.get("data-event-datetime", "")
-                    m_dt = re.search(r"(20\d{2})[/\-](\d{2})[/\-](\d{2})\s+(\d{2}:\d{2})", dt_attr)
-                    if not m_dt:
-                        continue
-                    td_ev = tr.select_one("td.event")
-                    nom = td_ev.get_text(" ", strip=True) if td_ev else ""
-                    if not nom:
-                        continue
-                    bulls = len(tr.select("td.sentiment i.grayFullBullishIcon"))
-                    extraidos.append({
-                        "fecha": f"{m_dt.group(1)}-{m_dt.group(2)}-{m_dt.group(3)}",
-                        "hora": m_dt.group(4),
-                        "div": "US",
-                        "evento": nom,
-                        "importancia": bulls if bulls in (1, 2, 3) else 2,
-                        "actual": (tr.select_one("td.act").get_text(strip=True) if tr.select_one("td.act") else "") or "-",
-                        "prevision": (tr.select_one("td.fore").get_text(strip=True) if tr.select_one("td.fore") else "") or "-",
-                        "anterior": (tr.select_one("td.prev").get_text(strip=True) if tr.select_one("td.prev") else "") or "-"
+                        "actual": _fv(ev.get("actual")),
+                        "prevision": _fv(ev.get("consensus")),
+                        "anterior": _fv(ev.get("previous"))
                     })
     except Exception:
         pass
 
+    # Fuente 2: Investing AWS en español para los eventos y resultados en vivo de hoy
+    try:
+        r_aws = GLOBAL_HTTP_SESSION.get(
+            f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
+            headers={**hdrs_std, "Origin": "https://es.investing.com", "Referer": "https://es.investing.com/economic-calendar/"},
+            timeout=4.0
+        )
+        if r_aws.status_code == 200:
+            data = r_aws.json()
+            lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or [])
+            for ev in lista:
+                cur = str(ev.get("country") or ev.get("currency") or "").upper()
+                if cur not in ("USD", "US"):
+                    continue
+                f_raw = str(ev.get("occurrence_time") or ev.get("date") or "")
+                try:
+                    dt_ar = datetime.fromisoformat(f_raw.replace("Z", "+00:00")).astimezone(tz_ar)
+                    f_iso = dt_ar.strftime("%Y-%m-%d")
+                    hora = dt_ar.strftime("%H:%M")
+                except Exception:
+                    continue
+                nom = str(ev.get("title") or ev.get("event") or ev.get("name") or "").strip()
+                if not nom:
+                    continue
+                imp_raw = str(ev.get("importance") or ev.get("impact") or "2").lower()
+                imp = 3 if imp_raw in ("3", "high") else (1 if imp_raw in ("1", "low") else 2)
+                extraidos.append({
+                    "fecha": f_iso,
+                    "hora": hora,
+                    "div": "US",
+                    "evento": nom,
+                    "importancia": imp,
+                    "actual": str(ev.get("actual") if ev.get("actual") not in (None, "") else "-").replace(".", ","),
+                    "prevision": str(ev.get("forecast") or ev.get("prevision") or "-").replace(".", ","),
+                    "anterior": str(ev.get("previous") or ev.get("anterior") or "-").replace(".", ",")
+                })
+    except Exception:
+        pass
+
     mapa = {}
-    for item in extraidos:
+    for item in CALENDARIO_USA_BASE + CACHE_CALENDARIO_USA + extraidos:
         if item.get("fecha") and item.get("evento"):
             clave = f"{item['fecha']}|{item['hora']}|{item['evento']}"
             if clave in mapa and item.get("actual") in ("-", "", None) and mapa[clave].get("actual") not in ("-", "", None):
                 continue
             mapa[clave] = item
 
-    if mapa:
-        res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
-        CACHE_CALENDARIO_USA = res
-        return res
-
-    return CACHE_CALENDARIO_USA or CALENDARIO_USA_BASE
+    res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
+    CACHE_CALENDARIO_USA = res
+    return res
 
 def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     fetch_estado_mae()

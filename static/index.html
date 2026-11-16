@@ -2018,7 +2018,27 @@
     };
 
     window.CALENDARIO_USA_DATA = [
-      { fecha: "2026-11-16", hora: "14:00", div: "US", evento: "Declaraciones de Warsh, del Consejo de Gobierno de la Fed", importancia: 3, actual: "-", prevision: "-", anterior: "-" }
+      { fecha: "2026-11-16", hora: "14:00", div: "US", evento: "Declaraciones de Warsh, del Consejo de Gobierno de la Fed", importancia: 3, actual: "-", prevision: "-", anterior: "-" },
+      { fecha: "2026-11-17", hora: "10:30", div: "US", evento: "Ventas minoristas (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,4%" },
+      { fecha: "2026-11-17", hora: "10:30", div: "US", evento: "Ventas minoristas subyacentes (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,5%" },
+      { fecha: "2026-11-17", hora: "11:15", div: "US", evento: "Producción industrial (Mensual) (Oct)", importancia: 2, actual: "-", prevision: "-0,2%", anterior: "-0,3%" },
+      { fecha: "2026-11-17", hora: "12:00", div: "US", evento: "Índice NAHB del mercado de la vivienda (Nov)", importancia: 2, actual: "-", prevision: "43", anterior: "43" },
+      { fecha: "2026-11-18", hora: "09:00", div: "US", evento: "Solicitudes de hipoteca MBA (Semanal)", importancia: 2, actual: "-", prevision: "-", anterior: "0,5%" },
+      { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Permisos de construcción (Oct)", importancia: 3, actual: "-", prevision: "1,440M", anterior: "1,425M" },
+      { fecha: "2026-11-18", hora: "10:30", div: "US", evento: "Inicios de construcción de viviendas (Oct)", importancia: 2, actual: "-", prevision: "1,340M", anterior: "1,354M" },
+      { fecha: "2026-11-18", hora: "12:30", div: "US", evento: "Inventarios de petróleo crudo de la AIE", importancia: 3, actual: "-", prevision: "1,200M", anterior: "2,149M" },
+      { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Nuevas peticiones de subsidio por desempleo", importancia: 3, actual: "-", prevision: "222K", anterior: "220K" },
+      { fecha: "2026-11-19", hora: "10:30", div: "US", evento: "Índice manufacturero de la Fed de Filadelfia (Nov)", importancia: 3, actual: "-", prevision: "8,0", anterior: "10,3" },
+      { fecha: "2026-11-19", hora: "12:00", div: "US", evento: "Ventas de viviendas de segunda mano (Oct)", importancia: 3, actual: "-", prevision: "3,93M", anterior: "3,84M" },
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI manufacturero de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "48,8", anterior: "48,5" },
+      { fecha: "2026-11-20", hora: "11:45", div: "US", evento: "PMI de servicios de S&P Global (Nov) (Preliminar)", importancia: 3, actual: "-", prevision: "55,2", anterior: "55,0" },
+      { fecha: "2026-11-20", hora: "12:00", div: "US", evento: "Confianza del consumidor de la Universidad de Michigan (Nov)", importancia: 3, actual: "-", prevision: "73,0", anterior: "70,5" },
+      { fecha: "2026-11-24", hora: "12:00", div: "US", evento: "Confianza del consumidor de The Conference Board (Nov)", importancia: 3, actual: "-", prevision: "111,8", anterior: "108,7" },
+      { fecha: "2026-11-24", hora: "12:00", div: "US", evento: "Ventas de viviendas nuevas (Oct)", importancia: 3, actual: "-", prevision: "725K", anterior: "738K" },
+      { fecha: "2026-11-25", hora: "10:30", div: "US", evento: "PIB (Trimestral) (3T) (Segunda estimación)", importancia: 3, actual: "-", prevision: "2,8%", anterior: "2,8%" },
+      { fecha: "2026-11-25", hora: "10:30", div: "US", evento: "Pedidos de bienes duraderos (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,5%", anterior: "-0,7%" },
+      { fecha: "2026-11-25", hora: "12:00", div: "US", evento: "Índice de precios PCE subyacente (Mensual) (Oct)", importancia: 3, actual: "-", prevision: "0,3%", anterior: "0,3%" },
+      { fecha: "2026-11-25", hora: "16:00", div: "US", evento: "Actas de la reunión del FOMC de la Reserva Federal", importancia: 3, actual: "-", prevision: "-", anterior: "-" }
     ];
 
     if (!window.subCalEconomicoActivo) window.subCalEconomicoActivo = "argentina";
@@ -3008,10 +3028,8 @@
       const dDesdeJs = window.sumarDiasISO(hoyDateJs, -7);
       const dHastaJs = window.sumarDiasISO(hoyDateJs, 14);
       const urlsUsaVivo = [
-        "https://endpoints.investing.com/pd-instruments/v1/calendars/economic/events/occurrences?domain-id=4&limit=250&start-date=" + dDesdeJs + "T00:00:00Z&end-date=" + dHastaJs + "T23:59:59Z&country-ids=5",
-        "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t=" + tsNow,
-        "https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t=" + tsNow,
-        "https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t=" + tsNow
+        "https://calendar-api.fxstreet.com/en/api/v1/eventDates/" + dDesdeJs + "T00:00:00Z/" + dHastaJs + "T23:59:59Z?&volatilities=LOW&volatilities=MEDIUM&volatilities=HIGH&countries=US&rows=250",
+        "https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t=" + tsNow
       ];
       const proxiesUsa = [];
       urlsUsaVivo.forEach(uBase => {
@@ -3060,7 +3078,7 @@
                 if (!cur && cId && cId !== "5") return;
                 const nomRaw = String(ev.long_name || ev.short_name || ev.title || ev.event || ev.name || "").trim();
                 const nom = tradMap[nomRaw] || nomRaw;
-                const rawIsoEv = String(ev.occurrence_time || ev.date || ev.fecha || ev.datetime || "");
+                const rawIsoEv = String(ev.dateUtc || ev.occurrence_time || ev.date || ev.fecha || ev.datetime || "");
                 let fRaw = rawIsoEv.slice(0, 10);
                 let horaAr = String(ev.hora || "10:30");
                 if (rawIsoEv.includes("T")) {
@@ -3071,7 +3089,7 @@
                     horaAr = strArIso.slice(11, 16);
                   }
                 }
-                const impRaw = String(ev.importance || ev.impact || "2").toLowerCase();
+                const impRaw = String(ev.volatility || ev.importance || ev.impact || "2").toLowerCase();
                 if (impRaw === "holiday" || impRaw === "non-economic" || impRaw === "0") return;
                 const impNum = (impRaw === "high" || impRaw === "3") ? 3 : ((impRaw === "low" || impRaw === "1") ? 1 : 2);
                 if (nom && /^202\d-\d{2}-\d{2}$/.test(fRaw)) {
