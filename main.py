@@ -364,7 +364,7 @@ SJB_CURVAS_URLS = {
     "bopreales_mep": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=MEP",
     "bopreales_ars": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BOPREALES&moneda=ARS",
     "lecaps": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=LECAP%20y%20BONCAP&moneda=ARS",
-    "cer": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
+    "cer": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS",
     "soberanos": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=MEP",
     "soberanos_mep": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=MEP",
     "soberanos_ars": "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=SOBERANOS&moneda=ARS",
@@ -1828,14 +1828,22 @@ def fetch_bonos_cer_rava_fallback() -> Optional[Dict[str, Any]]:
     return None
 
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
-    try:
-        r = GLOBAL_HTTP_SESSION.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
-        if r.status_code == 200:
-            norm = normalizar_respuesta_curva(r.json())
-            if norm and norm.get("tabla"):
-                return clave, norm
-    except Exception:
-        pass
+    urls_try = [url]
+    if clave == "cer":
+        urls_try = [
+            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS",
+            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
+            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=Bonos%20CER&moneda=ARS"
+        ]
+    for u_item in urls_try:
+        try:
+            r = GLOBAL_HTTP_SESSION.get(u_item, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
+            if r.status_code == 200:
+                norm = normalizar_respuesta_curva(r.json())
+                if norm and norm.get("tabla"):
+                    return clave, norm
+        except Exception:
+            pass
     if clave == "cer":
         fb_cer = fetch_bonos_cer_rava_fallback()
         if fb_cer:
@@ -1871,7 +1879,7 @@ def fetch_inflacion_implicita_sjb():
                     tir = normalizar_valor(row.get("TIR") or row.get("tir"))
                     if tir is not None:
                         tem = ((1 + tir / 100.0) ** (1 / 12.0) - 1) * 100.0
-                if d and tem is not None:
+                if d is not None and tem is not None:
                     pts.append((d, tem))
             if not pts:
                 return None
@@ -1892,7 +1900,7 @@ def fetch_inflacion_implicita_sjb():
                 be = round((((1 + t_nom / 100.0) / (1 + t_cer / 100.0)) - 1) * 100.0, 2)
                 serie.append({
                     "mes": m_lbl, "tipo": "implicita", "ipc_real": None,
-                    "inf_implicita": max(0.5, be), "tem_nominal": t_nom, "tem_cer": t_cer
+                    "inf_implicita": be, "tem_nominal": t_nom, "tem_cer": t_cer
                 })
         if len(serie) >= 8:
             return {"series": serie}
