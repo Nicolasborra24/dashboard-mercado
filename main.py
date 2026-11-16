@@ -383,9 +383,9 @@ CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
     "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
     "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
     "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"},
-    "TASA_CAUCION_1D": {"variable": "TASA_CAUCION_1D", "descripcion": "Caución Bursátil 1 Día (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "9,50% TNA", "variacion": "-63,6%", "var_mes": "-47,2%", "var_anio": "-92,1%", "valor": 9.50, "fecha": "Mes: -47,2% | Año: -92,1%"},
-    "TASA_CAUCION_7D": {"variable": "TASA_CAUCION_7D", "descripcion": "Caución Bursátil 7 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "19,00% TNA", "variacion": "-57,8%", "var_mes": "-2,1%", "var_anio": "-13,6%", "valor": 19.00, "fecha": "Mes: -2,1% | Año: -13,6%"},
-    "TASA_CAUCION_14D": {"variable": "TASA_CAUCION_14D", "descripcion": "Caución Bursátil 14 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "20,90% TNA", "variacion": "-32,4%", "var_mes": "+8,9%", "var_anio": "-5,0%", "valor": 20.90, "fecha": "Mes: +8,9% | Año: -5,0%"}
+    "TASA_CAUCION_1D": {"variable": "TASA_CAUCION_1D", "descripcion": "Caución Bursátil 1 Día (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "14,10% TNA", "variacion": "-", "var_mes": "-21,7%", "var_anio": "-88,3%", "valor": 14.10, "fecha": "Mes: -21,7% | Año: -88,3%"},
+    "TASA_CAUCION_7D": {"variable": "TASA_CAUCION_7D", "descripcion": "Caución Bursátil 7 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "15,10% TNA", "variacion": "-", "var_mes": "-22,2%", "var_anio": "-31,4%", "valor": 15.10, "fecha": "Mes: -22,2% | Año: -31,4%"},
+    "TASA_CAUCION_14D": {"variable": "TASA_CAUCION_14D", "descripcion": "Caución Bursátil 14 Días (Pesos)", "categoria": "tasas_y_monetario", "valor_formateado": "17,10% TNA", "variacion": "-", "var_mes": "-10,9%", "var_anio": "-22,3%", "valor": 17.10, "fecha": "Mes: -10,9% | Año: -22,3%"}
 }
 
 CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
@@ -1045,97 +1045,93 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
 
 def _actualizar_cauciones_en_vivo():
     base_c = {
-        "1D": {"desc": "Caución Bursátil 1 Día (Pesos)", "tasa": 9.50, "dia": -63.6, "mes": -47.2, "anio": -92.1},
-        "7D": {"desc": "Caución Bursátil 7 Días (Pesos)", "tasa": 19.00, "dia": -57.8, "mes": -2.1, "anio": -13.6},
-        "14D": {"desc": "Caución Bursátil 14 Días (Pesos)", "tasa": 20.90, "dia": -32.4, "mes": 8.9, "anio": -5.0}
+        "1D": {"desc": "Caución Bursátil 1 Día (Pesos)", "tasa": 14.10, "dia": None, "mes": -21.7, "anio": -88.3},
+        "7D": {"desc": "Caución Bursátil 7 Días (Pesos)", "tasa": 15.10, "dia": None, "mes": -22.2, "anio": -31.4},
+        "14D": {"desc": "Caución Bursátil 14 Días (Pesos)", "tasa": 17.10, "dia": None, "mes": -10.9, "anio": -22.3}
     }
     ts_ms = int(time.time() * 1000)
-    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Referer": "https://www.rava.com/"
+    }
 
-    # A) Consultar SJB tasas/tablas para cauciones si están disponibles
-    try:
-        r_sjb = GLOBAL_HTTP_SESSION.get(f"https://sjbdashboards.up.railway.app/api/tasas/tablas?_t={ts_ms}", headers=hdrs, timeout=3.5)
-        if r_sjb.status_code == 200:
-            d_sjb = r_sjb.json()
-            for sec_k in ("principales", "otras", "cauciones"):
-                for row in d_sjb.get(sec_k, []):
-                    nom = str(row.get("Tasa") or row.get("Plazo") or row.get("Instrumento") or "").upper()
-                    if "CAUCI" in nom or any(p in nom for p in ("1D", "7D", "14D", "1 D", "7 D", "14 D")):
-                        plz = "14D" if "14" in nom else ("7D" if "7" in nom else ("1D" if "1" in nom else None))
-                        if plz:
-                            t_v = normalizar_valor(row.get("TNA") or row.get("Tasa") or row.get("Ultimo"))
-                            v_d = normalizar_valor(row.get("Variacion") or row.get("Dia"))
-                            if t_v is not None and 0.5 <= t_v <= 150.0:
-                                base_c[plz]["tasa"] = t_v
-                            if v_d is not None:
-                                base_c[plz]["dia"] = v_d
-    except Exception:
-        pass
-
-    # B) Consultar Rava Home + Rava Cauciones en vivo
-    htmls_rava = [obtener_html_rava_compartido(ttl=4.0)]
-    try:
-        r_rc = GLOBAL_HTTP_SESSION.get(f"https://www.rava.com/cotizaciones/cauciones?_t={ts_ms}", headers=hdrs, timeout=3.5)
-        if r_rc.status_code == 200 and len(r_rc.text) > 400:
-            htmls_rava.append(r_rc.text)
-    except Exception:
-        pass
+    htmls_rava = [obtener_html_rava_compartido(ttl=3.5)]
+    for u_rava in [
+        f"https://www.rava.com/cotizaciones/cauciones?_t={ts_ms}",
+        f"https://www.rava.com/perfil/CAUCION%201D?_t={ts_ms}",
+        f"https://www.rava.com/perfil/CAUCION%207D?_t={ts_ms}",
+        f"https://www.rava.com/perfil/CAUCION%2014D?_t={ts_ms}"
+    ]:
+        try:
+            r_rc = GLOBAL_HTTP_SESSION.get(u_rava, headers=hdrs, timeout=3.2)
+            if r_rc.status_code == 200 and len(r_rc.text) > 400:
+                htmls_rava.append(r_rc.text)
+        except Exception:
+            pass
 
     for raw_rava_html in htmls_rava:
         if not raw_rava_html:
             continue
         try:
-            html_u = raw_rava_html.replace("&quot;", '"')
-            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"([^"]*CAUCI[OÓ]N[^"]*)"[^{}]*\}', html_u, re.IGNORECASE):
+            html_u = raw_rava_html.replace("&quot;", '"').replace("\\/", "/")
+            # 1) Buscar objetos JSON que contengan CAUCION 1D / 7D / 14D en cualquier orden de claves
+            for m_obj in re.finditer(r'\{[^{}]*CAUCI[OÓ]N[^\{\}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
-                nom_c = m_obj.group(1).upper()
+                m_nom = re.search(r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"([^"]*CAUCI[OÓ]N[^"]*)"', b, re.IGNORECASE)
+                if not m_nom:
+                    continue
+                nom_c = m_nom.group(1).upper()
                 if "USD" in nom_c or "DOLAR" in nom_c:
                     continue
                 plz = "14D" if "14" in nom_c else ("7D" if "7" in nom_c else ("1D" if "1" in nom_c else None))
                 if not plz:
                     continue
-                m_u = re.search(r'"(?:ultimo|tasa|valor|close)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_d = re.search(r'"(?:variacion|var_dia|dia|change)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_u = re.search(r'"(?:ultimo|tasa|valor|close|px_last)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
+                m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+|-)"?', b, re.IGNORECASE)
+                m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+|-)"?', b, re.IGNORECASE)
+                m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+|-)"?', b, re.IGNORECASE)
 
                 vu = normalizar_valor(m_u.group(1)) if m_u else None
-                vd = normalizar_valor(m_d.group(1)) if m_d else None
-                vm = normalizar_valor(m_m.group(1)) if m_m else None
-                va = normalizar_valor(m_a.group(1)) if m_a else None
-
                 if vu is not None and 0.5 <= vu <= 150.0:
                     base_c[plz]["tasa"] = vu
-                if vd is not None and -99.0 <= vd <= 200.0:
-                    base_c[plz]["dia"] = vd
-                if vm is not None and -99.0 <= vm <= 200.0:
-                    base_c[plz]["mes"] = vm
-                if va is not None and -99.0 <= va <= 200.0:
-                    base_c[plz]["anio"] = va
+                if m_d:
+                    base_c[plz]["dia"] = None if m_d.group(1).strip() == "-" else normalizar_valor(m_d.group(1))
+                if m_m and m_m.group(1).strip() != "-":
+                    vm = normalizar_valor(m_m.group(1))
+                    if vm is not None: base_c[plz]["mes"] = vm
+                if m_a and m_a.group(1).strip() != "-":
+                    va = normalizar_valor(m_a.group(1))
+                    if va is not None: base_c[plz]["anio"] = va
 
+            # 2) Buscar tabla HTML renderizada: CAUCION 1D | 14,10 | - | -21,7 | -88,3
             plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
-            for plz, pat_plz in [("1D", r"1\s*D(?:[IÍ]A)?"), ("7D", r"7\s*D(?:[IÍ]AS)?"), ("14D", r"14\s*D(?:[IÍ]AS)?")]:
+            for plz in ("1D", "7D", "14D"):
                 mt = re.search(
-                    r'CAUCI[OÓ]N(?:\s+PESOS)?\s+' + pat_plz + r'\b\s+([\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)\s+([+\-−]?[\d]+[\.,][\d]+)',
+                    r'\bCAUCI[OÓ]N\s+' + plz + r'\b\s+([\d]+[\.,][\d]+)\s+(-|[+\-−]?[\d]+[\.,][\d]+)\s+(-|[+\-−]?[\d]+[\.,][\d]+)\s+(-|[+\-−]?[\d]+[\.,][\d]+)',
                     plano, re.IGNORECASE
                 )
                 if mt:
                     u_v = normalizar_valor(mt.group(1))
-                    d_v = normalizar_valor(mt.group(2))
-                    m_v = normalizar_valor(mt.group(3))
-                    a_v = normalizar_valor(mt.group(4))
-                    if u_v is not None and 0.5 <= u_v <= 150.0: base_c[plz]["tasa"] = u_v
-                    if d_v is not None: base_c[plz]["dia"] = d_v
-                    if m_v is not None: base_c[plz]["mes"] = m_v
-                    if a_v is not None: base_c[plz]["anio"] = a_v
+                    if u_v is not None and 0.5 <= u_v <= 150.0:
+                        base_c[plz]["tasa"] = u_v
+                    d_raw = mt.group(2).strip()
+                    base_c[plz]["dia"] = None if d_raw == "-" else normalizar_valor(d_raw)
+                    if mt.group(3).strip() != "-":
+                        m_v = normalizar_valor(mt.group(3))
+                        if m_v is not None: base_c[plz]["mes"] = m_v
+                    if mt.group(4).strip() != "-":
+                        a_v = normalizar_valor(mt.group(4))
+                        if a_v is not None: base_c[plz]["anio"] = a_v
         except Exception:
             pass
 
     def _f_pct(v):
+        if v is None:
+            return "-"
         return f"+{v:.1f}%".replace(".", ",") if v > 0 else f"{v:.1f}%".replace(".", ",")
 
     CACHE_TASAS_PERSISTENTE.pop("TASA_CAUCIONES", None)
-    hora_c = datetime.utcnow().strftime("%H:%M:%S UTC")
 
     for plz in ("1D", "7D", "14D"):
         d_p = base_c[plz]

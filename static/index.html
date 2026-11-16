@@ -1405,6 +1405,61 @@
       }
     }
 
+    window.sincronizarCaucionesRava = async function() {
+      const ts = Date.now();
+      const targetRava = "https://www.rava.com/?_t=" + ts;
+      for (const u of [
+        "https://corsproxy.io/?" + encodeURIComponent(targetRava),
+        "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetRava)
+      ]) {
+        try {
+          const r = await fetch(u, { cache: "no-store" });
+          if (!r.ok) continue;
+          const htmlTxt = (await r.text()).replace(/&quot;/g, '"');
+          const plano = htmlTxt.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+          let hubo = false;
+          ["1D", "7D", "14D"].forEach(plz => {
+            const reTab = new RegExp("\\bCAUCI[OÓ]N\\s+" + plz + "\\b\\s+([\\d]+[\\.,][\\d]+)\\s+(-|[+\\-−]?[\\d]+[\\.,][\\d]+)\\s+(-|[+\\-−]?[\\d]+[\\.,][\\d]+)\\s+(-|[+\\-−]?[\\d]+[\\.,][\\d]+)", "i");
+            const m = plano.match(reTab);
+            if (m) {
+              const tVal = parseNumSeguro(m[1]);
+              if (!isNaN(tVal) && tVal >= 0.5 && tVal <= 150) {
+                const cod = "TASA_CAUCION_" + plz;
+                const dStr = m[2].trim() === "-" ? "-" : (parseNumSeguro(m[2]) > 0 ? "+" + parseNumSeguro(m[2]).toFixed(1).replace(".", ",") + "%" : parseNumSeguro(m[2]).toFixed(1).replace(".", ",") + "%");
+                const mStr = m[3].trim() === "-" ? "-" : (parseNumSeguro(m[3]) > 0 ? "+" + parseNumSeguro(m[3]).toFixed(1).replace(".", ",") + "%" : parseNumSeguro(m[3]).toFixed(1).replace(".", ",") + "%");
+                const aStr = m[4].trim() === "-" ? "-" : (parseNumSeguro(m[4]) > 0 ? "+" + parseNumSeguro(m[4]).toFixed(1).replace(".", ",") + "%" : parseNumSeguro(m[4]).toFixed(1).replace(".", ",") + "%");
+                if (PRECIOS_ANTERIORES[cod] !== undefined && Math.abs(tVal - PRECIOS_ANTERIORES[cod]) >= 0.01) {
+                  FLASH_REGISTRO[cod] = tVal > PRECIOS_ANTERIORES[cod] ? "flash-green" : "flash-red";
+                  setTimeout(() => { FLASH_REGISTRO[cod] = ""; }, 1400);
+                }
+                PRECIOS_ANTERIORES[cod] = tVal;
+                if (!datosGlobales.tasas_y_monetario) datosGlobales.tasas_y_monetario = [];
+                const idx = datosGlobales.tasas_y_monetario.findIndex(x => x && x.variable === cod);
+                const objC = {
+                  variable: cod,
+                  descripcion: plz === "1D" ? "Caución Bursátil 1 Día (Pesos)" : (plz === "7D" ? "Caución Bursátil 7 Días (Pesos)" : "Caución Bursátil 14 Días (Pesos)"),
+                  categoria: "tasas_y_monetario",
+                  valor_formateado: tVal.toFixed(2).replace(".", ",") + "% TNA",
+                  variacion: dStr,
+                  var_mes: mStr,
+                  var_anio: aStr,
+                  valor: tVal,
+                  fecha: "Mes: " + mStr + " | Año: " + aStr
+                };
+                if (idx >= 0) datosGlobales.tasas_y_monetario[idx] = objC;
+                else datosGlobales.tasas_y_monetario.push(objC);
+                hubo = true;
+              }
+            }
+          });
+          if (hubo) {
+            if (categoriaActiva === "tasas_y_monetario") renderizar(false);
+            break;
+          }
+        } catch (e) {}
+      }
+    };
+
     async function cargarDatos() {
       const data = await fetchJsonSeguro("/bcra/variables?formato=agrupado&t=" + Date.now());
       if (!data) return;
@@ -3083,6 +3138,8 @@
 
     setInterval(actualizarCriptosEnVivo, 8000);
     setInterval(cargarDatos, 8000);
+    setInterval(window.sincronizarCaucionesRava, 8000);
+    window.sincronizarCaucionesRava();
     setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
     setInterval(sincronizarEndpointsSecundarios, 8000);
