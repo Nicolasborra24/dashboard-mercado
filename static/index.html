@@ -1084,9 +1084,9 @@
         fetchJsonSeguro("/api/bonos/inflacion-implicita?t=" + Date.now()),
         fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now()),
         fetchJsonSeguro("/api/sectores/finviz?t=" + Date.now()),
-        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS"),
-        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS"),
-        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita")
+        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS&_t=" + Date.now()),
+        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS&_t=" + Date.now()),
+        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita?_t=" + Date.now())
       ]);
       if (curvas && Object.keys(curvas).length > 0) datosCurvasSJB = curvas;
       const cerVivo = cerDir1 || cerDir2;
@@ -2378,9 +2378,47 @@
         }
       }
 
-      // 0b. Si estamos en COTIZACIÓN BONOS y no es reconstrucción forzada, no destruir el canvas de la curva
-      if (!forzarReconstruccion && categoriaActiva === "cotizacion_bonos" && vistaMontadaActual === claveVista && chartCurvaInstance) {
-        return;
+      // 0b. Si estamos en COTIZACIÓN BONOS, actualizar tabla y curva en vivo con los últimos datos de SJB
+      if (!forzarReconstruccion && categoriaActiva === "cotizacion_bonos" && vistaMontadaActual === claveVista) {
+        const contTabla = document.getElementById("tabla-curva-bonos-live");
+        if (contTabla) {
+          let filasLive = [...obtenerFilasCurva(curvaActiva)];
+          const stL = SORT_STATE[curvaActiva];
+          if (stL && stL.col) {
+            filasLive.sort((a, b) => {
+              const va = valorParaOrdenar(a, stL.col), vb = valorParaOrdenar(b, stL.col);
+              return (typeof va === "string" && typeof vb === "string") ? (stL.asc ? va.localeCompare(vb) : vb.localeCompare(va)) : (stL.asc ? va - vb : vb - va);
+            });
+          }
+          const colsL = filasLive.length > 0 ? Object.keys(filasLive[0]) : [];
+          if (filasLive.length > 0) {
+            contTabla.innerHTML = `<table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <tr>${colsL.map(col => renderTh(curvaActiva, col, col.toUpperCase(), /ticker/i.test(col) ? "text-left" : (/precio|valor/i.test(col) ? "text-right" : "text-center"))).join("")}</tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                ${filasLive.map(b => `<tr class="table-dark-row transition">${colsL.map(col => {
+                  const val = b[col], cL = col.toLowerCase();
+                  if (cL.includes("ticker") || cL.includes("especie")) return `<td class="py-2.5 px-3 font-bold text-white">${val}</td>`;
+                  if (cL === "tramo") {
+                    const colTramo = val === "Corto" ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40" : (val === "Mediano" ? "bg-sky-950/60 text-sky-300 border-sky-500/40" : "bg-purple-950/60 text-purple-300 border-purple-500/40");
+                    return `<td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase ${colTramo}">${val}</span></td>`;
+                  }
+                  if (cL.includes("precio") || cL.includes("valor")) {
+                    const num = parseNumSeguro(val);
+                    const pref = (curvaActiva === "us_treasuries" || ((curvaActiva === "soberanos" || curvaActiva === "bopreales") && monedaBonosActiva !== "ARS")) ? "US$ " : "$ ";
+                    return `<td class="py-2.5 px-3 text-right font-medium text-slate-200">${!isNaN(num) ? (num >= 1000 ? pref + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : pref + num.toFixed(2)) : val}</td>`;
+                  }
+                  if (cL.includes("var")) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "var")}</td>`;
+                  if (/tir|tasa|tea|tna|tem|cupón|paridad/.test(cL)) return `<td class="py-2.5 px-3 text-center">${renderFilaTerminal(val, "neutro")}</td>`;
+                  return `<td class="py-2.5 px-3 text-center text-slate-300">${val ?? "-"}</td>`;
+                }).join("")}</tr>`).join("")}
+              </tbody>
+            </table>`;
+            dibujarGraficoCurva();
+          }
+          return;
+        }
       }
 
       // 1. Si estamos en CRIPTO y ya está montado el mapa de calor, solo actualizamos las tarjetas sin tocar el <tv-heatmap>
@@ -2713,7 +2751,7 @@
                       <button onclick="window.cambiarMonedaBonos('ARS')" class="px-3 py-1 rounded-lg text-xs font-bold font-mono transition ${monedaBonosActiva === 'ARS' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm' : 'text-slate-400 hover:text-white'}">ARS ($)</button>
                     </div>` : ""}
                 </div>
-                <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl">${tablaHtml}</div>
+                <div id="tabla-curva-bonos-live" class="overflow-x-auto rounded-2xl border border-slate-800 bg-[#090e1e]/90 shadow-2xl">${tablaHtml}</div>
                 <div class="rounded-2xl sjb-chart-box p-6 space-y-4">
                   <h3 class="text-sm font-bold text-white tracking-wide">${infoCurva.titulo}</h3>
                   <div class="w-full h-[380px] relative"><canvas id="canvas-curva-bonos"></canvas></div>
@@ -3023,7 +3061,7 @@
     setInterval(cargarDatos, 8000);
     setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
-    setInterval(sincronizarEndpointsSecundarios, 15000);
+    setInterval(sincronizarEndpointsSecundarios, 8000);
     setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 15000);
   </script>
 </body>

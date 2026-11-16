@@ -1828,12 +1828,14 @@ def fetch_bonos_cer_rava_fallback() -> Optional[Dict[str, Any]]:
     return None
 
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
-    urls_try = [url]
+    ts_ms = int(time.time() * 1000)
+    sep = "&" if "?" in url else "?"
+    urls_try = [f"{url}{sep}_t={ts_ms}"]
     if clave == "cer":
         urls_try = [
-            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS",
-            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS",
-            "https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=Bonos%20CER&moneda=ARS"
+            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS&_t={ts_ms}",
+            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS&_t={ts_ms}",
+            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=Bonos%20CER&moneda=ARS&_t={ts_ms}"
         ]
     for u_item in urls_try:
         try:
