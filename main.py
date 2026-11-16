@@ -2309,42 +2309,7 @@ CALENDARIO_INDEC_BASE = [
 ]
 
 CALENDARIO_USA_BASE = [
-    {"fecha": "2026-11-09", "hora": "13:00", "div": "US", "evento": "Expectativas de inflación del consumidor (Oct)", "importancia": 2, "actual": "2,9%", "prevision": "3,0%", "anterior": "3,0%"},
-    {"fecha": "2026-11-09", "hora": "15:00", "div": "US", "evento": "Subasta de letras a 3 y 6 meses del Tesoro", "importancia": 2, "actual": "4,42%", "prevision": "-", "anterior": "4,45%"},
-    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC (Mensual) (Oct)", "importancia": 3, "actual": "0,4%", "prevision": "0,3%", "anterior": "0,6%"},
-    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC subyacente (Mensual) (Oct)", "importancia": 3, "actual": "0,3%", "prevision": "0,2%", "anterior": "0,3%"},
-    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC (Anual) (Oct)", "importancia": 3, "actual": "2,6%", "prevision": "2,6%", "anterior": "2,4%"},
-    {"fecha": "2026-11-10", "hora": "10:30", "div": "US", "evento": "IPC subyacente (Anual) (Oct)", "importancia": 3, "actual": "3,3%", "prevision": "3,3%", "anterior": "3,3%"},
-    {"fecha": "2026-11-10", "hora": "16:00", "div": "US", "evento": "Balance presupuestario federal (Oct)", "importancia": 2, "actual": "-257,0B", "prevision": "-225,0B", "anterior": "-64,3B"},
-    {"fecha": "2026-11-11", "hora": "09:00", "div": "US", "evento": "Solicitudes de hipoteca MBA (Semanal)", "importancia": 2, "actual": "0,5%", "prevision": "-", "anterior": "-1,8%"},
-    {"fecha": "2026-11-11", "hora": "15:00", "div": "US", "evento": "Subasta de bonos del Tesoro a 10 años (UST 10Y)", "importancia": 3, "actual": "4,34%", "prevision": "4,30%", "anterior": "4,26%"},
-    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "IPP (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,2%", "anterior": "0,0%"},
-    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "IPP subyacente (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,2%"},
-    {"fecha": "2026-11-12", "hora": "10:30", "div": "US", "evento": "Nuevas peticiones de subsidio por desempleo", "importancia": 3, "actual": "-", "prevision": "220K", "anterior": "221K"},
-    {"fecha": "2026-11-12", "hora": "13:00", "div": "US", "evento": "Inventarios de petróleo crudo de la AIE", "importancia": 3, "actual": "-", "prevision": "1,100M", "anterior": "2,149M"},
-    {"fecha": "2026-11-12", "hora": "15:00", "div": "US", "evento": "Subasta de bonos del Tesoro a 30 años (UST 30Y)", "importancia": 3, "actual": "-", "prevision": "4,51%", "anterior": "4,39%"},
-    {"fecha": "2026-11-12", "hora": "17:00", "div": "US", "evento": "Comparecencia de Jerome Powell, presidente de la Fed", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"},
-    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Ventas minoristas (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,4%"},
-    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Ventas minoristas subyacentes (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,5%"},
-    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Índice manufacturero Empire State (Nov)", "importancia": 2, "actual": "-", "prevision": "-0,50", "anterior": "-11,90"},
-    {"fecha": "2026-11-13", "hora": "10:30", "div": "US", "evento": "Precios de importación y exportación (Mensual) (Oct)", "importancia": 2, "actual": "-", "prevision": "-0,1%", "anterior": "-0,4%"},
-    {"fecha": "2026-11-13", "hora": "11:15", "div": "US", "evento": "Producción industrial (Mensual) (Oct)", "importancia": 2, "actual": "-", "prevision": "-0,3%", "anterior": "-0,3%"},
-    {"fecha": "2026-11-16", "hora": "18:00", "div": "US", "evento": "Flujos de capital TIC a largo plazo (Sep)", "importancia": 2, "actual": "-", "prevision": "78,4B", "anterior": "111,4B"},
-    {"fecha": "2026-11-17", "hora": "12:00", "div": "US", "evento": "Índice NAHB del mercado de la vivienda (Nov)", "importancia": 2, "actual": "-", "prevision": "43", "anterior": "43"},
-    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Permisos de construcción (Oct)", "importancia": 3, "actual": "-", "prevision": "1,440M", "anterior": "1,425M"},
-    {"fecha": "2026-11-18", "hora": "10:30", "div": "US", "evento": "Inicios de construcción de viviendas (Oct)", "importancia": 2, "actual": "-", "prevision": "1,340M", "anterior": "1,354M"},
-    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Nuevas peticiones de subsidio por desempleo", "importancia": 3, "actual": "-", "prevision": "222K", "anterior": "220K"},
-    {"fecha": "2026-11-19", "hora": "10:30", "div": "US", "evento": "Índice manufacturero de la Fed de Filadelfia (Nov)", "importancia": 3, "actual": "-", "prevision": "8,0", "anterior": "10,3"},
-    {"fecha": "2026-11-19", "hora": "12:00", "div": "US", "evento": "Ventas de viviendas de segunda mano (Oct)", "importancia": 3, "actual": "-", "prevision": "3,93M", "anterior": "3,84M"},
-    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI manufacturero de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "48,8", "anterior": "48,5"},
-    {"fecha": "2026-11-20", "hora": "11:45", "div": "US", "evento": "PMI de servicios de S&P Global (Nov) (Preliminar)", "importancia": 3, "actual": "-", "prevision": "55,2", "anterior": "55,0"},
-    {"fecha": "2026-11-20", "hora": "12:00", "div": "US", "evento": "Confianza del consumidor de la Universidad de Michigan (Nov)", "importancia": 3, "actual": "-", "prevision": "73,0", "anterior": "70,5"},
-    {"fecha": "2026-11-24", "hora": "12:00", "div": "US", "evento": "Confianza del consumidor de The Conference Board (Nov)", "importancia": 3, "actual": "-", "prevision": "111,8", "anterior": "108,7"},
-    {"fecha": "2026-11-24", "hora": "12:00", "div": "US", "evento": "Ventas de viviendas nuevas (Oct)", "importancia": 3, "actual": "-", "prevision": "725K", "anterior": "738K"},
-    {"fecha": "2026-11-25", "hora": "10:30", "div": "US", "evento": "PIB (Trimestral) (3T) (Segunda estimación)", "importancia": 3, "actual": "-", "prevision": "2,8%", "anterior": "2,8%"},
-    {"fecha": "2026-11-25", "hora": "10:30", "div": "US", "evento": "Pedidos de bienes duraderos (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,5%", "anterior": "-0,7%"},
-    {"fecha": "2026-11-25", "hora": "12:00", "div": "US", "evento": "Índice de precios PCE subyacente (Mensual) (Oct)", "importancia": 3, "actual": "-", "prevision": "0,3%", "anterior": "0,3%"},
-    {"fecha": "2026-11-25", "hora": "16:00", "div": "US", "evento": "Actas de la reunión del FOMC de la Reserva Federal", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"}
+    {"fecha": "2026-11-16", "hora": "14:00", "div": "US", "evento": "Declaraciones de Warsh, del Consejo de Gobierno de la Fed", "importancia": 3, "actual": "-", "prevision": "-", "anterior": "-"}
 ]
 
 CACHE_CALENDARIO_INDEC: List[Dict[str, Any]] = list(CALENDARIO_INDEC_BASE)
@@ -2420,13 +2385,17 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
     extraidos = []
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*"
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "es-ES,es;q=0.9",
+        "Origin": "https://es.investing.com",
+        "Referer": "https://es.investing.com/economic-calendar/"
     }
 
     urls_live = [
+        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&lang=es&_t={ts_now}",
+        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&_t={ts_now}",
         f"https://nfs.faireconomy.media/ff_calendar_thisweek.json?_t={ts_now}",
-        f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}",
-        f"https://e1-0850197d5e074be58352ddc860645af6.ecs.us-east-1.on.aws/events?cee=no&_t={ts_now}"
+        f"https://nfs.faireconomy.media/ff_calendar_nextweek.json?_t={ts_now}"
     ]
     candidatos = []
     for u_base in urls_live:
@@ -2436,46 +2405,50 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
 
     for u in candidatos:
         try:
-            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.0, verify=False)
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.2, verify=False)
             if r.status_code == 200 and r.text.strip():
                 data = r.json()
-                lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or data.get("items") or [])
+                lista = data if isinstance(data, list) else (data.get("events") or data.get("data") or data.get("items") or data.get("calendar") or [])
                 if isinstance(lista, list) and len(lista) > 0:
                     for ev in lista:
                         if not isinstance(ev, dict):
                             continue
-                        cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or "").upper().strip()
-                        if cur not in ("USD", "US", "UNITED STATES", "EE.UU."):
+                        cur = str(ev.get("country") or ev.get("currency") or ev.get("div") or ev.get("countryCode") or "").upper().strip()
+                        c_id = str(ev.get("country_id") or ev.get("countryId") or "")
+                        if cur not in ("USD", "US", "USA", "UNITED STATES", "EE.UU.", "ESTADOS UNIDOS") and c_id != "5":
                             continue
-                        f_raw = str(ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
+                        f_raw = str(ev.get("occurrence_time") or ev.get("date") or ev.get("fecha") or ev.get("time") or ev.get("datetime") or "").strip()
                         f_iso = ""
                         hora = "10:30"
-                        try:
-                            dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
-                            if dt_parsed.tzinfo is not None:
-                                dt_ar = dt_parsed.astimezone(tz_ar)
-                            else:
-                                dt_ar = dt_parsed
+                        if f_raw.isdigit() and len(f_raw) >= 10:
+                            ts_s = int(f_raw[:10])
+                            dt_ar = datetime.fromtimestamp(ts_s, tz=tz_ar)
                             f_iso = dt_ar.strftime("%Y-%m-%d")
                             hora = dt_ar.strftime("%H:%M")
-                        except Exception:
-                            m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
-                            if not m_f:
-                                continue
-                            f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
-                            m_h = re.search(r"(\d{2}:\d{2})", f_raw)
-                            hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
+                        else:
+                            try:
+                                dt_parsed = datetime.fromisoformat(f_raw.replace("Z", "+00:00"))
+                                dt_ar = dt_parsed.astimezone(tz_ar) if dt_parsed.tzinfo is not None else dt_parsed
+                                f_iso = dt_ar.strftime("%Y-%m-%d")
+                                hora = dt_ar.strftime("%H:%M")
+                            except Exception:
+                                m_f = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", f_raw)
+                                if not m_f:
+                                    continue
+                                f_iso = f"{m_f.group(1)}-{int(m_f.group(2)):02d}-{int(m_f.group(3)):02d}"
+                                m_h = re.search(r"(\d{2}:\d{2})", f_raw)
+                                hora = str(ev.get("hora") or (m_h.group(1) if m_h else "10:30"))
 
-                        nom_raw = str(ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or "").strip()
+                        nom_raw = str(ev.get("title") or ev.get("event") or ev.get("name") or ev.get("evento") or ev.get("description") or "").strip()
                         if not nom_raw:
                             continue
                         nom = TRADUCCIONES_EVENTOS_USA.get(nom_raw, nom_raw)
-                        imp_raw = str(ev.get("impact") or ev.get("importance") or ev.get("importancia") or "Medium").lower()
-                        if imp_raw in ("holiday", "non-economic"):
+                        imp_raw = str(ev.get("impact") or ev.get("importance") or ev.get("importancia") or ev.get("volatility") or "2").lower()
+                        if imp_raw in ("holiday", "non-economic", "0"):
                             continue
-                        imp = 3 if imp_raw in ("3", "high", "alta", "bull3") else (1 if imp_raw in ("1", "low", "baja") else 2)
-                        act_v = str(ev.get("actual") if ev.get("actual") not in (None, "") else "-").replace(".", ",")
-                        prev_v = str(ev.get("forecast") or ev.get("prevision") or "-").replace(".", ",")
+                        imp = 3 if imp_raw in ("3", "high", "alta", "bull3") else (1 if imp_raw in ("1", "low", "baja", "bull1") else 2)
+                        act_v = str(ev.get("actual") if ev.get("actual") not in (None, "", "null") else "-").replace(".", ",")
+                        prev_v = str(ev.get("forecast") or ev.get("prevision") or ev.get("consensus") or "-").replace(".", ",")
                         ant_v = str(ev.get("previous") or ev.get("anterior") or "-").replace(".", ",")
                         extraidos.append({
                             "fecha": f_iso,
@@ -2490,16 +2463,16 @@ def extraer_calendario_usa() -> List[Dict[str, Any]]:
         except Exception:
             pass
 
-    mapa = {}
-    for item in CALENDARIO_USA_BASE + CACHE_CALENDARIO_USA + extraidos:
-        if item.get("fecha") and item.get("evento"):
+    if extraidos:
+        mapa = {}
+        for item in extraidos:
             clave = f"{item['fecha']}|{item['evento']}"
-            if clave in mapa and item.get("actual") in ("-", "", None) and mapa[clave].get("actual") not in ("-", "", None):
-                continue
             mapa[clave] = item
-    res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
-    CACHE_CALENDARIO_USA = res
-    return res
+        res = sorted(list(mapa.values()), key=lambda x: (x["fecha"], x["hora"]))
+        CACHE_CALENDARIO_USA = res
+        return res
+
+    return CACHE_CALENDARIO_USA or CALENDARIO_USA_BASE
 
 def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     fetch_estado_mae()
