@@ -715,6 +715,65 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
     }
     return CACHE_ACCIONES_ARGENTINA
 
+def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
+    """Consulta https://bondterminal.com/ (HTML + endpoints internos) para obtener Riesgo País en vivo."""
+    ts_ms = int(time.time() * 1000)
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Referer": "https://bondterminal.com/"
+    }
+    candidatos = [
+        f"https://bondterminal.com/?_t={ts_ms}",
+        f"https://bondterminal.com/api/riesgo-pais?_t={ts_ms}",
+        f"https://bondterminal.com/api/market?_t={ts_ms}",
+        f"https://bondterminal.com/api/data?_t={ts_ms}"
+    ]
+    for u in candidatos:
+        try:
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=3.5, verify=False)
+            if r.status_code != 200 or not r.text.strip():
+                continue
+            txt = r.text
+            # 1) Si es JSON o contiene JSON embebido con riesgoPais / embi / country_risk
+            for pat_json in [
+                r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*\{[^{}]*?"(?:valor|value|last|ultimo|price|puntos)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?',
+                r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?'
+            ]:
+                m_j = re.search(pat_json, txt, re.IGNORECASE)
+                if m_j:
+                    v_rp = _parse_float_limpio(m_j.group(1))
+                    if v_rp and 100 <= v_rp <= 5000:
+                        res_bt: Dict[str, float] = {"ult": v_rp}
+                        m_var = re.search(r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"[^{}]{0,220}?"(?:var|variacion|change|diff|pct)"\s*:\s*"?([+\-−]?\d{1,2}[\.,]\d{1,2})"?', txt, re.IGNORECASE)
+                        if m_var:
+                            vd = _parse_float_limpio(m_var.group(1))
+                            if vd is not None and -45 <= vd <= 45:
+                                res_bt["dia"] = vd
+                        return res_bt
+
+            # 2) Texto renderizado de BondTerminal (ej: "Riesgo País 1.071" o "EMBI+ 1071 pb")
+            plano = BeautifulSoup(txt, "html.parser").get_text(" ", strip=True)
+            m_txt = re.search(
+                r'(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)(?:\s*(?:pb|bps|pts))?(?:\s*\(?([+\-−]?\d{1,2}[,\.]\d{1,2})\s*%?\)?)?',
+                plano,
+                re.IGNORECASE
+            )
+            if m_txt:
+                v_rp = _parse_float_limpio(m_txt.group(1))
+                if v_rp and 100 <= v_rp <= 5000:
+                    res_bt = {"ult": v_rp}
+                    if m_txt.group(2):
+                        vd = _parse_float_limpio(m_txt.group(2))
+                        if vd is not None and -45 <= vd <= 45:
+                            res_bt["dia"] = vd
+                    return res_bt
+        except Exception:
+            pass
+    return None
+
 def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, float]]:
     encontrados: Dict[str, Dict[str, float]] = {}
     if not raw_html or len(raw_html) < 200:
@@ -723,10 +782,9 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
         raw_html.replace("&quot;", '"')
         .replace("&#34;", '"')
         .replace("&apos;", "'")
-        .replace("\\/", "/")
+        .replace("\/", "/")
     )
 
-    # 1) Buscar por ventana JSON alrededor de cada aparición de "RIESGO PAIS", "MERVAL" y "MERVAL USD"
     patrones_busqueda = [
         ("RIESGO_PAIS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"', 100, 5000),
         ("MERVAL_USD", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"', 20, 5000),
@@ -759,7 +817,6 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
             encontrados[clave] = res_k
             break
 
-    # 2) Fallback sobre tabla HTML renderizada si existiera
     if "RIESGO_PAIS" not in encontrados:
         soup = BeautifulSoup(raw_html, "html.parser")
         for tr in soup.find_all("tr"):
@@ -781,21 +838,21 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
 
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, Any]]:
     prev_rp = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), {})
-    prev_val = float(prev_rp.get("valor") or 1038.0)
-    if prev_val == 852.0:
-        prev_val = 1038.0
+    prev_val = float(prev_rp.get("valor") or 1071.0)
+    if prev_val in (852.0, 1038.0):
+        prev_val = 1071.0
 
     datos = {
         "MERVAL_ARS": {"ult": 83482.0, "dia": -0.7, "mes": -9.3, "anio": -22.1},
         "MERVAL_USD": {"ult": 50.0, "dia": -1.3, "mes": -10.0, "anio": -28.7},
         "RIESGO_PAIS": {
             "ult": prev_val,
-            "dia": _parse_float_limpio(prev_rp.get("variacion")) if prev_rp.get("valor") != 852.0 else 11.5,
-            "mes": _parse_float_limpio(prev_rp.get("var_mes")) if prev_rp.get("valor") != 852.0 else 31.9,
-            "anio": _parse_float_limpio(prev_rp.get("var_anio")) if prev_rp.get("valor") != 852.0 else 81.8
+            "dia": _parse_float_limpio(prev_rp.get("variacion")) or 0.0,
+            "mes": _parse_float_limpio(prev_rp.get("var_mes")) or 0.0,
+            "anio": _parse_float_limpio(prev_rp.get("var_anio")) or 0.0
         }
     }
-    rp_rava_ok = False
+    rp_vivo_ok = False
     ts_ms = int(time.time() * 1000)
     hdrs_rava = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -806,49 +863,32 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
         "Referer": "https://www.rava.com/"
     }
 
+    # 1. Consultar Rava (Home + Perfil + Índices)
     urls_rava = [
         f"https://www.rava.com/?_t={ts_ms}",
         f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}",
         f"https://www.rava.com/cotizaciones/indices?_t={ts_ms}"
     ]
-
-    token_rava = ""
     for u_rp in urls_rava:
         try:
-            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.8)
+            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.5)
             if rr.status_code != 200 or len(rr.text) < 400:
                 continue
-            if not token_rava:
-                m_tok = re.search(r'access_token["\']?\s*[:=]\s*["\']([a-zA-Z0-9\._\-]{15,})["\']', rr.text)
-                if m_tok:
-                    token_rava = m_tok.group(1)
             ext = _extraer_rp_y_merval_de_html_rava(rr.text)
             for k_e, v_e in ext.items():
                 datos[k_e].update(v_e)
                 if k_e == "RIESGO_PAIS":
-                    rp_rava_ok = True
-            if rp_rava_ok:
+                    rp_vivo_ok = True
+            if rp_vivo_ok:
                 break
         except Exception:
             pass
 
-    # Si tenemos token de sesión de Rava, consultar directo su REST API v3
-    if not rp_rava_ok and token_rava:
-        try:
-            r_api = GLOBAL_HTTP_SESSION.post(
-                "https://clasico.rava.com/lib/restapi/v3/publico/cotizaciones/especies",
-                data={"especie": "RIESGO PAIS", "access_token": token_rava},
-                headers={**hdrs_rava, "Origin": "https://www.rava.com"},
-                timeout=3.5,
-                verify=False
-            )
-            if r_api.status_code == 200:
-                ext_api = _extraer_rp_y_merval_de_html_rava(r_api.text)
-                if "RIESGO_PAIS" in ext_api:
-                    datos["RIESGO_PAIS"].update(ext_api["RIESGO_PAIS"])
-                    rp_rava_ok = True
-        except Exception:
-            pass
+    # 2. Consultar BondTerminal (https://bondterminal.com/) en vivo
+    bt_rp = _extraer_rp_de_bondterminal()
+    if bt_rp and bt_rp.get("ult"):
+        datos["RIESGO_PAIS"].update(bt_rp)
+        rp_vivo_ok = True
 
     res_out = {}
     config_items = [
@@ -872,7 +912,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
             "var_anio": var_anio,
             "valor": round(float(d_info["ult"]), 2),
             "fecha": f"Mes: {var_mes} | Año: {var_anio}",
-            "_live": rp_rava_ok if cod == "RIESGO_PAIS" else True
+            "_live": rp_vivo_ok if cod == "RIESGO_PAIS" else True
         }
     return res_out
 
@@ -3037,6 +3077,18 @@ def ver_curvas_sjb():
 def ver_inflacion_implicita():
     with CACHE_LOCK:
         return CACHE_INFLACION_IMPLICITA or {}
+
+@app.get("/api/riesgo-pais")
+def ver_riesgo_pais_vivo():
+    msci = obtener_msci_merval_en_vivo()
+    rp = msci.get("RIESGO_PAIS", {})
+    with CACHE_LOCK:
+        idx_list = CACHE_VARIABLES.get("indices", [])
+        for i, item in enumerate(idx_list):
+            if item.get("variable") == "RIESGO_PAIS":
+                idx_list[i] = rp
+                break
+    return rp
 
 @app.get("/api/dolar/dolarito")
 def ver_puntas_dolarito():

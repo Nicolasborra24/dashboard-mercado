@@ -3306,52 +3306,47 @@
     window._RP_RAVA_BROWSER_TS = 0;
     window.sincronizarRiesgoPaisRava = async function() {
       const ts = Date.now();
-      const urlsRava = [
-        "https://www.rava.com/?_t=" + ts,
-        "https://www.rava.com/perfil/RIESGO%20PAIS?_t=" + ts,
-        "https://www.rava.com/cotizaciones/indices?_t=" + ts
-      ];
       let rpUlt = NaN, rpDia = NaN, rpMes = NaN, rpAnio = NaN;
 
-      for (const targetUrl of urlsRava) {
-        if (!isNaN(rpUlt)) break;
+      // 1. Consultar endpoint dedicado en vivo del backend (/api/riesgo-pais -> Rava + BondTerminal)
+      const rpBack = await fetchJsonSeguro("/api/riesgo-pais?t=" + ts);
+      if (rpBack && rpBack.valor && rpBack.valor >= 100 && rpBack.valor <= 5000) {
+        rpUlt = parseFloat(rpBack.valor);
+        rpDia = parseNumSeguro(rpBack.variacion);
+        rpMes = parseNumSeguro(rpBack.var_mes);
+        rpAnio = parseNumSeguro(rpBack.var_anio);
+      }
+
+      // 2. Contraste directo desde el navegador con BondTerminal y Rava
+      const fuentesWeb = [
+        "https://bondterminal.com/?_t=" + ts,
+        "https://www.rava.com/perfil/RIESGO%20PAIS?_t=" + ts,
+        "https://www.rava.com/?_t=" + ts
+      ];
+      for (const targetUrl of fuentesWeb) {
+        if (!isNaN(rpUlt) && rpBack && rpBack._live) break;
         for (const pUrl of [
           "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
-          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
           "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl)
         ]) {
           try {
             const r = await fetch(pUrl, { cache: "no-store" });
             if (!r.ok) continue;
             const rawTxt = await r.text();
-            const htmlU = rawTxt
-              .replace(/&quot;/g, '"')
-              .replace(/&#34;/g, '"')
-              .replace(/&apos;/g, "'")
-              .replace(/\\\//g, '/');
+            const htmlU = rawTxt.replace(/&quot;/g, '"').replace(/&#34;/g, '"').replace(/\\\//g, '/');
 
-            const reSim = /"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"/ig;
-            let m;
-            while ((m = reSim.exec(htmlU)) !== null) {
-              const ini = Math.max(0, m.index - 250);
-              const fin = Math.min(htmlU.length, m.index + 550);
-              const vent = htmlU.slice(ini, fin);
-              const mU = vent.match(/"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
-              if (mU) {
-                const u = parseNumSeguro(mU[1]);
-                if (!isNaN(u) && u >= 100 && u <= 5000) {
-                  rpUlt = u;
-                  const mD = vent.match(/"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
-                  const mM = vent.match(/"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
-                  const mA = vent.match(/"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
-                  if (mD) rpDia = parseNumSeguro(mD[1]);
-                  if (mM) rpMes = parseNumSeguro(mM[1]);
-                  if (mA) rpAnio = parseNumSeguro(mA[1]);
-                  break;
-                }
-              }
+            const mJson = htmlU.match(/"(?:simbolo|especie|nombre|titulo|riesgo[_\s]?pais|embi)"\s*:\s*"?(?:RIESGO\s*PA[IÍ]S)?"?[^{}]{0,260}?"(?:ultimo|px_last|close|valor|value|last|puntos)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?/i);
+            if (mJson) {
+              const u = parseNumSeguro(mJson[1]);
+              if (!isNaN(u) && u >= 100 && u <= 5000) { rpUlt = u; break; }
             }
-            if (!isNaN(rpUlt)) break;
+
+            const plano = htmlU.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+            const mTxt = plano.match(/(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)/i);
+            if (mTxt) {
+              const u = parseNumSeguro(mTxt[1]);
+              if (!isNaN(u) && u >= 100 && u <= 5000) { rpUlt = u; break; }
+            }
           } catch (e) {}
         }
       }
