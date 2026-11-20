@@ -194,7 +194,7 @@
       </div>
     </div>
 
-    <div id="ticker-tape-container" class="rounded-xl overflow-hidden border border-slate-800/45 bg-white/[0.02] shadow-lg">
+    <div id="ticker-tape-container" class="rounded-xl overflow-hidden bg-[#070d19]">
       <tv-ticker-tape symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,BITSTAMP:BTCUSD,CMCMARKETS:GOLD,BCBA:MMSCI,FX_IDC:USDARS" hide-chart item-size="compact" theme="dark"></tv-ticker-tape>
     </div>
 
@@ -441,7 +441,7 @@
       cripto: { titulo: "Cotizaciones Criptomonedas en Vivo", sub: "Cotizaciones Spot en Tiempo Real", icono: "fa-brands fa-bitcoin", iconoDer: "fa-solid fa-microchip text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/25 text-amber-300" },
       cotizacion_bonos: { titulo: "Curvas de Renta Fija Argentina y Americana", sub: "Curvas de Rendimiento Locales y del Tesoro EE.UU.", icono: "fa-solid fa-file-invoice-dollar", iconoDer: "fa-solid fa-chart-area text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" },
       indices: { titulo: "Índices Principales y Sectores", sub: "Mercados Locales e Internacionales", icono: "fa-solid fa-chart-line", iconoDer: "fa-solid fa-building-columns text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "Índices de Precios y Break-Even de Mercado", icono: "fa-solid fa-arrow-trend-up", iconoDer: "fa-solid fa-fire-flame-Simple text-rose-400/80", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
+      inflacion_y_ajuste: { titulo: "Inflación y Coeficientes de Ajuste", sub: "Índices de Precios y Break-Even de Mercado", icono: "fa-solid fa-arrow-trend-up", iconoDer: "fa-solid fa-fire-flame-curved text-rose-400/80", barra: "section-bar-rose", flare: "glow-flare-rose", badge: "bg-rose-500/20 border-rose-400/40 text-rose-300" },
       metales: { titulo: "Metales Preciosos e Industriales", sub: "Commodities Metálicos en Tiempo Real", icono: "fa-solid fa-coins", iconoDer: "fa-solid fa-gem text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/25 text-amber-300" },
       petroleo: { titulo: "Mercado Internacional de Crudo y Combustibles", sub: "Petróleo y Derivados Energéticos", icono: "fa-solid fa-oil-well", iconoDer: "fa-solid fa-gas-pump text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/25 text-amber-300" },
       macro_y_fiscal: { titulo: "Macroeconomía, Comercio Exterior y Cuentas Fiscales", sub: "Indicadores Oficiales de la República Argentina", icono: "fa-solid fa-scale-balanced", iconoDer: "fa-solid fa-vault text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
@@ -3308,25 +3308,56 @@
       renderizar(true);
     }
 
-    // Arranque inmediato: dibuja apenas responde el backend sin bloquearse esperando proxies externos
-    cargarDatos().then(() => renderizar(false));
-    actualizarCriptosEnVivo();
-    actualizarPuntasDolarEnVivo();
-    sincronizarEndpointsSecundarios();
-    if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
-    if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();
-    if (window.sincronizarLicitacionesA3) window.sincronizarLicitacionesA3();
+    // Arranque inmediato + Scheduler Inteligente (pausa en segundo plano y evita requests solapados en móvil)
+    const _tareasEnCurso = {};
+    async function ejecutarSinSolapar(clave, fn) {
+      if (typeof fn !== "function" || _tareasEnCurso[clave]) return;
+      _tareasEnCurso[clave] = true;
+      try { await fn(); } catch (e) {} finally { _tareasEnCurso[clave] = false; }
+    }
 
-    setInterval(actualizarCriptosEnVivo, 8000);
-    setInterval(cargarDatos, 8000);
-    setInterval(window.sincronizarCaucionesRava, 8000);
-    setInterval(window.sincronizarMonedasEnVivo, 8000);
-    window.sincronizarMonedasEnVivo();
-    window.sincronizarCaucionesRava();
-    setInterval(actualizarPuntasDolarEnVivo, 8000);
-    setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
-    setInterval(sincronizarEndpointsSecundarios, 8000);
-    setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 15000);
+    function ejecutarCicloVivo() {
+      if (document.hidden) return;
+      ejecutarSinSolapar("core", cargarDatos);
+      ejecutarSinSolapar("cripto", actualizarCriptosEnVivo);
+      ejecutarSinSolapar("dolar", actualizarPuntasDolarEnVivo);
+      if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) {
+        ejecutarSinSolapar("sec", sincronizarEndpointsSecundarios);
+      }
+      if (categoriaActiva === "tasas_y_monetario") {
+        ejecutarSinSolapar("cauciones", window.sincronizarCaucionesRava);
+      }
+      if (categoriaActiva === "monedas") {
+        ejecutarSinSolapar("monedas", window.sincronizarMonedasEnVivo);
+      }
+      if (categoriaActiva === "indices" && subIndiceActivo === "acciones_argentinas") {
+        ejecutarSinSolapar("acciones", window.sincronizarAccionesArgentinaRava);
+      }
+    }
+
+    // Carga inicial completa
+    cargarDatos().then(() => renderizar(false));
+    ejecutarSinSolapar("cripto", actualizarCriptosEnVivo);
+    ejecutarSinSolapar("dolar", actualizarPuntasDolarEnVivo);
+    ejecutarSinSolapar("sec", sincronizarEndpointsSecundarios);
+    ejecutarSinSolapar("monedas", window.sincronizarMonedasEnVivo);
+    ejecutarSinSolapar("cauciones", window.sincronizarCaucionesRava);
+    ejecutarSinSolapar("acciones", window.sincronizarAccionesArgentinaRava);
+    ejecutarSinSolapar("cal_eco", window.sincronizarCalendarioEconomico);
+    ejecutarSinSolapar("licit", window.sincronizarLicitacionesA3);
+
+    // Pulso principal cada 8s (datos en vivo) y calendarios cada 45s si están activos
+    setInterval(ejecutarCicloVivo, 8000);
+    setInterval(() => {
+      if (document.hidden) return;
+      if (categoriaActiva === "calendario_economico") ejecutarSinSolapar("cal_eco", window.sincronizarCalendarioEconomico);
+      if (categoriaActiva === "calendario_licitaciones") ejecutarSinSolapar("licit", window.sincronizarLicitacionesA3);
+    }, 45000);
+
+    // Refresco instantáneo al volver a la pestaña en PC o desbloquear el teléfono
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) ejecutarCicloVivo();
+    });
   </script>
 </body>
 </html>

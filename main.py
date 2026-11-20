@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -40,6 +41,9 @@ GLOBAL_HTTP_SESSION = requests.Session()
 _adapter_pool = HTTPAdapter(pool_connections=32, pool_maxsize=32, max_retries=1)
 GLOBAL_HTTP_SESSION.mount("https://", _adapter_pool)
 GLOBAL_HTTP_SESSION.mount("http://", _adapter_pool)
+
+MAE_HTTP_SESSION = requests.Session()
+MAE_HTTP_SESSION.mount("https://", MAEAdapter(pool_connections=16, pool_maxsize=16, max_retries=1))
 
 _RAVA_HTML_CACHE = {"ts": 0.0, "html": ""}
 _RAVA_CACHE_LOCK = threading.Lock()
@@ -103,8 +107,7 @@ LICITACIONES_AGENDA_COMPLETA = [
 ]
 
 def consultar_url_mae_con_puentes(target_url: str) -> Any:
-    sess = requests.Session()
-    sess.mount("https://", MAEAdapter())
+    sess = MAE_HTTP_SESSION
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -169,6 +172,7 @@ if DATABASE_URL:
         SessionLocal = None
 
 app = FastAPI(title="API Mercado Argentino")
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -626,7 +630,7 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
     ]
     for u in urls:
         try:
-            r = requests.get(u, headers=hdrs, timeout=4.5)
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.5)
             if r.status_code == 200 and r.text:
                 html_u = r.text.replace("&quot;", '"')
                 for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie)"\s*:\s*"([A-Z0-9\.]{2,10})"[^{}]*\}', html_u):
@@ -1066,7 +1070,7 @@ def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
 def obtener_datos_indicadores() -> List[Dict[str, Any]]:
     items = []
     try:
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+        r = GLOBAL_HTTP_SESSION.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
             cargadas = set()
@@ -1167,7 +1171,7 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
 
     for url in urls:
         try:
-            r = requests.get(url, headers=headers, timeout=4.5, verify=False)
+            r = GLOBAL_HTTP_SESSION.get(url, headers=headers, timeout=4.5, verify=False)
             if r.status_code != 200:
                 continue
             try:
@@ -1369,7 +1373,7 @@ def obtener_promedio_plazo_fijo_bcra() -> Dict[str, Any]:
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
+        r = GLOBAL_HTTP_SESSION.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
             d = r.json()
             for row in (d.get("principales") or []) + (d.get("otras") or []):
@@ -1385,8 +1389,6 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                     CACHE_TASAS_PERSISTENTE["TASA_TAMAR"] = {"variable": "TASA_TAMAR", "descripcion": f"Tasa Referencia TAMAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
                 elif "badlar" in nom_t:
                     CACHE_TASAS_PERSISTENTE["TASA_BADLAR"] = {"variable": "TASA_BADLAR", "descripcion": f"Tasa BADLAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
-                elif False and ("plazo fijo" in nom_t or "minorista" in nom_t):
-                    CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"] = {"variable": "TASA_PLAZO_FIJO", "descripcion": f"Tasa Plazo Fijo{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
                 elif "tm20" in nom_t:
                     CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {"variable": "TASA_TM20", "descripcion": f"Tasa TM20{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
                 elif "call" in nom_t:
@@ -1668,8 +1670,20 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     return res_rava
 
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
-    if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 4.5 and _DOLARITO_CICLO_CACHE["data"]:
+    if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 6.5 and _DOLARITO_CICLO_CACHE["data"]:
         return {k: dict(v) for k, v in _DOLARITO_CICLO_CACHE["data"].items()}
+    if not _DOLARITO_CACHE_LOCK.acquire(blocking=False):
+        if _DOLARITO_CICLO_CACHE["data"]:
+            return {k: dict(v) for k, v in _DOLARITO_CICLO_CACHE["data"].items()}
+        _DOLARITO_CACHE_LOCK.acquire()
+    try:
+        if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 6.5 and _DOLARITO_CICLO_CACHE["data"]:
+            return {k: dict(v) for k, v in _DOLARITO_CICLO_CACHE["data"].items()}
+        return _obtener_puntas_dolarito_interno()
+    finally:
+        _DOLARITO_CACHE_LOCK.release()
+
+def _obtener_puntas_dolarito_interno() -> Dict[str, Dict[str, Any]]:
     res: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in BASE_DOLARITO_EXACTA.items()}
     ts_ms = int(time.time() * 1000)
     hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
@@ -1747,7 +1761,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     dolarito_cripto_actualizado = False
     for u in urls_intento:
         try:
-            r = requests.get(u, headers=headers, timeout=3.2, verify=False)
+            r = GLOBAL_HTTP_SESSION.get(u, headers=headers, timeout=3.2, verify=False)
             if r.status_code != 200 or not r.text.strip():
                 continue
             txt = r.text.strip()
@@ -1817,7 +1831,7 @@ def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
 
     # 4. Dólar Cripto dinámico
     try:
-        r_cy = requests.get(f"https://criptoya.com/api/usdt/ars/0.5?_t={ts_ms}", headers=headers, timeout=2.5)
+        r_cy = GLOBAL_HTTP_SESSION.get(f"https://criptoya.com/api/usdt/ars/0.5?_t={ts_ms}", headers=headers, timeout=2.5)
         if r_cy.status_code == 200:
             d_cy = r_cy.json()
             pares_validos = []
@@ -1957,7 +1971,7 @@ def obtener_datos_bonos_sjb() -> List[Dict[str, Any]]:
     items = []
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
-        r = requests.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+        r = GLOBAL_HTTP_SESSION.get("https://sjbdashboards.up.railway.app/api/bonos/precios-recientes", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
         if r.status_code == 200:
             bonos_raw = r.json()
             if isinstance(bonos_raw, dict):
@@ -2014,7 +2028,7 @@ def fetch_curva_us_treasuries() -> Dict[str, Any]:
     try:
         syms = "|".join([b["cnbc"] for b in US_TREASURIES_BASE])
         url_cnbc = f"https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols={syms}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1"
-        r = requests.get(url_cnbc, headers=headers, timeout=3.5)
+        r = GLOBAL_HTTP_SESSION.get(url_cnbc, headers=headers, timeout=3.5)
         if r.status_code == 200:
             q_list = r.json().get("FormattedQuoteResult", {}).get("FormattedQuote", [])
             if isinstance(q_list, dict):
@@ -2331,7 +2345,7 @@ def fetch_finviz_sectores(res_usa: Optional[List[Dict[str, Any]]] = None) -> Opt
                 data_res["1D"].append({"name": nom_en, "ticker": tk, "perf": round(float(chg_d), 2)})
 
     try:
-        r = requests.get("https://finviz.com/groups?g=sector&v=210&o=name", headers=headers, timeout=5.0)
+        r = GLOBAL_HTTP_SESSION.get("https://finviz.com/groups?g=sector&v=210&o=name", headers=headers, timeout=5.0)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
             for tr in soup.find_all("tr"):
@@ -2439,7 +2453,7 @@ def normalizar_item_licitacion(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def fetch_estado_mae() -> Dict[str, Any]:
     global CACHE_ESTADO_MAE
     try:
-        r = requests.get("https://api.marketdata.mae.com.ar/api/mercado/estado", headers=headers_mae_a3(), timeout=4.0, verify=False)
+        r = GLOBAL_HTTP_SESSION.get("https://api.marketdata.mae.com.ar/api/mercado/estado", headers=headers_mae_a3(), timeout=4.0, verify=False)
         if r.status_code == 200 and r.json():
             d = r.json()
             CACHE_ESTADO_MAE = d if isinstance(d, dict) else {"estado": str(d)}
@@ -2643,8 +2657,7 @@ def extraer_calendario_indec() -> List[Dict[str, Any]]:
     global CACHE_CALENDARIO_INDEC
     url_js = "https://www.indec.gob.ar/Scripts/CalendarioFull.js"
     extraidos = []
-    sess = requests.Session()
-    sess.mount("https://", MAEAdapter())
+    sess = MAE_HTTP_SESSION
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
         "Referer": "https://www.indec.gob.ar/indec/web/Calendario-Fecha-0"
@@ -2814,15 +2827,25 @@ def fetch_licitaciones_mae() -> List[Dict[str, Any]]:
     fetch_estado_mae()
     return fetch_licitaciones_mae_rango()
 
+def _safe_res(fut, default):
+    if fut is None:
+        return default
+    try:
+        return fut.result(timeout=10)
+    except Exception:
+        return default
+
 def worker_refresco_continuo():
     global CACHE_VARIABLES, CACHE_CURVAS_SJB, CACHE_INFLACION_IMPLICITA, CACHE_BANDAS_CAMBIARIAS, CACHE_LICITACIONES_MAE, CACHE_FINVIZ_SECTORES, ULTIMA_ACTUALIZACION
 
+    ciclo_n = 0
     while True:
         try:
+            es_ciclo_lento = (ciclo_n % 15 == 0)
             with ThreadPoolExecutor(max_workers=16) as executor:
                 f_ind = executor.submit(obtener_datos_indicadores)
                 f_acc_rava = executor.submit(obtener_acciones_rava_en_vivo)
-                f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra)
+                f_bcra_inf = executor.submit(obtener_inflacion_oficial_bcra) if es_ciclo_lento else None
                 f_tasas = executor.submit(obtener_datos_tasas_sjb)
                 f_monedas = executor.submit(obtener_datos_monedas_y_dolar)
                 f_bonos = executor.submit(obtener_datos_bonos_sjb)
@@ -2832,34 +2855,38 @@ def worker_refresco_continuo():
                 f_futuro = executor.submit(obtener_datos_dolar_futuro)
                 f_metales = executor.submit(obtener_datos_metales_en_vivo)
                 f_petroleo = executor.submit(obtener_datos_petroleo_en_vivo)
-                f_licit = executor.submit(fetch_licitaciones_mae)
+                f_licit = executor.submit(fetch_licitaciones_mae) if es_ciclo_lento else None
                 f_ust = executor.submit(fetch_curva_us_treasuries)
-                f_cal_usa = executor.submit(extraer_calendario_usa)
+                f_cal_usa = executor.submit(extraer_calendario_usa) if es_ciclo_lento else None
 
                 futures_curvas = [executor.submit(fetch_una_curva_sjb, k, url) for k, url in SJB_CURVAS_URLS.items()]
 
-                res_ind = f_ind.result()
-                res_bcra_inf = f_bcra_inf.result()
-                res_tasas = f_tasas.result()
-                res_monedas = f_monedas.result()
-                res_bonos = f_bonos.result()
-                res_usa = f_usa.result()
-                res_inf_imp = f_inf_imp.result()
-                res_bandas = f_bandas.result()
-                res_futuro = f_futuro.result()
-                res_metales = f_metales.result()
-                res_petroleo = f_petroleo.result()
-                res_licit = f_licit.result()
-                res_ust = f_ust.result()
+                res_ind = _safe_res(f_ind, [])
+                _safe_res(f_acc_rava, None)
+                res_bcra_inf = _safe_res(f_bcra_inf, {})
+                res_tasas = _safe_res(f_tasas, list(CACHE_TASAS_PERSISTENTE.values()))
+                res_monedas = _safe_res(f_monedas, [])
+                res_bonos = _safe_res(f_bonos, [])
+                res_usa = _safe_res(f_usa, [])
+                res_inf_imp = _safe_res(f_inf_imp, None)
+                res_bandas = _safe_res(f_bandas, None)
+                res_futuro = _safe_res(f_futuro, None)
+                res_metales = _safe_res(f_metales, [])
+                res_petroleo = _safe_res(f_petroleo, [])
+                res_licit = _safe_res(f_licit, None)
+                res_ust = _safe_res(f_ust, None)
+                _safe_res(f_cal_usa, None)
+
                 if res_ust:
                     CACHE_CURVAS_SJB['us_treasuries'] = res_ust
 
                 for fut in futures_curvas:
-                    k, data = fut.result()
-                    if data:
-                        CACHE_CURVAS_SJB[k] = data
+                    par = _safe_res(fut, (None, None))
+                    if par and par[0] and par[1]:
+                        CACHE_CURVAS_SJB[par[0]] = par[1]
 
-            res_finviz = fetch_finviz_sectores(res_usa)
+            res_finviz = fetch_finviz_sectores(res_usa) if (es_ciclo_lento or not CACHE_FINVIZ_SECTORES.get("1D")) else None
+            ciclo_n += 1
 
             if res_inf_imp: CACHE_INFLACION_IMPLICITA = res_inf_imp
             if res_bandas: CACHE_BANDAS_CAMBIARIAS = res_bandas
@@ -3099,7 +3126,7 @@ def ver_calendario_economico(desde: Optional[str] = Query(None), hasta: Optional
 @app.get("/dolar")
 def ver_dolar():
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=3.5)
+        r = GLOBAL_HTTP_SESSION.get("https://dolarapi.com/v1/dolares", timeout=3.5)
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -3109,7 +3136,7 @@ def ver_dolar():
 @app.get("/mercado/resumen")
 def ver_resumen_mercado():
     try:
-        r = requests.get("https://dolarapi.com/v1/dolares", timeout=3.5)
+        r = GLOBAL_HTTP_SESSION.get("https://dolarapi.com/v1/dolares", timeout=3.5)
         dolares = r.json() if r.status_code == 200 else []
         precios = {d["casa"]: float(d.get("venta", 0) or 0) for d in dolares}
         mayorista = precios.get("mayorista") or precios.get("oficial", 1)
@@ -3130,7 +3157,7 @@ def ver_resumen_mercado():
 @app.get("/indec/ipc")
 def ver_indec_ipc():
     try:
-        r = requests.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=3.5)
+        r = GLOBAL_HTTP_SESSION.get("https://apis.datos.gob.ar/series/api/series/?ids=148.3_INIVELNAL_DICI_M_26&limit=6&sort=desc", timeout=3.5)
         if r.status_code == 200:
             puntos = r.json().get("data", [])
             return [{"fecha": p[0], "indice_ipc": float(p[1])} for p in puntos if p[1] is not None]
