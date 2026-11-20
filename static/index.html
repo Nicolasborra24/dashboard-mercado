@@ -336,7 +336,7 @@
       { variable: "PETROLEO_WTI", descripcion: "PETRÓLEO CRUDO WTI", categoria: "petroleo", valor_formateado: "71,24 USD/bbl", variacion: "+0,32%", valor: 71.24, fecha: "En vivo" },
       { variable: "MERVAL_ARS", descripcion: "MERVAL", subcategoria: "argentina", valor_formateado: "83.482 pts", variacion: "-0,7%", var_mes: "-9,3%", var_anio: "-22,1%", valor: 83482.0, fecha: "Mes: -9,3% | Año: -22,1%" },
       { variable: "MERVAL_USD", descripcion: "MERVAL USD", subcategoria: "argentina", valor_formateado: "50 pts", variacion: "-1,3%", var_mes: "-10,0%", var_anio: "-28,7%", valor: 50.0, fecha: "Mes: -10,0% | Año: -28,7%" },
-      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "852 pb", variacion: "-0,1%", var_mes: "+8,3%", var_anio: "+49,2%", valor: 852.0, fecha: "Mes: +8,3% | Año: +49,2%" },
+      { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "1.038 pb", variacion: "+11,5%", var_mes: "+31,9%", var_anio: "+81,8%", valor: 1038.0, fecha: "Mes: +31,9% | Año: +81,8%" },
       { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
       { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
       { variable: "INDICE_VIX", descripcion: "ÍNDICE DE VOLATILIDAD (VIX)", subcategoria: "estados_unidos", valor_formateado: "25,64 pts", variacion: "-9.01%", valor: 25.64, fecha: "08 Nov 2026" },
@@ -3308,28 +3308,10 @@
       const ts = Date.now();
       const urlsRava = [
         "https://www.rava.com/?_t=" + ts,
-        "https://www.rava.com/perfil/riesgo%20pais?_t=" + ts
+        "https://www.rava.com/perfil/RIESGO%20PAIS?_t=" + ts,
+        "https://www.rava.com/cotizaciones/indices?_t=" + ts
       ];
       let rpUlt = NaN, rpDia = NaN, rpMes = NaN, rpAnio = NaN;
-
-      const revisarObjetoRava = (o) => {
-        if (!o || typeof o !== "object") return;
-        const nom = String(o.simbolo || o.especie || o.nombre || o.titulo || "").toUpperCase().trim();
-        if (nom === "RIESGO PAIS" || nom === "RIESGO PAÍS") {
-          const u = parseNumSeguro(o.ultimo ?? o.px_last ?? o.close ?? o.valor ?? o.cierre);
-          if (!isNaN(u) && u >= 100 && u <= 5000) {
-            rpUlt = u;
-            const d = parseNumSeguro(o.variacion ?? o.var_dia ?? o.dia ?? o.change ?? o.porc);
-            const m = parseNumSeguro(o.var_mes ?? o.mes ?? o.mensual);
-            const a = parseNumSeguro(o.var_anio ?? o.anio ?? o.anual ?? o.ytd);
-            if (!isNaN(d)) rpDia = d;
-            if (!isNaN(m)) rpMes = m;
-            if (!isNaN(a)) rpAnio = a;
-          }
-        }
-        if (Array.isArray(o)) o.forEach(revisarObjetoRava);
-        else Object.keys(o).forEach(k => revisarObjetoRava(o[k]));
-      };
 
       for (const targetUrl of urlsRava) {
         if (!isNaN(rpUlt)) break;
@@ -3342,23 +3324,30 @@
             const r = await fetch(pUrl, { cache: "no-store" });
             if (!r.ok) continue;
             const rawTxt = await r.text();
-            const htmlU = rawTxt.replace(/&quot;/g, '"').replace(/&#34;/g, '"').replace(/\\\//g, '/');
+            const htmlU = rawTxt
+              .replace(/&quot;/g, '"')
+              .replace(/&#34;/g, '"')
+              .replace(/&apos;/g, "'")
+              .replace(/\\\//g, '/');
 
-            const mDp = htmlU.match(/data-page="(\{[\s\S]*?\})"/);
-            if (mDp) {
-              try { revisarObjetoRava(JSON.parse(mDp[1])); } catch (e) {}
-            }
-
-            if (isNaN(rpUlt)) {
-              const plano = htmlU.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-              const mTab = plano.match(/\bRIESGO\s+PA[IÍ]S\b\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?/i);
-              if (mTab) {
-                const u = parseNumSeguro(mTab[1]);
+            const reSim = /"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"/ig;
+            let m;
+            while ((m = reSim.exec(htmlU)) !== null) {
+              const ini = Math.max(0, m.index - 250);
+              const fin = Math.min(htmlU.length, m.index + 550);
+              const vent = htmlU.slice(ini, fin);
+              const mU = vent.match(/"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+              if (mU) {
+                const u = parseNumSeguro(mU[1]);
                 if (!isNaN(u) && u >= 100 && u <= 5000) {
                   rpUlt = u;
-                  rpDia = parseNumSeguro(mTab[2]);
-                  rpMes = mTab[3] ? parseNumSeguro(mTab[3]) : NaN;
-                  rpAnio = mTab[4] ? parseNumSeguro(mTab[4]) : NaN;
+                  const mD = vent.match(/"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                  const mM = vent.match(/"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                  const mA = vent.match(/"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                  if (mD) rpDia = parseNumSeguro(mD[1]);
+                  if (mM) rpMes = parseNumSeguro(mM[1]);
+                  if (mA) rpAnio = parseNumSeguro(mA[1]);
+                  break;
                 }
               }
             }

@@ -342,7 +342,7 @@ US_TICKERS_DEF = [
 INDICES_BASE_MEMORIA = [
     {"variable": "MERVAL_ARS", "descripcion": "Merval", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "83.482 pts", "variacion": "-0,7%", "var_mes": "-9,3%", "var_anio": "-22,1%", "valor": 83482.0, "fecha": "Mes: -9,3% | Año: -22,1%"},
     {"variable": "MERVAL_USD", "descripcion": "Merval USD", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "50 pts", "variacion": "-1,3%", "var_mes": "-10,0%", "var_anio": "-28,7%", "valor": 50.0, "fecha": "Mes: -10,0% | Año: -28,7%"},
-    {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "852 pb", "variacion": "-0,1%", "var_mes": "+8,3%", "var_anio": "+49,2%", "valor": 852.0, "fecha": "Mes: +8,3% | Año: +49,2%"},
+    {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "1.038 pb", "variacion": "+11,5%", "var_mes": "+31,9%", "var_anio": "+81,8%", "valor": 1038.0, "fecha": "Mes: +31,9% | Año: +81,8%"},
     {"variable": "INDICE_SP500", "descripcion": "S&P 500 (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
     {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
     {"variable": "INDICE_VIX", "descripcion": "Índice de Volatilidad (VIX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "14,94 pts", "variacion": "-1,71%", "valor": 14.94, "fecha": "Cierre"},
@@ -715,16 +715,84 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
     }
     return CACHE_ACCIONES_ARGENTINA
 
+def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, float]]:
+    encontrados: Dict[str, Dict[str, float]] = {}
+    if not raw_html or len(raw_html) < 200:
+        return encontrados
+    html_u = (
+        raw_html.replace("&quot;", '"')
+        .replace("&#34;", '"')
+        .replace("&apos;", "'")
+        .replace("\\/", "/")
+    )
+
+    # 1) Buscar por ventana JSON alrededor de cada aparición de "RIESGO PAIS", "MERVAL" y "MERVAL USD"
+    patrones_busqueda = [
+        ("RIESGO_PAIS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"', 100, 5000),
+        ("MERVAL_USD", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"', 20, 5000),
+        ("MERVAL_ARS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|IMV)"', 40000, 10000000),
+    ]
+    for clave, pat_sim, min_v, max_v in patrones_busqueda:
+        for m in re.finditer(pat_sim, html_u, re.IGNORECASE):
+            ini = max(0, m.start() - 250)
+            fin = min(len(html_u), m.end() + 550)
+            ventana = html_u[ini:fin]
+            m_u = re.search(r'"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?', ventana, re.IGNORECASE)
+            if not m_u:
+                continue
+            vu = _parse_float_limpio(m_u.group(1))
+            if vu is None or not (min_v <= vu <= max_v):
+                continue
+            m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', ventana, re.IGNORECASE)
+            m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', ventana, re.IGNORECASE)
+            m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', ventana, re.IGNORECASE)
+            res_k: Dict[str, float] = {"ult": vu}
+            vd = _parse_float_limpio(m_d.group(1)) if m_d else None
+            vm = _parse_float_limpio(m_m.group(1)) if m_m else None
+            va = _parse_float_limpio(m_a.group(1)) if m_a else None
+            if vd is not None and -45.0 <= vd <= 45.0:
+                res_k["dia"] = vd
+            if vm is not None and -85.0 <= vm <= 250.0:
+                res_k["mes"] = vm
+            if va is not None and -95.0 <= va <= 500.0:
+                res_k["anio"] = va
+            encontrados[clave] = res_k
+            break
+
+    # 2) Fallback sobre tabla HTML renderizada si existiera
+    if "RIESGO_PAIS" not in encontrados:
+        soup = BeautifulSoup(raw_html, "html.parser")
+        for tr in soup.find_all("tr"):
+            celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+            if len(celdas) >= 2 and re.fullmatch(r'RIESGO\s+PA[IÍ]S', celdas[0].upper().strip()):
+                u_v = _parse_float_limpio(celdas[1])
+                if u_v and 100 <= u_v <= 5000:
+                    r_tab: Dict[str, float] = {"ult": u_v}
+                    if len(celdas) > 2 and _parse_float_limpio(celdas[2]) is not None:
+                        r_tab["dia"] = float(_parse_float_limpio(celdas[2]))
+                    if len(celdas) > 3 and _parse_float_limpio(celdas[3]) is not None:
+                        r_tab["mes"] = float(_parse_float_limpio(celdas[3]))
+                    if len(celdas) > 4 and _parse_float_limpio(celdas[4]) is not None:
+                        r_tab["anio"] = float(_parse_float_limpio(celdas[4]))
+                    encontrados["RIESGO_PAIS"] = r_tab
+                    break
+
+    return encontrados
+
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, Any]]:
     prev_rp = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), {})
+    prev_val = float(prev_rp.get("valor") or 1038.0)
+    if prev_val == 852.0:
+        prev_val = 1038.0
+
     datos = {
         "MERVAL_ARS": {"ult": 83482.0, "dia": -0.7, "mes": -9.3, "anio": -22.1},
         "MERVAL_USD": {"ult": 50.0, "dia": -1.3, "mes": -10.0, "anio": -28.7},
         "RIESGO_PAIS": {
-            "ult": float(prev_rp.get("valor") or 1038.0),
-            "dia": _parse_float_limpio(prev_rp.get("variacion")) or 0.0,
-            "mes": _parse_float_limpio(prev_rp.get("var_mes")) or 0.0,
-            "anio": _parse_float_limpio(prev_rp.get("var_anio")) or 0.0
+            "ult": prev_val,
+            "dia": _parse_float_limpio(prev_rp.get("variacion")) if prev_rp.get("valor") != 852.0 else 11.5,
+            "mes": _parse_float_limpio(prev_rp.get("var_mes")) if prev_rp.get("valor") != 852.0 else 31.9,
+            "anio": _parse_float_limpio(prev_rp.get("var_anio")) if prev_rp.get("valor") != 852.0 else 81.8
         }
     }
     rp_rava_ok = False
@@ -732,141 +800,53 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
     hdrs_rava = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+        "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Referer": "https://www.rava.com/"
     }
 
-    def _recorrer_json_rava(nodo: Any):
-        nonlocal rp_rava_ok
-        if isinstance(nodo, dict):
-            nom_raw = str(nodo.get("simbolo") or nodo.get("especie") or nodo.get("nombre") or nodo.get("titulo") or "").upper().strip()
-            if nom_raw in ("RIESGO PAIS", "RIESGO PAÍS", "MERVAL", "IMV", "MERVAL USD", "MERVAL CCL"):
-                k_t = "RIESGO_PAIS" if "RIESGO" in nom_raw else ("MERVAL_USD" if ("USD" in nom_raw or "CCL" in nom_raw) else "MERVAL_ARS")
-                vu = _parse_float_limpio(nodo.get("ultimo") or nodo.get("px_last") or nodo.get("close") or nodo.get("valor") or nodo.get("cierre"))
-                vd = _parse_float_limpio(nodo.get("variacion") or nodo.get("var_dia") or nodo.get("dia") or nodo.get("change") or nodo.get("porc"))
-                vm = _parse_float_limpio(nodo.get("var_mes") or nodo.get("mes") or nodo.get("mensual"))
-                va = _parse_float_limpio(nodo.get("var_anio") or nodo.get("anio") or nodo.get("anual") or nodo.get("ytd"))
-                if vu:
-                    if k_t == "RIESGO_PAIS" and 100 <= vu <= 5000:
-                        datos["RIESGO_PAIS"]["ult"] = vu
-                        rp_rava_ok = True
-                    elif k_t == "MERVAL_USD" and 20 <= vu <= 5000:
-                        datos["MERVAL_USD"]["ult"] = vu
-                    elif k_t == "MERVAL_ARS" and 40000 <= vu <= 10000000:
-                        datos["MERVAL_ARS"]["ult"] = vu
-                if vd is not None and -40.0 <= vd <= 40.0: datos[k_t]["dia"] = vd
-                if vm is not None and -80.0 <= vm <= 200.0: datos[k_t]["mes"] = vm
-                if va is not None and -90.0 <= va <= 400.0: datos[k_t]["anio"] = va
-            for v in nodo.values():
-                _recorrer_json_rava(v)
-        elif isinstance(nodo, list):
-            for el in nodo:
-                _recorrer_json_rava(el)
-
-    # 1. API interna REST v3 de Rava (cotizaciones en tiempo real)
-    for api_u, payload in [
-        ("https://clasico.rava.com/lib/restapi/v3/publico/cotizaciones/especies", {"especie": "RIESGO PAIS"}),
-        ("https://www.rava.com/lib/restapi/v3/publico/cotizaciones/especies", {"especie": "RIESGO PAIS"})
-    ]:
-        try:
-            r_api = GLOBAL_HTTP_SESSION.post(api_u, json=payload, headers={**hdrs_rava, "Origin": "https://www.rava.com"}, timeout=3.2, verify=False)
-            if r_api.status_code == 200 and r_api.text.strip():
-                _recorrer_json_rava(r_api.json())
-                if rp_rava_ok:
-                    break
-        except Exception:
-            pass
-
-    # 2. HTML de Rava (Home + Perfil Riesgo País + Índices), decodificando data-page
-    htmls_fuente = []
-    h_home = obtener_html_rava_compartido(ttl=2.5)
-    if h_home:
-        htmls_fuente.append(h_home)
-    for u_rp in [
-        f"https://www.rava.com/perfil/riesgo%20pais?_t={ts_ms}",
+    urls_rava = [
+        f"https://www.rava.com/?_t={ts_ms}",
+        f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}",
         f"https://www.rava.com/cotizaciones/indices?_t={ts_ms}"
-    ]:
+    ]
+
+    token_rava = ""
+    for u_rp in urls_rava:
         try:
-            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.5)
-            if rr.status_code == 200 and len(rr.text) > 400:
-                htmls_fuente.append(rr.text)
+            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.8)
+            if rr.status_code != 200 or len(rr.text) < 400:
+                continue
+            if not token_rava:
+                m_tok = re.search(r'access_token["']?\s*[:=]\s*["']([a-zA-Z0-9\._\-]{15,})["']', rr.text)
+                if m_tok:
+                    token_rava = m_tok.group(1)
+            ext = _extraer_rp_y_merval_de_html_rava(rr.text)
+            for k_e, v_e in ext.items():
+                datos[k_e].update(v_e)
+                if k_e == "RIESGO_PAIS":
+                    rp_rava_ok = True
+            if rp_rava_ok:
+                break
         except Exception:
             pass
 
-    for raw_rava_html in htmls_fuente:
-        if not raw_rava_html:
-            continue
+    # Si tenemos token de sesión de Rava, consultar directo su REST API v3
+    if not rp_rava_ok and token_rava:
         try:
-            html_u = raw_rava_html.replace("&quot;", '"').replace("&#34;", '"').replace("\\/", "/")
-            # Extraer atributo data-page completo de Inertia/Vue
-            m_dp = re.search(r'data-page="(\{.*?\})"', html_u, re.DOTALL)
-            if m_dp:
-                try:
-                    _recorrer_json_rava(json.loads(m_dp.group(1)))
-                except Exception:
-                    pass
-
-            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(MERVAL(?:\s*USD|\s*CCL)?|IMV|RIESGO\s*PA[IÍ]S)"[^{}]*\}', html_u, re.IGNORECASE):
-                b = m_obj.group(0)
-                sim = m_obj.group(1).upper().strip()
-                k_target = "RIESGO_PAIS" if "RIESGO" in sim else ("MERVAL_USD" if ("USD" in sim or "CCL" in sim) else "MERVAL_ARS")
-                m_u = re.search(r'"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc|var)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_m = re.search(r'"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b, re.IGNORECASE)
-                vu = _parse_float_limpio(m_u.group(1)) if m_u else None
-                vd = _parse_float_limpio(m_d.group(1)) if m_d else None
-                vm = _parse_float_limpio(m_m.group(1)) if m_m else None
-                va = _parse_float_limpio(m_a.group(1)) if m_a else None
-                if k_target == "RIESGO_PAIS" and vu and 100 <= vu <= 5000:
-                    datos["RIESGO_PAIS"]["ult"] = vu
+            r_api = GLOBAL_HTTP_SESSION.post(
+                "https://clasico.rava.com/lib/restapi/v3/publico/cotizaciones/especies",
+                data={"especie": "RIESGO PAIS", "access_token": token_rava},
+                headers={**hdrs_rava, "Origin": "https://www.rava.com"},
+                timeout=3.5,
+                verify=False
+            )
+            if r_api.status_code == 200:
+                ext_api = _extraer_rp_y_merval_de_html_rava(r_api.text)
+                if "RIESGO_PAIS" in ext_api:
+                    datos["RIESGO_PAIS"].update(ext_api["RIESGO_PAIS"])
                     rp_rava_ok = True
-                elif k_target == "MERVAL_USD" and vu and 20 <= vu <= 5000:
-                    datos["MERVAL_USD"]["ult"] = vu
-                elif k_target == "MERVAL_ARS" and vu and 40000 <= vu <= 10000000:
-                    datos["MERVAL_ARS"]["ult"] = vu
-                if vd is not None and -40.0 <= vd <= 40.0: datos[k_target]["dia"] = vd
-                if vm is not None and -80.0 <= vm <= 200.0: datos[k_target]["mes"] = vm
-                if va is not None and -90.0 <= va <= 400.0: datos[k_target]["anio"] = va
-
-            soup = BeautifulSoup(raw_rava_html, "html.parser")
-            for tr in soup.find_all("tr"):
-                celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
-                if len(celdas) >= 2 and re.fullmatch(r'RIESGO\s+PA[IÍ]S', celdas[0].upper().strip()):
-                    u_v = _parse_float_limpio(celdas[1])
-                    if u_v and 100 <= u_v <= 5000:
-                        datos["RIESGO_PAIS"]["ult"] = u_v
-                        rp_rava_ok = True
-                        if len(celdas) > 2 and _parse_float_limpio(celdas[2]) is not None:
-                            datos["RIESGO_PAIS"]["dia"] = _parse_float_limpio(celdas[2])
-                        if len(celdas) > 3 and _parse_float_limpio(celdas[3]) is not None:
-                            datos["RIESGO_PAIS"]["mes"] = _parse_float_limpio(celdas[3])
-                        if len(celdas) > 4 and _parse_float_limpio(celdas[4]) is not None:
-                            datos["RIESGO_PAIS"]["anio"] = _parse_float_limpio(celdas[4])
-
-            plano = soup.get_text(" ", strip=True)
-            patrones_tabla = [
-                ("MERVAL_ARS", r'\bMERVAL\b(?!\s*USD)\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("MERVAL_USD", r'\bMERVAL\s+USD\b\s+([\d]{2,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("RIESGO_PAIS", r'\bRIESGO\s+PA[IÍ]S\b\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?')
-            ]
-            for k_t, pat in patrones_tabla:
-                mt = re.search(pat, plano, re.IGNORECASE)
-                if mt:
-                    u_v = _parse_float_limpio(mt.group(1))
-                    d_v = _parse_float_limpio(mt.group(2))
-                    m_v = _parse_float_limpio(mt.group(3)) if mt.lastindex and mt.lastindex >= 3 and mt.group(3) else None
-                    a_v = _parse_float_limpio(mt.group(4)) if mt.lastindex and mt.lastindex >= 4 and mt.group(4) else None
-                    if u_v:
-                        if k_t == "RIESGO_PAIS" and 100 <= u_v <= 5000:
-                            datos["RIESGO_PAIS"]["ult"] = u_v
-                            rp_rava_ok = True
-                        elif k_t != "RIESGO_PAIS":
-                            datos[k_t]["ult"] = u_v
-                    if d_v is not None: datos[k_t]["dia"] = d_v
-                    if m_v is not None: datos[k_t]["mes"] = m_v
-                    if a_v is not None: datos[k_t]["anio"] = a_v
         except Exception:
             pass
 
@@ -2881,16 +2861,7 @@ def worker_refresco_continuo():
             msci_vivo = obtener_msci_merval_en_vivo(ccl_actual)
             indices_map["MERVAL_ARS"] = msci_vivo["MERVAL_ARS"]
             indices_map["MERVAL_USD"] = msci_vivo["MERVAL_USD"]
-            if msci_vivo["RIESGO_PAIS"].get("_live"):
-                indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
-            else:
-                rp_ind = next((x for x in res_ind if x.get("variable") == "RIESGO_PAIS" and x.get("valor", 0) > 100), None)
-                if rp_ind:
-                    rp_ind["subcategoria"] = "argentina"
-                    rp_ind["valor_formateado"] = f"{int(round(float(rp_ind['valor']))):,} pb".replace(",", ".")
-                    indices_map["RIESGO_PAIS"] = rp_ind
-                else:
-                    indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
+            indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
 
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
