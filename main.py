@@ -819,7 +819,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
             if rr.status_code != 200 or len(rr.text) < 400:
                 continue
             if not token_rava:
-                m_tok = re.search(r'access_token["']?\s*[:=]\s*["']([a-zA-Z0-9\._\-]{15,})["']', rr.text)
+                m_tok = re.search(r'access_token["\']?\s*[:=]\s*["\']([a-zA-Z0-9\._\-]{15,})["\']', rr.text)
                 if m_tok:
                     token_rava = m_tok.group(1)
             ext = _extraer_rp_y_merval_de_html_rava(rr.text)
