@@ -2720,6 +2720,13 @@ def worker_refresco_continuo():
 
         time.sleep(8)
 
+try:
+    _init_rava = obtener_dolares_rava_en_vivo()
+    for _k_init, _v_init in _init_rava.items():
+        BASE_DOLARITO_EXACTA[_k_init] = dict(_v_init)
+except Exception:
+    pass
+
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
 hilo_worker.start()
 

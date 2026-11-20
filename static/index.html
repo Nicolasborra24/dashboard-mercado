@@ -1104,17 +1104,7 @@
         // ============================================================================
     // 5. MÓDULO: MOTOR CAMBIARIO EN TIEMPO REAL (9 COTIZACIONES)
     // ============================================================================
-    window.PUNTAS_DOLAR_VIVO = {
-      DOLAR_OFICIAL: { compra: 1520.00, venta: 1570.00, variacion: "0,00%", fecha: "En vivo" },
-      DOLAR_BLUE: { compra: 1545.00, venta: 1565.00, variacion: "+0,64%", fecha: "En vivo" },
-      DOLAR_TARJETA: { compra: null, venta: 2041.00, variacion: "0,00%", fecha: "En vivo" },
-      DOLAR_NETFLIX: { compra: null, venta: 2370.70, variacion: "0,00%", fecha: "En vivo" },
-      DOLAR_MEP: { compra: null, venta: 1584.11, variacion: "0,00%", fecha: "AL30 / AL30D" },
-      DOLAR_CCL: { compra: null, venta: 1684.47, variacion: "0,00%", fecha: "AL30 / AL30C" },
-      DOLAR_CRIPTO: { compra: 1654.73, venta: 1658.43, variacion: "+0,55%", fecha: "En vivo" },
-      DOLAR_A3500: { compra: 1535.00, venta: 1544.00, variacion: "-0,10%", fecha: "En vivo" },
-      DOLAR_FUTURO: { compra: 1563.00, venta: 1563.50, variacion: "0,00%", fecha: "En vivo" }
-    };
+    window.PUNTAS_DOLAR_VIVO = {};
 
     window.registrarCambioPrecioDolar = function(cod, nuevoCompra, nuevoVenta, varFmt, fecStr) {
       const prevObj = window.PUNTAS_DOLAR_VIVO[cod] || {};
@@ -3208,14 +3198,14 @@
       renderizar(true);
     }
 
-    // Arranque limpio: espera ~100ms a que responda el backend y dibuja directamente los datos reales en vivo
+    // Arranque limpio: espera los datos reales del backend y puntas en vivo antes de dibujar
     Promise.all([
       cargarDatos(),
-      actualizarCriptosEnVivo()
+      actualizarCriptosEnVivo(),
+      actualizarPuntasDolarEnVivo()
     ]).then(() => {
       renderizar(false);
     });
-    actualizarPuntasDolarEnVivo();
     sincronizarEndpointsSecundarios();
     if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
     if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();
