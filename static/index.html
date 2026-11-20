@@ -3198,14 +3198,10 @@
       renderizar(true);
     }
 
-    // Arranque limpio: espera los datos reales del backend y puntas en vivo antes de dibujar
-    Promise.all([
-      cargarDatos(),
-      actualizarCriptosEnVivo(),
-      actualizarPuntasDolarEnVivo()
-    ]).then(() => {
-      renderizar(false);
-    });
+    // Arranque inmediato: dibuja apenas responde el backend sin bloquearse esperando proxies externos
+    cargarDatos().then(() => renderizar(false));
+    actualizarCriptosEnVivo();
+    actualizarPuntasDolarEnVivo();
     sincronizarEndpointsSecundarios();
     if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava();
     if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();

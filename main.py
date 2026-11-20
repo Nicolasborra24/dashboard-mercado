@@ -449,7 +449,17 @@ CACHE_FINVIZ_SECTORES: Dict[str, Any] = {
 
 CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "tasas_y_monetario": list(CACHE_TASAS_PERSISTENTE.values()),
-    "dolar_y_cambiario": [],
+    "dolar_y_cambiario": [
+        {"variable": "DOLAR_OFICIAL", "descripcion": "Dólar Oficial", "categoria": "dolar_y_cambiario", "compra": 1520.0, "venta": 1570.0, "valor": 1570.0, "valor_formateado": "$1.570,00", "variacion": "0,00%", "fecha": "En vivo"},
+        {"variable": "DOLAR_BLUE", "descripcion": "Dólar Blue", "categoria": "dolar_y_cambiario", "compra": 1545.0, "venta": 1565.0, "valor": 1565.0, "valor_formateado": "$1.565,00", "variacion": "+0,64%", "fecha": "En vivo"},
+        {"variable": "DOLAR_NETFLIX", "descripcion": "Dólar Netflix", "categoria": "dolar_y_cambiario", "compra": None, "venta": 2370.70, "valor": 2370.70, "valor_formateado": "$2.370,70", "variacion": "0,00%", "fecha": "En vivo"},
+        {"variable": "DOLAR_MEP", "descripcion": "Dólar MEP", "categoria": "dolar_y_cambiario", "compra": None, "venta": 1584.11, "valor": 1584.11, "valor_formateado": "$1.584,11", "variacion": "0,00%", "fecha": "AL30 / AL30D"},
+        {"variable": "DOLAR_CCL", "descripcion": "Dólar CCL", "categoria": "dolar_y_cambiario", "compra": None, "venta": 1684.47, "valor": 1684.47, "valor_formateado": "$1.684,47", "variacion": "0,00%", "fecha": "AL30 / AL30C"},
+        {"variable": "DOLAR_CRIPTO", "descripcion": "Dólar Cripto", "categoria": "dolar_y_cambiario", "compra": 1654.73, "venta": 1658.43, "valor": 1658.43, "valor_formateado": "$1.658,43", "variacion": "+0,55%", "fecha": "En vivo"},
+        {"variable": "DOLAR_TARJETA", "descripcion": "Dólar Tarjeta", "categoria": "dolar_y_cambiario", "compra": None, "venta": 2041.00, "valor": 2041.00, "valor_formateado": "$2.041,00", "variacion": "0,00%", "fecha": "En vivo"},
+        {"variable": "DOLAR_A3500", "descripcion": "Dólar Mayorista", "categoria": "dolar_y_cambiario", "compra": 1535.0, "venta": 1544.0, "valor": 1544.0, "valor_formateado": "$1.544,00", "variacion": "-0,10%", "fecha": "En vivo"},
+        {"variable": "DOLAR_FUTURO", "descripcion": "Dólar Futuro", "categoria": "dolar_y_cambiario", "compra": 1563.0, "venta": 1563.5, "valor": 1563.5, "valor_formateado": "$1.563,50", "variacion": "0,00%", "fecha": "En vivo"}
+    ],
     "monedas": [],
     "cripto": [],
     "cotizacion_bonos": [],
@@ -459,7 +469,13 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     "petroleo": [],
     "macro_y_fiscal": [],
     "micro_y_sectores": [],
-    "commodities_agro_energia": []
+    "commodities_agro_energia": [
+        {"variable": "AGRO_SOJA", "descripcion": "Soja (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 485.000", "precio_usd": "US$ 314,00", "valor_ars": 485000.0, "valor_usd": 314.0, "valor_formateado": "$ 485.000 / US$ 314,00", "variacion": "0,00%", "valor": 314.0, "fecha": "Pizarra Rosario"},
+        {"variable": "AGRO_MAIZ", "descripcion": "Maíz (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 285.000", "precio_usd": "US$ 184,50", "valor_ars": 285000.0, "valor_usd": 184.5, "valor_formateado": "$ 285.000 / US$ 184,50", "variacion": "0,00%", "valor": 184.5, "fecha": "Pizarra Rosario"},
+        {"variable": "AGRO_TRIGO", "descripcion": "Trigo (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 295.000", "precio_usd": "US$ 191,00", "valor_ars": 295000.0, "valor_usd": 191.0, "valor_formateado": "$ 295.000 / US$ 191,00", "variacion": "0,00%", "valor": 191.0, "fecha": "Pizarra Rosario"},
+        {"variable": "AGRO_GIRASOL", "descripcion": "Girasol (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 540.000", "precio_usd": "US$ 349,50", "valor_ars": 540000.0, "valor_usd": 349.5, "valor_formateado": "$ 540.000 / US$ 349,50", "variacion": "0,00%", "valor": 349.5, "fecha": "Pizarra Rosario"},
+        {"variable": "AGRO_SORGO", "descripcion": "Sorgo (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 255.000", "precio_usd": "US$ 165,00", "valor_ars": 255000.0, "valor_usd": 165.0, "valor_formateado": "$ 255.000 / US$ 165,00", "variacion": "0,00%", "valor": 165.0, "fecha": "Pizarra Rosario"}
+    ]
 }
 CACHE_LOCK = threading.Lock()
 ULTIMA_ACTUALIZACION = ""
@@ -2722,13 +2738,6 @@ def worker_refresco_continuo():
             print(f"[Worker Error] {e}")
 
         time.sleep(8)
-
-try:
-    _init_rava = obtener_dolares_rava_en_vivo()
-    for _k_init, _v_init in _init_rava.items():
-        BASE_DOLARITO_EXACTA[_k_init] = dict(_v_init)
-except Exception:
-    pass
 
 hilo_worker = threading.Thread(target=worker_refresco_continuo, daemon=True)
 hilo_worker.start()
