@@ -1354,8 +1354,8 @@
           if (isNaN(v) || v < 900 || v > 5000) return;
           let cod = null;
           if (casa === "blue") cod = "DOLAR_BLUE";
-          else if (casa === "oficial") cod = "DOLAR_OFICIAL";
-          else if (casa === "mayorista") cod = "DOLAR_A3500";
+          else if (casa === "oficial" && !puntasBack) cod = "DOLAR_OFICIAL";
+          else if (casa === "mayorista" && !puntasBack) cod = "DOLAR_A3500";
           if (cod) {
             const prev = window.PUNTAS_DOLAR_VIVO[cod] || {};
             let varFmt = prev.variacion || "0,00%";
@@ -1422,30 +1422,7 @@
         }
       }
 
-      // 3. Dólar Cripto en tiempo real siguiendo el spread de Dolarito + libro USDT/ARS en vivo
-      if (criptoYa && typeof criptoYa === "object") {
-        const pares = [];
-        Object.keys(criptoYa).forEach(ex => {
-          const obj = criptoYa[ex];
-          if (obj && typeof obj === "object") {
-            const b = parseFloat(obj.totalBid || obj.bid);
-            const a = parseFloat(obj.totalAsk || obj.ask);
-            if (!isNaN(b) && !isNaN(a) && b >= 1550 && b <= 1780 && a >= 1550 && a <= 1780 && a >= b) {
-              pares.push({ b, a, dist: Math.abs(a - 1658.43) });
-            }
-          }
-        });
-        if (pares.length > 0) {
-          pares.sort((x, y) => x.dist - y.dist);
-          const top = pares.slice(0, 4);
-          const cVivo = +(top.reduce((acc, p) => acc + p.b, 0) / top.length).toFixed(2);
-          let vVivo = +(top.reduce((acc, p) => acc + p.a, 0) / top.length).toFixed(2);
-          if (vVivo <= cVivo) vVivo = +(cVivo + 3.70).toFixed(2);
-          const chg = (((vVivo - 1649.35) / 1649.35) * 100).toFixed(2).replace(".", ",");
-          const varStr = parseFloat(chg.replace(",", ".")) >= 0 ? `+${chg}%` : `${chg}%`;
-          window.registrarCambioPrecioDolar("DOLAR_CRIPTO", cVivo, vVivo, varStr, new Date().toLocaleTimeString());
-        }
-      }
+// Dólar Cripto sincronizado directamente desde Rava vía /api/dolar/dolarito
 
       if (window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL && window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta) {
         const vOf = window.PUNTAS_DOLAR_VIVO.DOLAR_OFICIAL.venta;
