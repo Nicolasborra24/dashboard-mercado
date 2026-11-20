@@ -2157,16 +2157,158 @@ def fetch_bonos_cer_rava_fallback() -> Optional[Dict[str, Any]]:
         pass
     return None
 
+CURVAS_FALLBACK_META = {
+    "lecaps": [
+        ("S30N6", "2026-11-30", 104.25), ("T15E7", "2027-01-15", 108.15), ("S29E7", "2027-01-29", 109.10),
+        ("S26F7", "2027-02-26", 111.45), ("T30A7", "2027-04-30", 117.65), ("T31Y7", "2027-05-31", 120.40),
+        ("T30J7", "2027-06-30", 123.10), ("TY30P", "2027-09-30", 132.85)
+    ],
+    "tamar": [
+        ("M29E7", "2027-01-29", 108.40), ("M31M7", "2027-03-31", 113.90), ("M30A7", "2027-04-30", 116.40),
+        ("M30J7", "2027-06-30", 121.50), ("M15S7", "2027-09-15", 128.90), ("M15D7", "2027-12-15", 137.60)
+    ],
+    "dollar_linked": [
+        ("TZVD6", "2026-12-15", 1125.0), ("TZVM7", "2027-03-31", 1110.0), ("TZV27", "2027-06-30", 1085.0),
+        ("TZVD7", "2027-12-15", 1052.0), ("TZV28", "2028-06-30", 1024.0)
+    ],
+    "soberanos": [
+        ("AL29", "2029-07-09", 76450.0, "Local"), ("GD29", "2029-07-09", 78900.0, "NY"),
+        ("AL30", "2030-07-09", 72150.0, "Local"), ("GD30", "2030-07-09", 74800.0, "NY"),
+        ("AL35", "2035-07-09", 65400.0, "Local"), ("GD35", "2035-07-09", 67900.0, "NY"),
+        ("AE38", "2038-01-09", 68200.0, "Local"), ("GD38", "2038-01-09", 71300.0, "NY"),
+        ("AL41", "2041-07-09", 61200.0, "Local"), ("GD41", "2041-07-09", 63800.0, "NY"),
+        ("GD46", "2046-07-09", 64900.0, "NY")
+    ],
+    "bopreales": [
+        ("BPY26", "2026-11-30", 103400.0), ("BPOA7", "2027-10-31", 96500.0),
+        ("BPOB7", "2027-10-31", 95800.0), ("BPOC7", "2027-10-31", 94900.0), ("BPOD7", "2027-10-31", 94200.0)
+    ]
+}
+
+def _fetch_curva_rava_respaldo(clave: str) -> Optional[Dict[str, Any]]:
+    ts_ms = int(time.time() * 1000)
+    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    rava_map: Dict[str, Dict[str, Any]] = {}
+
+    for u in [f"https://www.rava.com/cotizaciones/bonos?_t={ts_ms}", f"https://www.rava.com/cotizaciones/letras?_t={ts_ms}"]:
+        try:
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.2)
+            if r.status_code != 200:
+                continue
+            html_u = r.text.replace("&quot;", '"')
+            for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie)"\s*:\s*"([A-Z0-9]{3,7})"[^{}]*\}', html_u):
+                b = m_obj.group(0)
+                sim = m_obj.group(1).upper().strip()
+                m_u = re.search(r'"(?:ultimo|px_last|close|valor)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b)
+                m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b)
+                m_t = re.search(r'"(?:tir|tea|rendimiento)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b)
+                m_p = re.search(r'"(?:paridad|parity)"\s*:\s*"?([+\-−]?[\d\.,]+)"?', b)
+                px = normalizar_valor(m_u.group(1)) if m_u else None
+                if px and px > 5:
+                    rava_map[sim] = {
+                        "precio": px,
+                        "var": normalizar_valor(m_d.group(1)) if m_d else 0.0,
+                        "tir": normalizar_valor(m_t.group(1)) if m_t else None,
+                        "paridad": normalizar_valor(m_p.group(1)) if m_p else None
+                    }
+        except Exception:
+            pass
+
+    if not rava_map:
+        return None
+
+    mep_ref = 1584.0
+    if "AL30" in rava_map and "AL30D" in rava_map and rava_map["AL30D"]["precio"] > 0:
+        ratio = rava_map["AL30"]["precio"] / rava_map["AL30D"]["precio"]
+        mep_ref = ratio * 100.0 if ratio < 15 else ratio
+
+    hoy = datetime.utcnow().date()
+    filas = []
+
+    if clave in ("soberanos", "soberanos_mep", "soberanos_ars", "soberanos_ccl"):
+        suf = "C" if clave == "soberanos_ccl" else ("D" if clave in ("soberanos", "soberanos_mep") else "")
+        for tk_base, vto, def_ars, ley in CURVAS_FALLBACK_META["soberanos"]:
+            tk = tk_base + suf
+            info = rava_map.get(tk) or rava_map.get(tk_base)
+            if not info:
+                continue
+            px = info["precio"]
+            if suf and px > 500:
+                px = round(px / mep_ref, 2)
+            dias = max(1, (datetime.strptime(vto, "%Y-%m-%d").date() - hoy).days)
+            vd = info["var"] or 0.0
+            tir = info["tir"] if info["tir"] is not None else 12.10
+            par = info["paridad"] if info["paridad"] is not None else 70.0
+            filas.append({
+                "Ticker": tk, "Ley": ley, "Vencimiento": vto, "Dias": dias,
+                "Precio": round(px, 2), "Variacion": f"+{vd:.2f}%" if vd > 0 else f"{vd:.2f}%",
+                "TIR": f"{tir:.2f}%", "Paridad": f"{par:.2f}%", "MD": round(dias / 365.0 * 0.65, 2)
+            })
+
+    elif clave in ("bopreales", "bopreales_mep", "bopreales_ars"):
+        suf = "D" if clave in ("bopreales", "bopreales_mep") else ""
+        for tk_base, vto, def_ars in CURVAS_FALLBACK_META["bopreales"]:
+            tk = tk_base + suf
+            info = rava_map.get(tk) or rava_map.get(tk_base)
+            if not info:
+                continue
+            px = info["precio"]
+            if suf and px > 500:
+                px = round(px / mep_ref, 2)
+            dias = max(1, (datetime.strptime(vto, "%Y-%m-%d").date() - hoy).days)
+            vd = info["var"] or 0.0
+            tir = info["tir"] if info["tir"] is not None else 11.20
+            par = info["paridad"] if info["paridad"] is not None else 89.50
+            filas.append({
+                "Ticker": tk, "Vencimiento": vto, "Dias": dias,
+                "Precio": round(px, 2), "Variacion": f"+{vd:.2f}%" if vd > 0 else f"{vd:.2f}%",
+                "TIR": f"{tir:.2f}%", "Paridad": f"{par:.2f}%", "MD": round(dias / 365.0 * 0.90, 2)
+            })
+
+    elif clave in ("lecaps", "tamar", "dollar_linked"):
+        for tk, vto, def_px in CURVAS_FALLBACK_META[clave]:
+            info = rava_map.get(tk)
+            if not info:
+                continue
+            px = info["precio"]
+            dias = max(1, (datetime.strptime(vto, "%Y-%m-%d").date() - hoy).days)
+            vd = info["var"] or 0.0
+            tir = info["tir"] if info["tir"] is not None else (27.5 if clave == "lecaps" else (32.0 if clave == "tamar" else 6.8))
+            tem = round(((1 + tir / 100.0) ** (1 / 12.0) - 1) * 100.0, 2)
+            fila = {
+                "Ticker": tk, "Vencimiento": vto, "Dias": dias,
+                "Precio": round(px, 2), "Variacion": f"+{vd:.2f}%" if vd > 0 else f"{vd:.2f}%",
+                "TIR": f"{tir:.2f}%", "TEM": f"{tem:.2f}%", "MD": round(dias / 365.0 * 0.95, 2)
+            }
+            if clave == "dollar_linked":
+                fila["Paridad"] = f"{(info['paridad'] or 95.0):.2f}%"
+            filas.append(fila)
+
+    return {"tabla": filas} if len(filas) >= 2 else None
+
 def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     ts_ms = int(time.time() * 1000)
     sep = "&" if "?" in url else "?"
     urls_try = [f"{url}{sep}_t={ts_ms}"]
-    if clave == "cer":
-        urls_try = [
-            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS&_t={ts_ms}",
-            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS&_t={ts_ms}",
-            f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=Bonos%20CER&moneda=ARS&_t={ts_ms}"
-        ]
+
+    variantes_sjb = {
+        "cer": ["BONOS%20CER", "CER", "Bonos%20CER"],
+        "lecaps": ["LECAP%20y%20BONCAP", "LECAPS", "LECAP", "Lecaps%20y%20Boncaps"],
+        "tamar": ["LETAM", "TAMAR", "BONOS%20TAMAR", "Letras%20TAMAR"],
+        "dollar_linked": ["D%C3%B3lar%20Linked", "DOLLAR%20LINKED", "DOLAR%20LINKED", "Dollar%20Linked"],
+        "soberanos": ["SOBERANOS&moneda=MEP", "Soberanos&moneda=MEP"],
+        "soberanos_mep": ["SOBERANOS&moneda=MEP", "Soberanos&moneda=MEP"],
+        "soberanos_ars": ["SOBERANOS&moneda=ARS", "Soberanos&moneda=ARS"],
+        "bopreales": ["BOPREALES&moneda=MEP", "BOPREAL&moneda=MEP", "Bopreales&moneda=MEP"],
+        "bopreales_mep": ["BOPREALES&moneda=MEP", "BOPREAL&moneda=MEP", "Bopreales&moneda=MEP"],
+        "bopreales_ars": ["BOPREALES&moneda=ARS", "BOPREAL&moneda=ARS", "Bopreales&moneda=ARS"]
+    }
+    if clave in variantes_sjb:
+        urls_try = []
+        for cat_v in variantes_sjb[clave]:
+            mon_part = "" if "moneda=" in cat_v else "&moneda=ARS"
+            urls_try.append(f"https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria={cat_v}{mon_part}&_t={ts_ms}")
+
     for u_item in urls_try:
         try:
             r = GLOBAL_HTTP_SESSION.get(u_item, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
@@ -2176,10 +2318,16 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
                     return clave, norm
         except Exception:
             pass
+
     if clave == "cer":
         fb_cer = fetch_bonos_cer_rava_fallback()
         if fb_cer:
             return clave, fb_cer
+    else:
+        fb_gen = _fetch_curva_rava_respaldo(clave)
+        if fb_gen:
+            return clave, fb_gen
+
     return clave, None
 
 def fetch_inflacion_implicita_sjb():

@@ -767,7 +767,7 @@
       renderizar(true);
       if (curvaKey === "soberanos" || curvaKey === "bopreales") {
         window.cambiarMonedaBonos(monedaBonosActiva);
-      } else if (curvaKey === "cer" || curvaKey === "lecaps") {
+      } else {
         sincronizarEndpointsSecundarios().then(() => renderizar(true));
       }
     }
