@@ -1667,7 +1667,7 @@
         </div>`;
     }
 
-    function crearTarjeta(item, categoria, valorOficial) {
+    function crearTarjeta(item, categoria, valorOficial, compacta = false) {
       if (!item) return "";
       if (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO[item.variable]) {
         const pv = window.PUNTAS_DOLAR_VIVO[item.variable];
@@ -1707,12 +1707,17 @@
       if (["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"].includes(item.variable) && !valFmt.startsWith("$")) valFmt = `$${valFmt}`;
       if (item.variable === "RIESGO_PAIS" && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
 
+      const clsCardPad = compacta ? "rounded-xl p-2.5" : "rounded-2xl p-4";
+      const clsTitulo = compacta ? "text-[10px]" : "text-[11px]";
+      const clsValor = compacta ? "text-base xl:text-lg" : "text-2xl";
+      const clsFooter = compacta ? "mt-2 pt-1.5 text-[10px]" : "mt-4 pt-2 text-[11px]";
+
       return `
-        <div class="neon-card rounded-2xl p-4 flex flex-col justify-between ${animFlash ? 'card-' + animFlash : ''}">
+        <div class="neon-card ${clsCardPad} flex flex-col justify-between ${animFlash ? 'card-' + animFlash : ''}">
           <div>
-            <div class="flex items-center justify-between gap-1.5">
-              <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
-              ${badgeBrecha}
+            <div class="flex items-center justify-between gap-1">
+              <span class="${clsTitulo} font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
+              ${compacta ? "" : badgeBrecha}
             </div>
             ${(() => {
               const pVivo = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO[item.variable]) || {};
@@ -1721,7 +1726,17 @@
               const fmtP = n => "$" + Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
               if (["DOLAR_OFICIAL", "DOLAR_BLUE", "DOLAR_CRIPTO", "DOLAR_A3500", "DOLAR_FUTURO"].includes(item.variable) && vCompra && vVenta) {
-                return `
+                return compacta ? `
+                  <div class="mt-1.5 grid grid-cols-2 gap-1 pt-1 border-t border-slate-800/60">
+                    <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-1.5 py-1 flex flex-col">
+                      <span class="text-[8px] font-bold uppercase text-slate-400">Compra</span>
+                      <span class="text-xs font-bold text-slate-200 font-mono truncate ${animFlash}">${fmtP(vCompra)}</span>
+                    </div>
+                    <div class="bg-cyan-950/30 border border-cyan-500/40 rounded-lg px-1.5 py-1 flex flex-col">
+                      <span class="text-[8px] font-bold uppercase text-cyan-400">Venta</span>
+                      <span class="text-xs font-extrabold text-white font-mono truncate ${animFlash}">${fmtP(vVenta)}</span>
+                    </div>
+                  </div>` : `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
                     <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
                       <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Compra</span>
@@ -1757,7 +1772,17 @@
                   </div>`;
               }
               if (item.precio_ars && item.precio_usd) {
-                return `
+                return compacta ? `
+                  <div class="mt-1.5 grid grid-cols-2 gap-1 pt-1 border-t border-slate-800/60">
+                    <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-1.5 py-1 flex flex-col">
+                      <span class="text-[8px] font-bold uppercase text-amber-400">ARS/tn</span>
+                      <span class="text-[11px] font-bold text-slate-100 font-mono truncate ${animFlash}">${item.precio_ars}</span>
+                    </div>
+                    <div class="bg-emerald-950/30 border border-emerald-500/40 rounded-lg px-1.5 py-1 flex flex-col">
+                      <span class="text-[8px] font-bold uppercase text-emerald-400">USD/tn</span>
+                      <span class="text-[11px] font-extrabold text-white font-mono truncate ${animFlash}">${item.precio_usd}</span>
+                    </div>
+                  </div>` : `
                   <div class="mt-2.5 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-800/60">
                     <div class="bg-slate-900/70 border border-slate-800 rounded-xl px-2.5 py-1.5 flex flex-col">
                       <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400">Pesos (ARS/tn)</span>
@@ -1770,17 +1795,17 @@
                   </div>`;
               }
               const valMostrar = (item.variable === "DOLAR_NETFLIX" || item.variable === "DOLAR_TARJETA") && vVenta ? fmtP(vVenta) : valFmt;
-              return `<div class="mt-2"><span class="text-2xl font-bold tracking-tight text-white font-mono truncate ${animFlash}">${valMostrar}</span></div>`;
+              return `<div class="${compacta ? 'mt-1.5' : 'mt-2'}"><span class="${clsValor} font-bold tracking-tight text-white font-mono block truncate ${animFlash}">${valMostrar}</span></div>`;
             })()}
           </div>
-          <div class="mt-4 pt-2 border-t border-slate-800/60 flex items-center justify-between gap-1.5 text-[11px]">
+          <div class="${clsFooter} border-t border-slate-800/60 flex items-center justify-between gap-1">
             ${varBadge}
-            ${item.var_mes && item.var_anio ? `
+            ${!compacta && item.var_mes && item.var_anio ? `
               <div class="flex items-center gap-1.5 font-mono text-[10px]">
                 <span class="px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-300">Mes: <strong class="${String(item.var_mes).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${item.var_mes}</strong></span>
                 <span class="px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-300">Año: <strong class="${String(item.var_anio).includes('-') ? 'text-rose-400' : 'text-emerald-400'}">${item.var_anio}</strong></span>
               </div>
-            ` : `<span class="text-slate-400 text-[10px] font-mono">${fecha}</span>`}
+            ` : `<span class="text-slate-400 text-[9px] font-mono truncate">${compacta && item.var_mes ? 'M: ' + item.var_mes : fecha}</span>`}
           </div>
         </div>`;
     }
@@ -2651,27 +2676,42 @@
 
       if (categoriaActiva === "home") {
         const todos = Object.values(datosGlobales).flat();
-        contenedor.innerHTML = window.BLOQUES_HOME.map(bloque => {
+        const renderBloqueCompacto = (bloque, colsGrid) => {
           const itemsBloque = [];
           bloque.variables.forEach(cod => {
             const it = todos.find(x => x && x.variable === cod);
             if (it && !itemsBloque.some(y => y.variable === it.variable)) itemsBloque.push(it);
           });
           return `
-            <section class="space-y-3">
-              <div class="rounded-xl px-4 py-2.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
-                <div class="flex items-center gap-3 z-10">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center border text-xs shadow-sm ${bloque.badgeBg}"><i class="${bloque.iconoIzq}"></i></div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">${bloque.titulo}</h2>
+            <section class="space-y-1.5">
+              <div class="rounded-lg px-3 py-1.5 flex items-center justify-between overflow-hidden relative ${bloque.estiloBarra}">
+                <div class="flex items-center gap-2 z-10">
+                  <div class="w-5 h-5 rounded-md flex items-center justify-center border text-[10px] shadow-sm ${bloque.badgeBg}"><i class="${bloque.iconoIzq}"></i></div>
+                  <h2 class="text-xs font-extrabold tracking-wider text-white uppercase">${bloque.titulo}</h2>
                 </div>
-                <div class="z-10 flex items-center gap-2"><i class="${bloque.iconoDer} text-sm"></i></div>
-                <div class="absolute right-12 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
+                <div class="z-10 flex items-center gap-1.5"><i class="${bloque.iconoDer} text-xs"></i></div>
+                <div class="absolute right-10 top-1/2 -translate-y-1/2 h-[2px] w-1/3 opacity-80 ${bloque.estiloFlare}"></div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial)).join("")}
+              <div class="grid ${colsGrid} gap-2">
+                ${itemsBloque.map(item => crearTarjeta(item, item.categoria, valorOficial, true)).join("")}
               </div>
             </section>`;
-        }).join("");
+        };
+
+        const b0 = window.BLOQUES_HOME[0];
+        const b1 = window.BLOQUES_HOME[1];
+        const b2 = window.BLOQUES_HOME[2];
+        const b3 = window.BLOQUES_HOME[3];
+
+        contenedor.innerHTML = `
+          <div class="space-y-2.5">
+            ${b0 ? renderBloqueCompacto(b0, "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6") : ""}
+            ${b1 ? renderBloqueCompacto(b1, "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6") : ""}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+              ${b2 ? renderBloqueCompacto(b2, "grid-cols-2 sm:grid-cols-3") : ""}
+              ${b3 ? renderBloqueCompacto(b3, "grid-cols-2 sm:grid-cols-3") : ""}
+            </div>
+          </div>`;
         return;
       }
 
