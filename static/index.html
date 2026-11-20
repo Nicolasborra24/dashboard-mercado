@@ -3307,8 +3307,10 @@
     window.sincronizarRiesgoPaisRava = async function() {
       const ts = Date.now();
       let rpUlt = NaN, rpDia = NaN, rpMes = NaN, rpAnio = NaN;
+      let mArsUlt = NaN, mArsDia = NaN, mArsMes = NaN, mArsAnio = NaN;
+      let mUsdUlt = NaN, mUsdDia = NaN, mUsdMes = NaN, mUsdAnio = NaN;
 
-      // 1. Consultar endpoint dedicado en vivo del backend (/api/riesgo-pais -> Rava + BondTerminal)
+      // 1. Consultar endpoint dedicado en vivo del backend
       const rpBack = await fetchJsonSeguro("/api/riesgo-pais?t=" + ts);
       if (rpBack && rpBack.valor && rpBack.valor >= 100 && rpBack.valor <= 5000) {
         rpUlt = parseFloat(rpBack.valor);
@@ -3317,14 +3319,14 @@
         rpAnio = parseNumSeguro(rpBack.var_anio);
       }
 
-      // 2. Contraste directo desde el navegador con BondTerminal y Rava
+      // 2. Contraste directo desde el navegador con Rava (Home + Índices) y BondTerminal
       const fuentesWeb = [
-        "https://bondterminal.com/?_t=" + ts,
-        "https://www.rava.com/perfil/RIESGO%20PAIS?_t=" + ts,
-        "https://www.rava.com/?_t=" + ts
+        "https://www.rava.com/?_t=" + ts,
+        "https://www.rava.com/cotizaciones/indices?_t=" + ts,
+        "https://bondterminal.com/?_t=" + ts
       ];
       for (const targetUrl of fuentesWeb) {
-        if (!isNaN(rpUlt) && rpBack && rpBack._live) break;
+        if (!isNaN(rpUlt) && !isNaN(mArsUlt) && !isNaN(mUsdUlt)) break;
         for (const pUrl of [
           "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
           "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl)
@@ -3335,56 +3337,134 @@
             const rawTxt = await r.text();
             const htmlU = rawTxt.replace(/&quot;/g, '"').replace(/&#34;/g, '"').replace(/\\\//g, '/');
 
-            const mJson = htmlU.match(/"(?:simbolo|especie|nombre|titulo|riesgo[_\s]?pais|embi)"\s*:\s*"?(?:RIESGO\s*PA[IÍ]S)?"?[^{}]{0,260}?"(?:ultimo|px_last|close|valor|value|last|puntos)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?/i);
-            if (mJson) {
-              const u = parseNumSeguro(mJson[1]);
-              if (!isNaN(u) && u >= 100 && u <= 5000) { rpUlt = u; break; }
+            const extraerVentana = (regexSim, minV, maxV) => {
+              let m;
+              while ((m = regexSim.exec(htmlU)) !== null) {
+                const vent = htmlU.slice(Math.max(0, m.index - 220), Math.min(htmlU.length, m.index + 520));
+                const mU = vent.match(/"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?/i);
+                if (mU) {
+                  const u = parseNumSeguro(mU[1]);
+                  if (!isNaN(u) && u >= minV && u <= maxV) {
+                    const mD = vent.match(/"(?:variacion|var_dia|dia|change|porc)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                    const mM = vent.match(/"(?:var_mes|mes|mensual|var_mtd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                    const mA = vent.match(/"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+)"?/i);
+                    return {
+                      u,
+                      d: mD ? parseNumSeguro(mD[1]) : NaN,
+                      m: mM ? parseNumSeguro(mM[1]) : NaN,
+                      a: mA ? parseNumSeguro(mA[1]) : NaN
+                    };
+                  }
+                }
+              }
+              return null;
+            };
+
+            if (isNaN(rpUlt)) {
+              const rRp = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"/ig, 100, 5000);
+              if (rRp) { rpUlt = rRp.u; rpDia = rRp.d; rpMes = rRp.m; rpAnio = rRp.a; }
+            }
+            if (isNaN(mArsUlt)) {
+              const rMa = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|S&P\s*MERVAL|IMV)"/ig, 100000, 20000000);
+              if (rMa) { mArsUlt = rMa.u; mArsDia = rMa.d; mArsMes = rMa.m; mArsAnio = rMa.a; }
+            }
+            if (isNaN(mUsdUlt)) {
+              const rMu = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"/ig, 100, 10000);
+              if (rMu) { mUsdUlt = rMu.u; mUsdDia = rMu.d; mUsdMes = rMu.m; mUsdAnio = rMu.a; }
             }
 
             const plano = htmlU.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-            const mTxt = plano.match(/(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)/i);
-            if (mTxt) {
-              const u = parseNumSeguro(mTxt[1]);
-              if (!isNaN(u) && u >= 100 && u <= 5000) { rpUlt = u; break; }
+            if (isNaN(rpUlt)) {
+              const mTxt = plano.match(/(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)/i);
+              if (mTxt) {
+                const u = parseNumSeguro(mTxt[1]);
+                if (!isNaN(u) && u >= 100 && u <= 5000) rpUlt = u;
+              }
             }
+            if (isNaN(mArsUlt)) {
+              const mTabA = plano.match(/(?:S&P\s+)?MERVAL(?!\s*(?:USD|CCL))\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?/i);
+              if (mTabA) {
+                const u = parseNumSeguro(mTabA[1]);
+                if (!isNaN(u) && u >= 100000) {
+                  mArsUlt = u;
+                  mArsDia = parseNumSeguro(mTabA[2]);
+                  if (mTabA[3]) mArsMes = parseNumSeguro(mTabA[3]);
+                  if (mTabA[4]) mArsAnio = parseNumSeguro(mTabA[4]);
+                }
+              }
+            }
+            if (isNaN(mUsdUlt)) {
+              const mTabU = plano.match(/MERVAL\s+(?:USD|CCL)\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?/i);
+              if (mTabU) {
+                const u = parseNumSeguro(mTabU[1]);
+                if (!isNaN(u) && u >= 100) {
+                  mUsdUlt = u;
+                  mUsdDia = parseNumSeguro(mTabU[2]);
+                  if (mTabU[3]) mUsdMes = parseNumSeguro(mTabU[3]);
+                  if (mTabU[4]) mUsdAnio = parseNumSeguro(mTabU[4]);
+                }
+              }
+            }
+            break;
           } catch (e) {}
         }
       }
 
-      if (!isNaN(rpUlt) && rpUlt >= 100 && rpUlt <= 5000) {
-        window._RP_RAVA_BROWSER_TS = Date.now();
-        const fmtPct = (v, defStr) => isNaN(v) ? defStr : (v > 0 ? "+" + v.toFixed(1).replace(".", ",") + "%" : v.toFixed(1).replace(".", ",") + "%");
-        if (!datosGlobales.indices) datosGlobales.indices = [...window.INDICES_ESTATICOS_BASE];
-        const idx = datosGlobales.indices.findIndex(x => x && x.variable === "RIESGO_PAIS");
-        const prevItem = idx >= 0 ? datosGlobales.indices[idx] : {};
-        const varD = fmtPct(rpDia, prevItem.variacion || "0,0%");
-        const varM = fmtPct(rpMes, prevItem.var_mes || "0,0%");
-        const varA = fmtPct(rpAnio, prevItem.var_anio || "0,0%");
+      if (!datosGlobales.indices) datosGlobales.indices = [...window.INDICES_ESTATICOS_BASE];
+      const fmtPct = (v, defStr) => isNaN(v) ? defStr : (v > 0 ? "+" + v.toFixed(1).replace(".", ",") + "%" : v.toFixed(1).replace(".", ",") + "%");
+      let huboCambios = false;
 
-        if (PRECIOS_ANTERIORES["RIESGO_PAIS"] !== undefined && Math.abs(rpUlt - PRECIOS_ANTERIORES["RIESGO_PAIS"]) >= 1) {
-          FLASH_REGISTRO["RIESGO_PAIS"] = rpUlt > PRECIOS_ANTERIORES["RIESGO_PAIS"] ? "flash-red" : "flash-green";
-          setTimeout(() => { FLASH_REGISTRO["RIESGO_PAIS"] = ""; }, 1400);
+      const aplicarIndice = (cod, desc, ultVal, dVal, mVal, aVal, fmtStr, invertirColor) => {
+        if (isNaN(ultVal)) return;
+        const idx = datosGlobales.indices.findIndex(x => x && x.variable === cod);
+        const prevItem = idx >= 0 ? datosGlobales.indices[idx] : {};
+        const varD = fmtPct(dVal, prevItem.variacion || "0,0%");
+        const varM = fmtPct(mVal, prevItem.var_mes || "0,0%");
+        const varA = fmtPct(aVal, prevItem.var_anio || "0,0%");
+
+        if (PRECIOS_ANTERIORES[cod] !== undefined && Math.abs(ultVal - PRECIOS_ANTERIORES[cod]) >= 0.5) {
+          const subio = ultVal > PRECIOS_ANTERIORES[cod];
+          FLASH_REGISTRO[cod] = invertirColor ? (subio ? "flash-red" : "flash-green") : (subio ? "flash-green" : "flash-red");
+          setTimeout(() => { FLASH_REGISTRO[cod] = ""; }, 1400);
         }
-        PRECIOS_ANTERIORES["RIESGO_PAIS"] = rpUlt;
+        PRECIOS_ANTERIORES[cod] = ultVal;
 
         const nuevoObj = {
-          variable: "RIESGO_PAIS",
-          descripcion: "Riesgo País EMBI+",
+          variable: cod,
+          descripcion: desc,
           categoria: "indices",
           subcategoria: "argentina",
-          valor_formateado: Math.round(rpUlt).toLocaleString("es-AR") + " pb",
+          valor_formateado: fmtStr,
           variacion: varD,
           var_mes: varM,
           var_anio: varA,
-          valor: rpUlt,
+          valor: ultVal,
           fecha: "Mes: " + varM + " | Año: " + varA
         };
         if (idx >= 0) datosGlobales.indices[idx] = nuevoObj;
         else datosGlobales.indices.push(nuevoObj);
+        huboCambios = true;
+      };
 
-        if (categoriaActiva === "home" || (categoriaActiva === "indices" && subIndiceActivo === "argentina")) {
-          renderizar(false);
+      if (!isNaN(rpUlt) && rpUlt >= 100 && rpUlt <= 5000) {
+        window._RP_RAVA_BROWSER_TS = Date.now();
+        aplicarIndice("RIESGO_PAIS", "Riesgo País EMBI+", rpUlt, rpDia, rpMes, rpAnio, Math.round(rpUlt).toLocaleString("es-AR") + " pb", true);
+      }
+
+      if (!isNaN(mArsUlt) && mArsUlt >= 100000) {
+        aplicarIndice("MERVAL_ARS", "Merval", mArsUlt, mArsDia, mArsMes, mArsAnio, Math.round(mArsUlt).toLocaleString("es-AR") + " pts", false);
+        if (isNaN(mUsdUlt)) {
+          const cclPx = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO.DOLAR_CCL && window.PUNTAS_DOLAR_VIVO.DOLAR_CCL.venta) || 1749.47;
+          if (cclPx > 800) mUsdUlt = Math.round(mArsUlt / cclPx);
         }
+      }
+
+      if (!isNaN(mUsdUlt) && mUsdUlt >= 100) {
+        aplicarIndice("MERVAL_USD", "Merval USD", mUsdUlt, mUsdDia, mUsdMes, mUsdAnio, "US$ " + Math.round(mUsdUlt).toLocaleString("es-AR"), false);
+      }
+
+      if (huboCambios && (categoriaActiva === "home" || (categoriaActiva === "indices" && subIndiceActivo === "argentina"))) {
+        renderizar(false);
       }
     };
 
