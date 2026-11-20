@@ -380,6 +380,9 @@ CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 703.82, "banda_supe
 CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
+    "TASA_TAMAR": {"variable": "TASA_TAMAR", "descripcion": "Tasa Referencia TAMAR", "categoria": "tasas_y_monetario", "valor_formateado": "34,25% TNA", "variacion": "0,0%", "valor": 34.25, "fecha": "Mercado"},
+    "TASA_BADLAR": {"variable": "TASA_BADLAR", "descripcion": "Tasa BADLAR", "categoria": "tasas_y_monetario", "valor_formateado": "32,50% TNA", "variacion": "0,0%", "valor": 32.50, "fecha": "Mercado"},
+    "TASA_PLAZO_FIJO": {"variable": "TASA_PLAZO_FIJO", "descripcion": "Tasa Plazo Fijo", "categoria": "tasas_y_monetario", "valor_formateado": "30,00% TNA", "variacion": "0,0%", "valor": 30.00, "fecha": "Mercado"},
     "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
     "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
     "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"},
@@ -936,8 +939,12 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                     nom = c[0].get_text(strip=True).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
                     for k_map, v_map in MAPEO.items():
                         k_clean = k_map.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
-                        if k_clean == nom and v_map[0] not in cargadas:
-                            cod, desc, cat = v_map
+                        cod, desc, cat = v_map
+                        coincide = (k_clean == nom) or (
+                            cod in ("TASA_BADLAR", "TASA_TAMAR", "TASA_PLAZO_FIJO", "TASA_CALL")
+                            and k_clean.replace("tasa ", "").replace("referencia ", "").strip("()") in nom
+                        )
+                        if coincide and cod not in cargadas:
                             v_num = normalizar_valor(c[1].get_text(strip=True))
                             if v_num is not None:
                                 fecha_txt = c[3].get_text(strip=True)
@@ -948,11 +955,15 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                                 elif cod == "INFLACION_INTERANUAL" and mes_corte:
                                     desc_final = f"Inflación Interanual ({mes_corte})"
 
+                                val_fmt_raw = c[1].get_text(strip=True)
+                                if cod.startswith("TASA_") and "TNA" not in val_fmt_raw.upper():
+                                    val_fmt_raw = f"{val_fmt_raw} TNA"
+
                                 item_dict = {
                                     "variable": cod,
                                     "descripcion": desc_final,
                                     "categoria": cat,
-                                    "valor_formateado": c[1].get_text(strip=True),
+                                    "valor_formateado": val_fmt_raw,
                                     "variacion": c[2].get_text(strip=True),
                                     "valor": v_num,
                                     "fecha": f"Corte: {mes_corte}" if mes_corte and cod in ("INFLACION_MENSUAL", "INFLACION_INTERANUAL") else fecha_txt
@@ -960,7 +971,9 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                                 if cat == "indices":
                                     item_dict["subcategoria"] = "argentina"
                                 items.append(item_dict)
-                                cargadas.add(v_map[0])
+                                if cod in CACHE_TASAS_PERSISTENTE:
+                                    CACHE_TASAS_PERSISTENTE[cod] = dict(item_dict)
+                                cargadas.add(cod)
     except Exception:
         pass
     return items
@@ -1158,30 +1171,27 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
         r = requests.get("https://sjbdashboards.up.railway.app/api/tasas/tablas", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.5)
         if r.status_code == 200:
             d = r.json()
-            for row in d.get("principales", []):
-                if "TM20" in str(row.get("Tasa", "")).upper():
-                    tna_val = row.get("TNA", "")
-                    CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {
-                        "variable": "TASA_TM20", "descripcion": f"Tasa TM20 (TEA {row.get('TEA', '')})",
-                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%", "valor": normalizar_valor(tna_val) or 22.0, "fecha": fec_hoy
-                    }
-            for row in d.get("otras", []):
-                nom_t = str(row.get("Tasa", "")).lower()
-                tna_val = row.get("TNA", "")
+            for row in (d.get("principales") or []) + (d.get("otras") or []):
+                nom_t = str(row.get("Tasa") or row.get("tasa") or "").lower()
+                tna_val = str(row.get("TNA") or row.get("tna") or "").strip()
+                tea_val = str(row.get("TEA") or row.get("tea") or "").strip()
                 v_n = normalizar_valor(tna_val)
-                if "call" in nom_t and v_n is not None:
-                    CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {
-                        "variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos",
-                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy
-                    }
-                elif "pase" in nom_t and v_n is not None:
-                    CACHE_TASAS_PERSISTENTE["TASA_PASES"] = {
-                        "variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA",
-                        "categoria": "tasas_y_monetario", "valor_formateado": f"{tna_val} TNA" if "TNA" not in str(tna_val).upper() else str(tna_val),
-                        "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy
-                    }
+                if v_n is None:
+                    continue
+                fmt_tna = f"{tna_val} TNA" if "TNA" not in tna_val.upper() else tna_val
+                suf_tea = f" (TEA {tea_val})" if tea_val else ""
+                if "tamar" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_TAMAR"] = {"variable": "TASA_TAMAR", "descripcion": f"Tasa Referencia TAMAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
+                elif "badlar" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_BADLAR"] = {"variable": "TASA_BADLAR", "descripcion": f"Tasa BADLAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
+                elif "plazo fijo" in nom_t or "minorista" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"] = {"variable": "TASA_PLAZO_FIJO", "descripcion": f"Tasa Plazo Fijo{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
+                elif "tm20" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {"variable": "TASA_TM20", "descripcion": f"Tasa TM20{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
+                elif "call" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_CALL"] = {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
+                elif "pase" in nom_t:
+                    CACHE_TASAS_PERSISTENTE["TASA_PASES"] = {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
     except Exception:
         pass
     _actualizar_cauciones_en_vivo()
