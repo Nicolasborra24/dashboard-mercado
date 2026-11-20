@@ -676,7 +676,7 @@
     let datosGlobales = {};
     let datosCurvasSJB = {};
     let datosInflacionImplicitaSJB = null;
-    let datosBandasCambiarias = { banda_inferior: 703.82, banda_superior: 1974.20, dolar_mayorista: 1544.00 };
+    let datosBandasCambiarias = { banda_inferior: 702.92, banda_superior: 1976.68, dolar_mayorista: 1544.00, fecha_banda: "2026-11-20" };
     let datosFinvizSectores = null;
 
     let categoriaActiva = "home";
@@ -1717,7 +1717,7 @@
           <div>
             <div class="flex items-center justify-between gap-1">
               <span class="${clsTitulo} font-semibold text-slate-300 uppercase tracking-wider truncate" title="${desc}">${desc}</span>
-              ${compacta ? "" : badgeBrecha}
+              ${(compacta && categoria !== "dolar_y_cambiario") ? "" : badgeBrecha}
             </div>
             ${(() => {
               const pVivo = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO[item.variable]) || {};
@@ -2788,8 +2788,9 @@
         const items = [];
         orden9.forEach(cod => { const it = rawItems.find(x => x.variable === cod); if (it) items.push(it); });
 
-        const bInf = datosBandasCambiarias.banda_inferior || 703.82;
-        const bSup = datosBandasCambiarias.banda_superior || 1974.20;
+        const bInf = datosBandasCambiarias.banda_inferior || 702.92;
+        const bSup = datosBandasCambiarias.banda_superior || 1976.68;
+        const fBanda = datosBandasCambiarias.fecha_banda || "BCRA Diario";
         const dMay = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500 && window.PUNTAS_DOLAR_VIVO.DOLAR_A3500.venta) || datosBandasCambiarias.dolar_mayorista || 1544.00;
         const pMedio = (bInf + bSup) / 2;
         const ancho = bSup - bInf;
@@ -2800,23 +2801,23 @@
         const fmt$ = n => `$${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
         contenedor.innerHTML = `
-          <div class="space-y-6">
-            <section class="space-y-3">
+          <div class="space-y-4">
+            <section class="space-y-2.5">
               ${renderizarBarraSeccion(window.CONFIG_SECCIONES.dolar_y_cambiario)}
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">${items.map(item => crearTarjeta(item, "dolar_y_cambiario", valorOficial)).join("")}</div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">${items.map(item => crearTarjeta(item, "dolar_y_cambiario", valorOficial, true)).join("")}</div>
             </section>
-            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-6 shadow-2xl backdrop-blur-md space-y-6">
-              <div class="border-b border-slate-800/70 pb-3 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs"><i class="fa-solid fa-gauge-high"></i></div>
-                  <h2 class="text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo de Bandas Cambiarias</h2>
+            <section class="rounded-2xl border border-slate-800 bg-[#090e1e]/90 p-4 sm:p-5 shadow-2xl backdrop-blur-md space-y-4">
+              <div class="border-b border-slate-800/70 pb-2.5 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-xs"><i class="fa-solid fa-gauge-high"></i></div>
+                  <h2 class="text-xs sm:text-sm font-extrabold tracking-wider text-white uppercase">Monitoreo de Bandas Cambiarias (BCRA)</h2>
                 </div>
-                
+                <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">Vigencia BCRA: ${fBanda}</span>
               </div>
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                 <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-[#0e172e]/60 to-[#060a16]/90 border border-slate-800">
-                  <div class="mb-2"><span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-xs"><span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}</span></div>
-                  <div class="relative w-72 h-40 flex items-end justify-center">
+                  <div class="mb-1"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-sky-400/30 bg-sky-950/60 text-white font-mono font-bold text-[11px]"><span class="text-sky-400 text-[10px]">Punto Medio:</span> ${fmt$(pMedio)}</span></div>
+                  <div class="relative w-60 h-32 flex items-end justify-center">
                     <svg viewBox="0 0 200 115" class="w-full h-full overflow-visible">
                       <path d="M 22 100 A 78 78 0 0 1 36.90 54.16" fill="none" stroke="#22c55e" stroke-width="20" stroke-linecap="round" />
                       <path d="M 36.90 54.16 A 78 78 0 0 1 155.16 44.85" fill="none" stroke="#eab308" stroke-width="20" />
@@ -2829,29 +2830,29 @@
                       </g>
                     </svg>
                   </div>
-                  <div class="w-full flex items-center justify-between px-2 mt-1 font-mono">
-                    <div class="flex flex-col items-start bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-2.5 py-1"><span class="text-[9px] uppercase text-emerald-400 font-bold">Piso Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bInf)}</span></div>
-                    <div class="flex flex-col items-end bg-rose-950/40 border border-rose-500/40 rounded-lg px-2.5 py-1"><span class="text-[9px] uppercase text-rose-400 font-bold">Techo Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bSup)}</span></div>
+                  <div class="w-full flex items-center justify-between px-1 mt-1 font-mono gap-2">
+                    <div class="flex flex-col items-start bg-emerald-950/40 border border-emerald-500/40 rounded-lg px-2 py-1"><span class="text-[8px] uppercase text-emerald-400 font-bold">Piso Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bInf)}</span></div>
+                    <div class="flex flex-col items-end bg-rose-950/40 border border-rose-500/40 rounded-lg px-2 py-1"><span class="text-[8px] uppercase text-rose-400 font-bold">Techo Banda</span><span class="text-xs font-extrabold text-white">${fmt$(bSup)}</span></div>
                   </div>
-                  <div class="mt-4 flex flex-col items-center gap-2.5 text-center w-full">
-                    <div class="w-full py-2.5 px-4 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 text-amber-300 font-mono font-bold text-sm flex items-center justify-center gap-2"><span>Dólar Mayorista:</span><span class="text-white text-base font-extrabold">${fmt$(dMay)}</span></div>
-                    <div class="w-full py-2 px-3 rounded-xl border border-amber-500/40 bg-slate-950 text-slate-300 font-mono text-xs">El dólar está al <strong class="text-amber-300 font-bold text-sm">${pctClamped.toFixed(2)}%</strong> de la banda inferior</div>
+                  <div class="mt-2.5 flex flex-col items-center gap-1.5 text-center w-full">
+                    <div class="w-full py-1.5 px-3 rounded-xl border border-amber-400/80 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 text-amber-300 font-mono font-bold text-xs flex items-center justify-center gap-2"><span>Dólar Mayorista:</span><span class="text-white text-sm font-extrabold">${fmt$(dMay)}</span></div>
+                    <div class="w-full py-1.5 px-3 rounded-xl border border-amber-500/40 bg-slate-950 text-slate-300 font-mono text-[11px]">Posición en banda: <strong class="text-amber-300 font-bold">${pctClamped.toFixed(2)}%</strong> desde el piso</div>
                   </div>
                 </div>
-                <div class="lg:col-span-7 space-y-4">
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2.5 shadow-md">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-sliders text-cyan-400 text-[11px]"></i> Valores actuales de las bandas cambiarias</h3>
+                <div class="lg:col-span-7 space-y-3">
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-3.5 space-y-2 shadow-md">
+                    <h3 class="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-sliders text-cyan-400 text-[10px]"></i> Límites diarios oficiales de flotación</h3>
                     <table class="w-full text-xs font-mono">
                       <tbody class="divide-y divide-slate-800/60">
-                        <tr><td class="py-2 flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>USD banda inferior</td><td class="py-2 text-right font-extrabold text-emerald-400 text-sm">${fmt$(bInf)}</td></tr>
-                        <tr><td class="py-2 flex items-center gap-2 text-slate-200"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>USD banda superior</td><td class="py-2 text-right font-extrabold text-rose-400 text-sm">${fmt$(bSup)}</td></tr>
+                        <tr><td class="py-1.5 flex items-center gap-2 text-slate-200"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>USD banda inferior (Piso)</td><td class="py-1.5 text-right font-extrabold text-emerald-400 text-sm">${fmt$(bInf)}</td></tr>
+                        <tr><td class="py-1.5 flex items-center gap-2 text-slate-200"><span class="w-2 h-2 rounded-full bg-rose-500"></span>USD banda superior (Techo)</td><td class="py-1.5 text-right font-extrabold text-rose-400 text-sm">${fmt$(bSup)}</td></tr>
                       </tbody>
                     </table>
                   </div>
-                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-4 space-y-2 font-mono text-xs shadow-md">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 font-sans flex items-center gap-1.5"><i class="fa-solid fa-arrows-up-down text-purple-400 text-[11px]"></i> Diferencias con las bandas</h3>
-                    <div class="flex items-center gap-2.5 text-slate-200"><span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">▲</span><span>El dólar debería subir <strong class="text-emerald-400 font-extrabold text-sm">${fmt$(difSubir)} (${pctSubir.toFixed(2)}%)</strong> para llegar a la banda superior</span></div>
-                    <div class="flex items-center gap-2.5 text-slate-200"><span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">▼</span><span>El dólar debería bajar <strong class="text-amber-400 font-extrabold text-sm">${fmt$(difBajar)} (${pctBajar.toFixed(2)}%)</strong> para llegar a la banda inferior</span></div>
+                  <div class="rounded-xl border border-slate-800 bg-[#060a16] p-3.5 space-y-2 font-mono text-xs shadow-md">
+                    <h3 class="text-[11px] font-bold text-white uppercase tracking-wider mb-1 font-sans flex items-center gap-1.5"><i class="fa-solid fa-arrows-up-down text-purple-400 text-[10px]"></i> Margen respecto a los límites</h3>
+                    <div class="flex items-center gap-2 text-slate-200"><span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] shrink-0">▲</span><span>Distancia al techo: <strong class="text-emerald-400 font-extrabold">${fmt$(difSubir)} (+${pctSubir.toFixed(2)}%)</strong></span></div>
+                    <div class="flex items-center gap-2 text-slate-200"><span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[10px] shrink-0">▼</span><span>Colchón sobre el piso: <strong class="text-amber-400 font-extrabold">${fmt$(difBajar)} (-${pctBajar.toFixed(2)}%)</strong></span></div>
                   </div>
                 </div>
               </div>

@@ -376,7 +376,7 @@ SJB_CURVAS_URLS = {
 
 CACHE_CURVAS_SJB: Dict[str, Any] = {}
 CACHE_INFLACION_IMPLICITA: Any = None
-CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 703.82, "banda_superior": 1974.20, "dolar_mayorista": 1544.00}
+CACHE_BANDAS_CAMBIARIAS: Dict[str, Any] = {"banda_inferior": 702.92, "banda_superior": 1976.68, "dolar_mayorista": 1544.00, "fecha_banda": "2026-11-20"}
 CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
@@ -2173,22 +2173,96 @@ def fetch_inflacion_implicita_sjb():
             return {"series": serie}
     return None
 
-def fetch_bandas_dolarito() -> Dict[str, Any]:
-    b_inf, b_sup, d_may = 703.82, 1974.20, 1544.00
+BANDAS_BCRA_TABLA_BASE = {
+    "2026-11-16": (704.72, 1971.72), "2026-11-17": (704.27, 1972.96), "2026-11-18": (703.82, 1974.20),
+    "2026-11-19": (703.37, 1975.44), "2026-11-20": (702.92, 1976.68), "2026-11-24": (701.12, 1981.64),
+    "2026-11-25": (700.68, 1982.89), "2026-11-26": (700.23, 1984.13), "2026-11-27": (699.78, 1985.38),
+    "2026-11-30": (698.44, 1989.12), "2026-12-01": (697.94, 1990.51), "2026-12-02": (697.44, 1991.91),
+    "2026-12-03": (696.94, 1993.31), "2026-12-04": (696.44, 1994.71), "2026-12-09": (693.94, 2001.72),
+    "2026-12-10": (693.45, 2003.13), "2026-12-11": (692.95, 2004.54), "2026-12-14": (691.46, 2008.76),
+    "2026-12-15": (690.96, 2010.17), "2026-12-16": (690.47, 2011.58), "2026-12-17": (689.97, 2013.00),
+    "2026-12-18": (689.48, 2014.41), "2026-12-21": (687.99, 2018.66), "2026-12-22": (687.50, 2020.08),
+    "2026-12-23": (687.51, 2021.49), "2026-12-24": (687.52, 2022.91), "2026-12-28": (687.53, 2028.60),
+    "2026-12-29": (687.54, 2030.03), "2026-12-30": (687.55, 2031.45), "2026-12-31": (687.56, 2032.88),
+}
+
+_BCRA_BANDAS_CACHE = {"ts": 0.0, "tabla": dict(BANDAS_BCRA_TABLA_BASE)}
+_BCRA_BANDAS_LOCK = threading.Lock()
+
+def _actualizar_tabla_bandas_bcra() -> Dict[str, tuple]:
+    now = time.time()
+    # Refresca cada 3 horas para capturar tanto el cambio diario como las publicaciones mensuales del BCRA
+    if now - _BCRA_BANDAS_CACHE["ts"] < 10800.0 and _BCRA_BANDAS_CACHE["tabla"]:
+        return _BCRA_BANDAS_CACHE["tabla"]
+    if not _BCRA_BANDAS_LOCK.acquire(blocking=False):
+        return _BCRA_BANDAS_CACHE["tabla"]
     try:
-        h = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-        r1 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaInferior", headers=h, timeout=3.0)
-        if r1.status_code == 200:
-            b_inf = float(r1.json().get("value") or r1.json().get("valor") or b_inf)
-        r2 = requests.get("https://api.dolarito.ar/api/frontend/indices/bandaSuperior", headers=h, timeout=3.0)
-        if r2.status_code == 200:
-            b_sup = float(r2.json().get("value") or r2.json().get("valor") or b_sup)
+        r = GLOBAL_HTTP_SESSION.get(
+            f"https://www.bcra.gob.ar/regimen-de-bandas-cambiarias/?_t={int(now)}",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=4.5,
+            verify=False,
+        )
+        if r.status_code == 200 and r.text:
+            soup = BeautifulSoup(r.text, "html.parser")
+            nueva_tabla = dict(_BCRA_BANDAS_CACHE["tabla"])
+            for tr in soup.find_all("tr"):
+                celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+                if len(celdas) >= 3:
+                    m_fec = re.search(r"(\d{1,2})/(\d{1,2})/(20\d{2})", celdas[0])
+                    if m_fec:
+                        f_iso = f"{m_fec.group(3)}-{int(m_fec.group(2)):02d}-{int(m_fec.group(1)):02d}"
+                        b_inf = normalizar_valor(celdas[1])
+                        b_sup = normalizar_valor(celdas[2])
+                        if b_inf and b_sup and 400 <= b_inf <= 1500 and 1200 <= b_sup <= 5000:
+                            nueva_tabla[f_iso] = (round(b_inf, 2), round(b_sup, 2))
+            if len(nueva_tabla) > 0:
+                _BCRA_BANDAS_CACHE["tabla"] = nueva_tabla
+        _BCRA_BANDAS_CACHE["ts"] = time.time()
+    except Exception:
+        _BCRA_BANDAS_CACHE["ts"] = time.time() - 9900.0
+    finally:
+        _BCRA_BANDAS_LOCK.release()
+    return _BCRA_BANDAS_CACHE["tabla"]
+
+def fetch_bandas_dolarito() -> Dict[str, Any]:
+    from datetime import timezone, timedelta
+    tz_ar = timezone(timedelta(hours=-3))
+    ahora_ar = datetime.now(tz_ar)
+    hoy_iso = ahora_ar.strftime("%Y-%m-%d")
+
+    tabla = _actualizar_tabla_bandas_bcra()
+    fechas_ord = sorted(tabla.keys())
+    fecha_vigente = hoy_iso
+
+    if hoy_iso in tabla:
+        b_inf, b_sup = tabla[hoy_iso]
+    else:
+        # Si es fin de semana o feriado, tomar el último día hábil vigente anterior (o el más cercano)
+        anteriores = [f for f in fechas_ord if f <= hoy_iso]
+        if anteriores:
+            fecha_vigente = anteriores[-1]
+            b_inf, b_sup = tabla[fecha_vigente]
+        elif fechas_ord:
+            fecha_vigente = fechas_ord[0]
+            b_inf, b_sup = tabla[fecha_vigente]
+        else:
+            b_inf, b_sup = 702.92, 1976.68
+
+    d_may = 1544.00
+    try:
         puntas_dl = obtener_puntas_dolarito()
         if "DOLAR_A3500" in puntas_dl and puntas_dl["DOLAR_A3500"].get("venta"):
             d_may = float(puntas_dl["DOLAR_A3500"]["venta"])
     except Exception:
         pass
-    return {"banda_inferior": round(b_inf, 2), "banda_superior": round(b_sup, 2), "dolar_mayorista": round(d_may, 2)}
+
+    return {
+        "banda_inferior": round(b_inf, 2),
+        "banda_superior": round(b_sup, 2),
+        "dolar_mayorista": round(d_may, 2),
+        "fecha_banda": fecha_vigente
+    }
 
 def fetch_finviz_sectores(res_usa: Optional[List[Dict[str, Any]]] = None) -> Optional[Dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
