@@ -1589,6 +1589,10 @@
       renderizar(false);
       const reloj = document.getElementById("last-update");
       if (reloj) reloj.innerText = new Date().toLocaleTimeString();
+      const badgeSync = document.getElementById("sync-status");
+      if (badgeSync) {
+        badgeSync.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado';
+      }
     }
 
     function valorParaOrdenar(item, col) {

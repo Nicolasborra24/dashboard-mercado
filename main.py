@@ -680,14 +680,61 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
     datos = {
         "MERVAL_ARS": {"ult": 83482.0, "dia": -0.7, "mes": -9.3, "anio": -22.1},
         "MERVAL_USD": {"ult": 50.0, "dia": -1.3, "mes": -10.0, "anio": -28.7},
-        "RIESGO_PAIS": {"ult": 852.0, "dia": -0.1, "mes": 8.3, "anio": 49.2}
+        "RIESGO_PAIS": {"ult": 750.0, "dia": 0.0, "mes": 0.0, "anio": 0.0}
     }
+    rp_actualizado = False
 
+    # 1. Fuente JSON directa para Riesgo País (ArgentinaDatos: último + serie histórica para variaciones)
     try:
-        raw_rava_html = obtener_html_rava_compartido()
-        if raw_rava_html:
+        r_rp = GLOBAL_HTTP_SESSION.get(
+            "https://api.argentinadatos.com/v1/finanzas/indices/riesgo-pais",
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=3.8
+        )
+        if r_rp.status_code == 200:
+            serie_rp = r_rp.json()
+            if isinstance(serie_rp, list) and len(serie_rp) >= 2:
+                ult_item = serie_rp[-1]
+                prev_item = serie_rp[-2]
+                v_ult = float(ult_item.get("valor") or 0)
+                v_prev = float(prev_item.get("valor") or 0)
+                if 100 <= v_ult <= 5000:
+                    datos["RIESGO_PAIS"]["ult"] = v_ult
+                    rp_actualizado = True
+                    if v_prev > 0:
+                        datos["RIESGO_PAIS"]["dia"] = round(((v_ult - v_prev) / v_prev) * 100.0, 2)
+                    # Variación mensual (~22 ruedas) y anual (inicio de año)
+                    if len(serie_rp) >= 23:
+                        v_mes = float(serie_rp[-23].get("valor") or 0)
+                        if v_mes > 0:
+                            datos["RIESGO_PAIS"]["mes"] = round(((v_ult - v_mes) / v_mes) * 100.0, 2)
+                    anio_act = str(ult_item.get("fecha", ""))[:4]
+                    inicio_anio = next((x for x in serie_rp if str(x.get("fecha", "")).startswith(anio_act)), None)
+                    if inicio_anio and float(inicio_anio.get("valor") or 0) > 0:
+                        v_ini = float(inicio_anio["valor"])
+                        datos["RIESGO_PAIS"]["anio"] = round(((v_ult - v_ini) / v_ini) * 100.0, 2)
+    except Exception:
+        pass
+
+    # 2. Rava HTML compartido + perfil específico de Riesgo País
+    htmls_fuente = [obtener_html_rava_compartido()]
+    if not rp_actualizado:
+        try:
+            rr_rp = GLOBAL_HTTP_SESSION.get(
+                f"https://www.rava.com/perfil/riesgo%20pais?_t={int(time.time()*1000)}",
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                timeout=3.5
+            )
+            if rr_rp.status_code == 200 and len(rr_rp.text) > 400:
+                htmls_fuente.append(rr_rp.text)
+        except Exception:
+            pass
+
+    for raw_rava_html in htmls_fuente:
+        if not raw_rava_html:
+            continue
+        try:
             html_u = raw_rava_html.replace("&quot;", '"')
-            # A) Extraer desde el JSON embebido (trae ultimo, variacion diaria, var_mes / mes y var_anio / anio)
             for m_obj in re.finditer(r'\{[^{}]*"(?:simbolo|especie|nombre)"\s*:\s*"(MERVAL(?:\s*USD|\s*CCL)?|IMV|RIESGO\s*PA[IÍ]S)"[^{}]*\}', html_u, re.IGNORECASE):
                 b = m_obj.group(0)
                 sim = m_obj.group(1).upper().strip()
@@ -703,25 +750,25 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
                 vm = _parse_float_limpio(m_m.group(1)) if m_m else None
                 va = _parse_float_limpio(m_a.group(1)) if m_a else None
 
-                if k_target == "RIESGO_PAIS" and vu and 200 <= vu <= 5000:
+                if k_target == "RIESGO_PAIS" and vu and 100 <= vu <= 5000:
                     datos["RIESGO_PAIS"]["ult"] = vu
-                elif k_target == "MERVAL_USD" and vu and 20 <= vu <= 300:
+                    rp_actualizado = True
+                elif k_target == "MERVAL_USD" and vu and 20 <= vu <= 5000:
                     datos["MERVAL_USD"]["ult"] = vu
-                elif k_target == "MERVAL_ARS" and vu and 40000 <= vu <= 250000:
+                elif k_target == "MERVAL_ARS" and vu and 40000 <= vu <= 10000000:
                     datos["MERVAL_ARS"]["ult"] = vu
 
-                if vd is not None and -20.0 <= vd <= 20.0:
+                if vd is not None and -25.0 <= vd <= 25.0:
                     datos[k_target]["dia"] = vd
                 if vm is not None and -60.0 <= vm <= 150.0:
                     datos[k_target]["mes"] = vm
                 if va is not None and -80.0 <= va <= 300.0:
                     datos[k_target]["anio"] = va
 
-            # B) Extraer desde las tablas renderizadas (ESPECIE | ÚLTIMO | % DÍA | % MES | % AÑO)
             plano = BeautifulSoup(raw_rava_html, "html.parser").get_text(" ", strip=True)
             patrones_tabla = [
-                ("MERVAL_ARS", r'\bMERVAL\b(?!\s*USD)\s+([\d]{2,3}\.[\d]{3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
-                ("MERVAL_USD", r'\bMERVAL\s+USD\b\s+([\d]{2,3}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("MERVAL_ARS", r'\bMERVAL\b(?!\s*USD)\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
+                ("MERVAL_USD", r'\bMERVAL\s+USD\b\s+([\d]{2,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)'),
                 ("RIESGO_PAIS", r'\bRIESGO\s+PA[IÍ]S\b\s+([\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)\s+([+\-−]?[\d]+,[\d]+)')
             ]
             for k_t, pat in patrones_tabla:
@@ -731,12 +778,15 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
                     d_v = _parse_float_limpio(mt.group(2))
                     m_v = _parse_float_limpio(mt.group(3))
                     a_v = _parse_float_limpio(mt.group(4))
-                    if u_v: datos[k_t]["ult"] = u_v
+                    if u_v:
+                        datos[k_t]["ult"] = u_v
+                        if k_t == "RIESGO_PAIS":
+                            rp_actualizado = True
                     if d_v is not None: datos[k_t]["dia"] = d_v
                     if m_v is not None: datos[k_t]["mes"] = m_v
                     if a_v is not None: datos[k_t]["anio"] = a_v
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     res_out = {}
     config_items = [
@@ -759,7 +809,8 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1669.0) -> Dict[str, Dict[str, 
             "var_mes": var_mes,
             "var_anio": var_anio,
             "valor": round(float(d_info["ult"]), 2),
-            "fecha": f"Mes: {var_mes} | Año: {var_anio}"
+            "fecha": f"Mes: {var_mes} | Año: {var_anio}",
+            "_live": rp_actualizado if cod == "RIESGO_PAIS" else True
         }
     return res_out
 
@@ -2725,7 +2776,16 @@ def worker_refresco_continuo():
             msci_vivo = obtener_msci_merval_en_vivo(ccl_actual)
             indices_map["MERVAL_ARS"] = msci_vivo["MERVAL_ARS"]
             indices_map["MERVAL_USD"] = msci_vivo["MERVAL_USD"]
-            indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
+            if msci_vivo["RIESGO_PAIS"].get("_live"):
+                indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
+            else:
+                rp_ind = next((x for x in res_ind if x.get("variable") == "RIESGO_PAIS" and x.get("valor", 0) > 100), None)
+                if rp_ind:
+                    rp_ind["subcategoria"] = "argentina"
+                    rp_ind["valor_formateado"] = f"{int(round(float(rp_ind['valor']))):,} pb".replace(",", ".")
+                    indices_map["RIESGO_PAIS"] = rp_ind
+                else:
+                    indices_map["RIESGO_PAIS"] = msci_vivo["RIESGO_PAIS"]
 
             nuevo_agrupado = {
                 "tasas_y_monetario": [],
@@ -2850,6 +2910,26 @@ def inicio():
             headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
         )
     return {"mensaje": "Servidor activo", "ultima_actualizacion": ULTIMA_ACTUALIZACION}
+
+@app.get("/api/salud")
+def ver_salud_sincronizacion():
+    with CACHE_LOCK:
+        conteos = {k: len(v) for k, v in CACHE_VARIABLES.items()}
+        rp_obj = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), {})
+        mep_obj = next((x for x in CACHE_VARIABLES.get("dolar_y_cambiario", []) if x.get("variable") == "DOLAR_MEP"), {})
+        pf_obj = next((x for x in CACHE_VARIABLES.get("tasas_y_monetario", []) if x.get("variable") == "TASA_PLAZO_FIJO"), {})
+        soja_obj = next((x for x in CACHE_VARIABLES.get("commodities_agro_energia", []) if x.get("variable") == "AGRO_SOJA"), {})
+        return {
+            "ok": bool(ULTIMA_ACTUALIZACION),
+            "ultima_actualizacion": ULTIMA_ACTUALIZACION or "Iniciando...",
+            "conteos": conteos,
+            "muestras": {
+                "riesgo_pais": rp_obj.get("valor_formateado"),
+                "dolar_mep": mep_obj.get("valor_formateado"),
+                "plazo_fijo": pf_obj.get("valor_formateado"),
+                "soja_rosario": soja_obj.get("precio_ars")
+            }
+        }
 
 @app.get("/bcra/variables")
 def ver_bcra(formato: str = Query("agrupado")):
