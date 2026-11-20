@@ -340,8 +340,8 @@ US_TICKERS_DEF = [
 ]
 
 INDICES_BASE_MEMORIA = [
-    {"variable": "MERVAL_ARS", "descripcion": "Merval", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "83.482 pts", "variacion": "-0,7%", "var_mes": "-9,3%", "var_anio": "-22,1%", "valor": 83482.0, "fecha": "Mes: -9,3% | Año: -22,1%"},
-    {"variable": "MERVAL_USD", "descripcion": "Merval USD", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "50 pts", "variacion": "-1,3%", "var_mes": "-10,0%", "var_anio": "-28,7%", "valor": 50.0, "fecha": "Mes: -10,0% | Año: -28,7%"},
+    {"variable": "MERVAL_ARS", "descripcion": "Merval", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "81.255 pts", "variacion": "+0,1%", "var_mes": "-11,8%", "var_anio": "-24,1%", "valor": 81255.0, "fecha": "Mes: -11,8% | Año: -24,1%"},
+    {"variable": "MERVAL_USD", "descripcion": "Merval USD", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "46 pts", "variacion": "-1,2%", "var_mes": "-17,4%", "var_anio": "-34,6%", "valor": 46.0, "fecha": "Mes: -17,4% | Año: -34,6%"},
     {"variable": "RIESGO_PAIS", "descripcion": "Riesgo País EMBI+", "categoria": "indices", "subcategoria": "argentina", "valor_formateado": "1.038 pb", "variacion": "+11,5%", "var_mes": "+31,9%", "var_anio": "+81,8%", "valor": 1038.0, "fecha": "Mes: +31,9% | Año: +81,8%"},
     {"variable": "INDICE_SP500", "descripcion": "S&P 500 (SPX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "5.995,54 pts", "variacion": "+0,38%", "valor": 5995.54, "fecha": "Cierre"},
     {"variable": "INDICE_NASDAQ", "descripcion": "Nasdaq 100 (NDX)", "categoria": "indices", "subcategoria": "estados_unidos", "valor_formateado": "21.117,20 pts", "variacion": "+0,09%", "valor": 21117.20, "fecha": "Cierre"},
@@ -788,8 +788,8 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
     # 1) Buscar en objetos/props JSON embebidos en Rava
     patrones_busqueda = [
         ("RIESGO_PAIS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"', 100, 5000),
-        ("MERVAL_USD", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"', 100, 10000),
-        ("MERVAL_ARS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|S&P\s*MERVAL|IMV)"', 100000, 20000000),
+        ("MERVAL_USD", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"', 10, 5000),
+        ("MERVAL_ARS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|S&P\s*MERVAL|IMV)"', 20000, 10000000),
     ]
     for clave, pat_sim, min_v, max_v in patrones_busqueda:
         for m in re.finditer(pat_sim, html_u, re.IGNORECASE):
@@ -830,9 +830,9 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
         if re.fullmatch(r'RIESGO\s+PA[IÍ]S', esp):
             clave_tr, min_v, max_v = "RIESGO_PAIS", 100, 5000
         elif re.fullmatch(r'MERVAL\s*(?:USD|CCL)', esp):
-            clave_tr, min_v, max_v = "MERVAL_USD", 100, 10000
+            clave_tr, min_v, max_v = "MERVAL_USD", 10, 5000
         elif re.fullmatch(r'(?:S&P\s*)?MERVAL|IMV', esp):
-            clave_tr, min_v, max_v = "MERVAL_ARS", 100000, 20000000
+            clave_tr, min_v, max_v = "MERVAL_ARS", 20000, 10000000
 
         if clave_tr and clave_tr not in encontrados:
             u_v = _parse_float_limpio(celdas[1])
@@ -880,13 +880,13 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
     if prev_rp_val in (852.0, 1038.0):
         prev_rp_val = 1071.0
 
-    prev_mars_val = float(prev_m_ars.get("valor") or 2850000.0)
-    if prev_mars_val < 100000:
-        prev_mars_val = 2850000.0
+    prev_mars_val = float(prev_m_ars.get("valor") or 81255.0)
+    if prev_mars_val > 500000:
+        prev_mars_val = 81255.0
 
-    prev_musd_val = float(prev_m_usd.get("valor") or round(prev_mars_val / max(1000.0, ccl_ref), 0))
-    if prev_musd_val < 100:
-        prev_musd_val = round(prev_mars_val / max(1000.0, ccl_ref), 0)
+    prev_musd_val = float(prev_m_usd.get("valor") or 46.0)
+    if prev_musd_val > 500:
+        prev_musd_val = 46.0
 
     datos = {
         "MERVAL_ARS": {
@@ -966,7 +966,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
     res_out = {}
     config_items = [
         ("MERVAL_ARS", "Merval", f"{int(round(datos['MERVAL_ARS']['ult'])):,} pts".replace(",", ".")),
-        ("MERVAL_USD", "Merval USD", f"US$ {int(round(datos['MERVAL_USD']['ult'])):,}".replace(",", ".")),
+        ("MERVAL_USD", "Merval USD", f"{int(round(datos['MERVAL_USD']['ult'])):,} pts".replace(",", ".")),
         ("RIESGO_PAIS", "Riesgo País EMBI+", f"{int(round(datos['RIESGO_PAIS']['ult'])):,} pb".replace(",", "."))
     ]
     for cod, desc, fmt_val in config_items:

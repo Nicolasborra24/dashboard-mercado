@@ -334,8 +334,8 @@
       { variable: "AGRO_SOJA", descripcion: "SOJA (GRANOS)", categoria: "commodities_agro_energia", precio_ars: "$ 461.035", precio_usd: "US$ 298,50", valor_ars: 461035.0, valor_usd: 298.50, valor_formateado: "$ 461.035 / US$ 298,50", variacion: "+0,40%", valor: 298.50, fecha: "En vivo" },
       { variable: "METALES_XAU", descripcion: "ORO (XAU)", categoria: "metales", valor_formateado: "4.070,10 US$/ozt", variacion: "+0,45%", valor: 4070.10, fecha: "En vivo" },
       { variable: "PETROLEO_WTI", descripcion: "PETRÓLEO CRUDO WTI", categoria: "petroleo", valor_formateado: "71,24 USD/bbl", variacion: "+0,32%", valor: 71.24, fecha: "En vivo" },
-      { variable: "MERVAL_ARS", descripcion: "MERVAL", subcategoria: "argentina", valor_formateado: "83.482 pts", variacion: "-0,7%", var_mes: "-9,3%", var_anio: "-22,1%", valor: 83482.0, fecha: "Mes: -9,3% | Año: -22,1%" },
-      { variable: "MERVAL_USD", descripcion: "MERVAL USD", subcategoria: "argentina", valor_formateado: "50 pts", variacion: "-1,3%", var_mes: "-10,0%", var_anio: "-28,7%", valor: 50.0, fecha: "Mes: -10,0% | Año: -28,7%" },
+      { variable: "MERVAL_ARS", descripcion: "MERVAL", subcategoria: "argentina", valor_formateado: "81.255 pts", variacion: "+0,1%", var_mes: "-11,8%", var_anio: "-24,1%", valor: 81255.0, fecha: "Mes: -11,8% | Año: -24,1%" },
+      { variable: "MERVAL_USD", descripcion: "MERVAL USD", subcategoria: "argentina", valor_formateado: "46 pts", variacion: "-1,2%", var_mes: "-17,4%", var_anio: "-34,6%", valor: 46.0, fecha: "Mes: -17,4% | Año: -34,6%" },
       { variable: "RIESGO_PAIS", descripcion: "RIESGO PAÍS EMBI+", subcategoria: "argentina", valor_formateado: "1.038 pb", variacion: "+11,5%", var_mes: "+31,9%", var_anio: "+81,8%", valor: 1038.0, fecha: "Mes: +31,9% | Año: +81,8%" },
       { variable: "INDICE_SP500", descripcion: "S&P 500 (SPX)", subcategoria: "estados_unidos", valor_formateado: "7.376,86 pts", variacion: "+0.31%", valor: 7376.86, fecha: "08 Nov 2026" },
       { variable: "INDICE_NASDAQ", descripcion: "NASDAQ 100 (NDX)", subcategoria: "estados_unidos", valor_formateado: "26.989,99 pts", variacion: "+1.35%", valor: 26989.99, fecha: "08 Nov 2026" },
@@ -3365,11 +3365,11 @@
               if (rRp) { rpUlt = rRp.u; rpDia = rRp.d; rpMes = rRp.m; rpAnio = rRp.a; }
             }
             if (isNaN(mArsUlt)) {
-              const rMa = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|S&P\s*MERVAL|IMV)"/ig, 100000, 20000000);
+              const rMa = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"(?:MERVAL|S&P\s*MERVAL|IMV)"/ig, 20000, 10000000);
               if (rMa) { mArsUlt = rMa.u; mArsDia = rMa.d; mArsMes = rMa.m; mArsAnio = rMa.a; }
             }
             if (isNaN(mUsdUlt)) {
-              const rMu = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"/ig, 100, 10000);
+              const rMu = extraerVentana(/"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"/ig, 10, 5000);
               if (rMu) { mUsdUlt = rMu.u; mUsdDia = rMu.d; mUsdMes = rMu.m; mUsdAnio = rMu.a; }
             }
 
@@ -3385,7 +3385,7 @@
               const mTabA = plano.match(/(?:S&P\s+)?MERVAL(?!\s*(?:USD|CCL))\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?/i);
               if (mTabA) {
                 const u = parseNumSeguro(mTabA[1]);
-                if (!isNaN(u) && u >= 100000) {
+                if (!isNaN(u) && u >= 20000) {
                   mArsUlt = u;
                   mArsDia = parseNumSeguro(mTabA[2]);
                   if (mTabA[3]) mArsMes = parseNumSeguro(mTabA[3]);
@@ -3451,7 +3451,7 @@
         aplicarIndice("RIESGO_PAIS", "Riesgo País EMBI+", rpUlt, rpDia, rpMes, rpAnio, Math.round(rpUlt).toLocaleString("es-AR") + " pb", true);
       }
 
-      if (!isNaN(mArsUlt) && mArsUlt >= 100000) {
+      if (!isNaN(mArsUlt) && mArsUlt >= 20000) {
         aplicarIndice("MERVAL_ARS", "Merval", mArsUlt, mArsDia, mArsMes, mArsAnio, Math.round(mArsUlt).toLocaleString("es-AR") + " pts", false);
         if (isNaN(mUsdUlt)) {
           const cclPx = (window.PUNTAS_DOLAR_VIVO && window.PUNTAS_DOLAR_VIVO.DOLAR_CCL && window.PUNTAS_DOLAR_VIVO.DOLAR_CCL.venta) || 1749.47;
@@ -3459,8 +3459,8 @@
         }
       }
 
-      if (!isNaN(mUsdUlt) && mUsdUlt >= 100) {
-        aplicarIndice("MERVAL_USD", "Merval USD", mUsdUlt, mUsdDia, mUsdMes, mUsdAnio, "US$ " + Math.round(mUsdUlt).toLocaleString("es-AR"), false);
+      if (!isNaN(mUsdUlt) && mUsdUlt >= 10) {
+        aplicarIndice("MERVAL_USD", "Merval USD", mUsdUlt, mUsdDia, mUsdMes, mUsdAnio, Math.round(mUsdUlt).toLocaleString("es-AR") + " pts", false);
       }
 
       if (huboCambios && (categoriaActiva === "home" || (categoriaActiva === "indices" && subIndiceActivo === "argentina"))) {
