@@ -1596,6 +1596,11 @@
       for (const cat in data) {
         if (cat === "cripto" || !Array.isArray(data[cat]) || data[cat].length === 0) continue;
         data[cat].forEach(item => {
+          if (item && item.variable === "RIESGO_PAIS" && (Date.now() - (window._RP_RAVA_BROWSER_TS || 0) < 20000)) {
+            const curRp = (datosGlobales.indices || []).find(x => x && x.variable === "RIESGO_PAIS");
+            if (curRp) Object.assign(item, curRp);
+            return;
+          }
           if (item && item.variable && item.valor !== undefined) {
             const k = item.variable, v = parseFloat(item.valor);
             if (PRECIOS_ANTERIORES[k] !== undefined && !isNaN(v)) {
@@ -3298,11 +3303,114 @@
       try { await fn(); } catch (e) {} finally { _tareasEnCurso[clave] = false; }
     }
 
+    window._RP_RAVA_BROWSER_TS = 0;
+    window.sincronizarRiesgoPaisRava = async function() {
+      const ts = Date.now();
+      const urlsRava = [
+        "https://www.rava.com/?_t=" + ts,
+        "https://www.rava.com/perfil/riesgo%20pais?_t=" + ts
+      ];
+      let rpUlt = NaN, rpDia = NaN, rpMes = NaN, rpAnio = NaN;
+
+      const revisarObjetoRava = (o) => {
+        if (!o || typeof o !== "object") return;
+        const nom = String(o.simbolo || o.especie || o.nombre || o.titulo || "").toUpperCase().trim();
+        if (nom === "RIESGO PAIS" || nom === "RIESGO PAÍS") {
+          const u = parseNumSeguro(o.ultimo ?? o.px_last ?? o.close ?? o.valor ?? o.cierre);
+          if (!isNaN(u) && u >= 100 && u <= 5000) {
+            rpUlt = u;
+            const d = parseNumSeguro(o.variacion ?? o.var_dia ?? o.dia ?? o.change ?? o.porc);
+            const m = parseNumSeguro(o.var_mes ?? o.mes ?? o.mensual);
+            const a = parseNumSeguro(o.var_anio ?? o.anio ?? o.anual ?? o.ytd);
+            if (!isNaN(d)) rpDia = d;
+            if (!isNaN(m)) rpMes = m;
+            if (!isNaN(a)) rpAnio = a;
+          }
+        }
+        if (Array.isArray(o)) o.forEach(revisarObjetoRava);
+        else Object.keys(o).forEach(k => revisarObjetoRava(o[k]));
+      };
+
+      for (const targetUrl of urlsRava) {
+        if (!isNaN(rpUlt)) break;
+        for (const pUrl of [
+          "https://corsproxy.io/?" + encodeURIComponent(targetUrl),
+          "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl),
+          "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl)
+        ]) {
+          try {
+            const r = await fetch(pUrl, { cache: "no-store" });
+            if (!r.ok) continue;
+            const rawTxt = await r.text();
+            const htmlU = rawTxt.replace(/&quot;/g, '"').replace(/&#34;/g, '"').replace(/\\\//g, '/');
+
+            const mDp = htmlU.match(/data-page="(\{[\s\S]*?\})"/);
+            if (mDp) {
+              try { revisarObjetoRava(JSON.parse(mDp[1])); } catch (e) {}
+            }
+
+            if (isNaN(rpUlt)) {
+              const plano = htmlU.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+              const mTab = plano.match(/\bRIESGO\s+PA[IÍ]S\b\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?/i);
+              if (mTab) {
+                const u = parseNumSeguro(mTab[1]);
+                if (!isNaN(u) && u >= 100 && u <= 5000) {
+                  rpUlt = u;
+                  rpDia = parseNumSeguro(mTab[2]);
+                  rpMes = mTab[3] ? parseNumSeguro(mTab[3]) : NaN;
+                  rpAnio = mTab[4] ? parseNumSeguro(mTab[4]) : NaN;
+                }
+              }
+            }
+            if (!isNaN(rpUlt)) break;
+          } catch (e) {}
+        }
+      }
+
+      if (!isNaN(rpUlt) && rpUlt >= 100 && rpUlt <= 5000) {
+        window._RP_RAVA_BROWSER_TS = Date.now();
+        const fmtPct = (v, defStr) => isNaN(v) ? defStr : (v > 0 ? "+" + v.toFixed(1).replace(".", ",") + "%" : v.toFixed(1).replace(".", ",") + "%");
+        if (!datosGlobales.indices) datosGlobales.indices = [...window.INDICES_ESTATICOS_BASE];
+        const idx = datosGlobales.indices.findIndex(x => x && x.variable === "RIESGO_PAIS");
+        const prevItem = idx >= 0 ? datosGlobales.indices[idx] : {};
+        const varD = fmtPct(rpDia, prevItem.variacion || "0,0%");
+        const varM = fmtPct(rpMes, prevItem.var_mes || "0,0%");
+        const varA = fmtPct(rpAnio, prevItem.var_anio || "0,0%");
+
+        if (PRECIOS_ANTERIORES["RIESGO_PAIS"] !== undefined && Math.abs(rpUlt - PRECIOS_ANTERIORES["RIESGO_PAIS"]) >= 1) {
+          FLASH_REGISTRO["RIESGO_PAIS"] = rpUlt > PRECIOS_ANTERIORES["RIESGO_PAIS"] ? "flash-red" : "flash-green";
+          setTimeout(() => { FLASH_REGISTRO["RIESGO_PAIS"] = ""; }, 1400);
+        }
+        PRECIOS_ANTERIORES["RIESGO_PAIS"] = rpUlt;
+
+        const nuevoObj = {
+          variable: "RIESGO_PAIS",
+          descripcion: "Riesgo País EMBI+",
+          categoria: "indices",
+          subcategoria: "argentina",
+          valor_formateado: Math.round(rpUlt).toLocaleString("es-AR") + " pb",
+          variacion: varD,
+          var_mes: varM,
+          var_anio: varA,
+          valor: rpUlt,
+          fecha: "Mes: " + varM + " | Año: " + varA
+        };
+        if (idx >= 0) datosGlobales.indices[idx] = nuevoObj;
+        else datosGlobales.indices.push(nuevoObj);
+
+        if (categoriaActiva === "home" || (categoriaActiva === "indices" && subIndiceActivo === "argentina")) {
+          renderizar(false);
+        }
+      }
+    };
+
     function ejecutarCicloVivo() {
       if (document.hidden) return;
       ejecutarSinSolapar("core", cargarDatos);
       ejecutarSinSolapar("cripto", actualizarCriptosEnVivo);
       ejecutarSinSolapar("dolar", actualizarPuntasDolarEnVivo);
+    ejecutarSinSolapar("rp_rava", window.sincronizarRiesgoPaisRava);
+      ejecutarSinSolapar("rp_rava", window.sincronizarRiesgoPaisRava);
       if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) {
         ejecutarSinSolapar("sec", sincronizarEndpointsSecundarios);
       }
