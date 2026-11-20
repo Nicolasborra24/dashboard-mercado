@@ -382,7 +382,7 @@ CACHE_LICITACIONES_MAE: List[Dict[str, Any]] = []
 CACHE_TASAS_PERSISTENTE: Dict[str, Dict[str, Any]] = {
     "TASA_TAMAR": {"variable": "TASA_TAMAR", "descripcion": "Tasa Referencia TAMAR", "categoria": "tasas_y_monetario", "valor_formateado": "34,25% TNA", "variacion": "0,0%", "valor": 34.25, "fecha": "Mercado"},
     "TASA_BADLAR": {"variable": "TASA_BADLAR", "descripcion": "Tasa BADLAR", "categoria": "tasas_y_monetario", "valor_formateado": "32,50% TNA", "variacion": "0,0%", "valor": 32.50, "fecha": "Mercado"},
-    "TASA_PLAZO_FIJO": {"variable": "TASA_PLAZO_FIJO", "descripcion": "Tasa Plazo Fijo", "categoria": "tasas_y_monetario", "valor_formateado": "30,00% TNA", "variacion": "0,0%", "valor": 30.00, "fecha": "Mercado"},
+    "TASA_PLAZO_FIJO": {"variable": "TASA_PLAZO_FIJO", "descripcion": "Tasa Plazo Fijo 30d (Prom. BCRA)", "categoria": "tasas_y_monetario", "valor_formateado": "20,44% TNA", "variacion": "0,0%", "valor": 20.44, "fecha": "BCRA Oficial (29 bancos)"},
     "TASA_CALL": {"variable": "TASA_CALL", "descripcion": "Tasa Call Interbancaria en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "21,66% TNA", "variacion": "0,0%", "valor": 21.66, "fecha": "Mercado"},
     "TASA_TM20": {"variable": "TASA_TM20", "descripcion": "Tasa TM20 en Pesos", "categoria": "tasas_y_monetario", "valor_formateado": "22,00% TNA", "variacion": "0,0%", "valor": 22.0, "fecha": "Mercado"},
     "TASA_PASES": {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": "22,06% TNA", "variacion": "0,0%", "valor": 22.06, "fecha": "Mercado"},
@@ -1028,7 +1028,7 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                                 if cat == "indices":
                                     item_dict["subcategoria"] = "argentina"
                                 items.append(item_dict)
-                                if cod in CACHE_TASAS_PERSISTENTE:
+                                if cod in CACHE_TASAS_PERSISTENTE and cod != "TASA_PLAZO_FIJO":
                                     CACHE_TASAS_PERSISTENTE[cod] = dict(item_dict)
                                 cargadas.add(cod)
     except Exception:
@@ -1222,6 +1222,67 @@ def _actualizar_cauciones_en_vivo():
             "fecha": f"Mes: {var_m} | Año: {var_a}"
         }
 
+_BCRA_PF_CACHE = {"ts": 0.0, "data": None}
+_BCRA_PF_LOCK = threading.Lock()
+
+def obtener_promedio_plazo_fijo_bcra() -> Dict[str, Any]:
+    """Consulta 1 vez por día (TTL 24h) https://www.bcra.gob.ar/plazos-fijos-online/ y promedia la TNA a 30 días de todos los bancos."""
+    now = time.time()
+    if now - _BCRA_PF_CACHE["ts"] < 86400.0 and _BCRA_PF_CACHE["data"]:
+        return _BCRA_PF_CACHE["data"]
+
+    if not _BCRA_PF_LOCK.acquire(blocking=False):
+        return _BCRA_PF_CACHE["data"] or CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"]
+
+    try:
+        r = GLOBAL_HTTP_SESSION.get(
+            "https://www.bcra.gob.ar/plazos-fijos-online/",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=4.5,
+            verify=False,
+        )
+        if r.status_code == 200 and r.text:
+            soup = BeautifulSoup(r.text, "html.parser")
+            tasas_bancos = []
+            for tr in soup.find_all("tr"):
+                celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+                if len(celdas) < 2:
+                    continue
+                entidad = celdas[0].strip()
+                if not entidad or "entidad" in entidad.lower() or "diez bancos" in entidad.lower() or "otros bancos" in entidad.lower():
+                    continue
+                # Columna Clientes (índice 1) y No Clientes (índice 2)
+                t_cli = normalizar_valor(celdas[1]) if len(celdas) > 1 else None
+                t_nocli = normalizar_valor(celdas[2]) if len(celdas) > 2 else None
+                t_valida = t_cli if (t_cli is not None and 1.0 <= t_cli <= 200.0) else (
+                    t_nocli if (t_nocli is not None and 1.0 <= t_nocli <= 200.0) else None
+                )
+                if t_valida is not None:
+                    tasas_bancos.append(t_valida)
+
+            if len(tasas_bancos) >= 10:
+                prom = round(sum(tasas_bancos) / len(tasas_bancos), 2)
+                fec_str = datetime.utcnow().strftime("%d %b %Y")
+                obj_pf = {
+                    "variable": "TASA_PLAZO_FIJO",
+                    "descripcion": "Tasa Plazo Fijo 30d (Prom. BCRA)",
+                    "categoria": "tasas_y_monetario",
+                    "valor_formateado": f"{prom:.2f}% TNA".replace(".", ","),
+                    "variacion": "0,0%",
+                    "valor": prom,
+                    "fecha": f"BCRA {fec_str} ({len(tasas_bancos)} bancos)",
+                }
+                _BCRA_PF_CACHE["data"] = obj_pf
+                CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"] = obj_pf
+        _BCRA_PF_CACHE["ts"] = time.time()
+    except Exception:
+        # Si falla puntualmente, reintenta en 15 minutos sin bloquear
+        _BCRA_PF_CACHE["ts"] = time.time() - 85500.0
+    finally:
+        _BCRA_PF_LOCK.release()
+
+    return _BCRA_PF_CACHE["data"] or CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"]
+
 def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
     try:
@@ -1241,7 +1302,7 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                     CACHE_TASAS_PERSISTENTE["TASA_TAMAR"] = {"variable": "TASA_TAMAR", "descripcion": f"Tasa Referencia TAMAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
                 elif "badlar" in nom_t:
                     CACHE_TASAS_PERSISTENTE["TASA_BADLAR"] = {"variable": "TASA_BADLAR", "descripcion": f"Tasa BADLAR{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
-                elif "plazo fijo" in nom_t or "minorista" in nom_t:
+                elif False and ("plazo fijo" in nom_t or "minorista" in nom_t):
                     CACHE_TASAS_PERSISTENTE["TASA_PLAZO_FIJO"] = {"variable": "TASA_PLAZO_FIJO", "descripcion": f"Tasa Plazo Fijo{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
                 elif "tm20" in nom_t:
                     CACHE_TASAS_PERSISTENTE["TASA_TM20"] = {"variable": "TASA_TM20", "descripcion": f"Tasa TM20{suf_tea}", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
@@ -1251,6 +1312,7 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
                     CACHE_TASAS_PERSISTENTE["TASA_PASES"] = {"variable": "TASA_PASES", "descripcion": "Tasa de Pases Pasivos BCRA", "categoria": "tasas_y_monetario", "valor_formateado": fmt_tna, "variacion": "0,0%", "valor": v_n, "fecha": fec_hoy}
     except Exception:
         pass
+    obtener_promedio_plazo_fijo_bcra()
     _actualizar_cauciones_en_vivo()
     return list(CACHE_TASAS_PERSISTENTE.values())
 
