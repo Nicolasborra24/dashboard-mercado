@@ -474,8 +474,37 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
     ],
     "metales": [],
     "petroleo": [],
-    "macro_y_fiscal": [],
-    "micro_y_sectores": [],
+    "macro_y_fiscal": [
+        {"variable": "BALANZA_COMERCIAL", "descripcion": "Balanza Comercial", "categoria": "macro_y_fiscal", "valor_formateado": "US$ 1.120 M", "variacion": "+12,4%", "valor": 1120.0, "fecha": "INDEC ICA"},
+        {"variable": "EXPORTACIONES", "descripcion": "Exportaciones", "categoria": "macro_y_fiscal", "valor_formateado": "US$ 7.240 M", "variacion": "+8,1%", "valor": 7240.0, "fecha": "INDEC ICA"},
+        {"variable": "IMPORTACIONES", "descripcion": "Importaciones", "categoria": "macro_y_fiscal", "valor_formateado": "US$ 6.120 M", "variacion": "+6,5%", "valor": 6120.0, "fecha": "INDEC ICA"},
+        {"variable": "RESULTADO_FISCAL", "descripcion": "Resultado Fiscal Primario", "categoria": "macro_y_fiscal", "valor_formateado": "$ 980.500 M", "variacion": "Superávit", "valor": 980500.0, "fecha": "Min. Economía"},
+        {"variable": "RECAUDACION_TRIBUTARIA", "descripcion": "Recaudación Tributaria", "categoria": "macro_y_fiscal", "valor_formateado": "$ 14.850.000 M", "variacion": "+38,2% i.a.", "valor": 14850000.0, "fecha": "ARCA"},
+        {"variable": "EMAE_ACTIVIDAD", "descripcion": "EMAE Actividad Económica", "categoria": "macro_y_fiscal", "valor_formateado": "+4,2% i.a.", "variacion": "+0,4% m/m", "valor": 4.2, "fecha": "INDEC"},
+        {"variable": "PIB_ARG", "descripcion": "PIB Argentina (Var. i.a.)", "categoria": "macro_y_fiscal", "valor_formateado": "+3,8% i.a.", "variacion": "+3,8%", "valor": 3.8, "fecha": "INDEC"},
+        {"variable": "SALARIO_MINIMO", "descripcion": "Salario Mínimo Vital y Móvil", "categoria": "macro_y_fiscal", "valor_formateado": "$ 322.000", "variacion": "Vigente", "valor": 322000.0, "fecha": "Oficial"},
+        {"variable": "JUBILACION_MINIMA", "descripcion": "Jubilación Mínima (con bono)", "categoria": "macro_y_fiscal", "valor_formateado": "$ 385.000", "variacion": "+2,1%", "valor": 385000.0, "fecha": "ANSES"},
+        {"variable": "CANASTA_BASICA_TOTAL", "descripcion": "Canasta Básica Total (Hogar 4)", "categoria": "macro_y_fiscal", "valor_formateado": "$ 1.185.400", "variacion": "+2,0%", "valor": 1185400.0, "fecha": "INDEC"},
+        {"variable": "CANASTA_BASICA_ALIMENTARIA", "descripcion": "Canasta Básica Alimentaria", "categoria": "macro_y_fiscal", "valor_formateado": "$ 528.900", "variacion": "+1,9%", "valor": 528900.0, "fecha": "INDEC"},
+        {"variable": "POBREZA", "descripcion": "Tasa de Pobreza (EPH)", "categoria": "macro_y_fiscal", "valor_formateado": "38,1%", "variacion": "-14,8 pp", "valor": 38.1, "fecha": "INDEC EPH"},
+        {"variable": "INDIGENCIA", "descripcion": "Tasa de Indigencia (EPH)", "categoria": "macro_y_fiscal", "valor_formateado": "8,2%", "variacion": "-9,9 pp", "valor": 8.2, "fecha": "INDEC EPH"},
+        {"variable": "TRABAJADORES_REGISTRADOS", "descripcion": "Trabajadores Registrados", "categoria": "macro_y_fiscal", "valor_formateado": "10,18 M", "variacion": "+0,2%", "valor": 10.18, "fecha": "SIPA"}
+    ],
+    "micro_y_sectores": [
+        {"variable": "PRESTAMOS_PRIVADOS", "descripcion": "Préstamos al Sector Privado", "categoria": "micro_y_sectores", "valor_formateado": "$ 74.200 MM", "variacion": "+4,8% m/m", "valor": 74200.0, "fecha": "BCRA"},
+        {"variable": "CREDITOS_HIPOTECARIOS", "descripcion": "Créditos Hipotecarios (Stock)", "categoria": "micro_y_sectores", "valor_formateado": "$ 3.450 MM", "variacion": "+9,5% m/m", "valor": 3450.0, "fecha": "BCRA"},
+        {"variable": "PRODUCCION_INDUSTRIAL", "descripcion": "Producción Industrial (IPI)", "categoria": "micro_y_sectores", "valor_formateado": "+5,1% i.a.", "variacion": "+0,6% m/m", "valor": 5.1, "fecha": "INDEC"},
+        {"variable": "CAPACIDAD_INSTALADA", "descripcion": "Capacidad Instalada Industria", "categoria": "micro_y_sectores", "valor_formateado": "63,4%", "variacion": "+1,2 pp", "valor": 63.4, "fecha": "INDEC"},
+        {"variable": "ISAC_CONSTRUCCION", "descripcion": "ISAC Construcción", "categoria": "micro_y_sectores", "valor_formateado": "+6,8% i.a.", "variacion": "+1,1% m/m", "valor": 6.8, "fecha": "INDEC"},
+        {"variable": "DESPACHOS_CEMENTO", "descripcion": "Despachos de Cemento", "categoria": "micro_y_sectores", "valor_formateado": "945.200 tn", "variacion": "+7,4% i.a.", "valor": 945200.0, "fecha": "AFCP"},
+        {"variable": "PRODUCCION_AUTOMOTRIZ", "descripcion": "Producción Automotriz", "categoria": "micro_y_sectores", "valor_formateado": "48.350 unid.", "variacion": "+6,2% i.a.", "valor": 48350.0, "fecha": "ADEFA"},
+        {"variable": "ESCRITURAS_CABA", "descripcion": "Escrituras Inmobiliarias CABA", "categoria": "micro_y_sectores", "valor_formateado": "5.420 op.", "variacion": "+24,5% i.a.", "valor": 5420.0, "fecha": "Col. Escribanos"},
+        {"variable": "DEMANDA_ELECTRICA", "descripcion": "Demanda Eléctrica (CAMMESA)", "categoria": "micro_y_sectores", "valor_formateado": "11.840 GWh", "variacion": "+2,3% i.a.", "valor": 11840.0, "fecha": "CAMMESA"},
+        {"variable": "VENTAS_SUPERMERCADOS", "descripcion": "Ventas en Supermercados", "categoria": "micro_y_sectores", "valor_formateado": "+1,8% i.a.", "variacion": "+0,5% m/m", "valor": 1.8, "fecha": "INDEC"},
+        {"variable": "VENTAS_SHOPPINGS", "descripcion": "Ventas en Shoppings", "categoria": "micro_y_sectores", "valor_formateado": "+4,5% i.a.", "variacion": "+1,1% m/m", "valor": 4.5, "fecha": "INDEC"},
+        {"variable": "CONFIANZA_CONSUMIDOR", "descripcion": "Índice Confianza del Consumidor", "categoria": "micro_y_sectores", "valor_formateado": "46,2 pts", "variacion": "+2,4%", "valor": 46.2, "fecha": "UTDT"},
+        {"variable": "CONFIANZA_GOBIERNO", "descripcion": "Índice Confianza en el Gobierno", "categoria": "micro_y_sectores", "valor_formateado": "2,48 pts", "variacion": "+1,6%", "valor": 2.48, "fecha": "UTDT"}
+    ],
     "commodities_agro_energia": [
         {"variable": "AGRO_SOJA", "descripcion": "Soja (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 485.000", "precio_usd": "US$ 314,00", "valor_ars": 485000.0, "valor_usd": 314.0, "valor_formateado": "$ 485.000 / US$ 314,00", "variacion": "0,00%", "valor": 314.0, "fecha": "Pizarra Rosario"},
         {"variable": "AGRO_MAIZ", "descripcion": "Maíz (Pizarra Rosario)", "categoria": "commodities_agro_energia", "precio_ars": "$ 285.000", "precio_usd": "US$ 184,50", "valor_ars": 285000.0, "valor_usd": 184.5, "valor_formateado": "$ 285.000 / US$ 184,50", "variacion": "0,00%", "valor": 184.5, "fecha": "Pizarra Rosario"},
@@ -1048,7 +1077,10 @@ def obtener_datos_indicadores() -> List[Dict[str, Any]]:
                     for k_map, v_map in MAPEO.items():
                         k_clean = k_map.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
                         cod, desc, cat = v_map
+                        k_base = re.sub(r"\s*\([^)]*\)", "", k_clean).strip()
                         coincide = (k_clean == nom) or (
+                            cat in ("macro_y_fiscal", "micro_y_sectores") and len(k_base) >= 5 and k_base in nom
+                        ) or (
                             cod in ("TASA_BADLAR", "TASA_TAMAR", "TASA_PLAZO_FIJO", "TASA_CALL")
                             and k_clean.replace("tasa ", "").replace("referencia ", "").strip("()") in nom
                         )
