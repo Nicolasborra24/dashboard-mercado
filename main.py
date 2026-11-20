@@ -464,7 +464,13 @@ CACHE_VARIABLES: Dict[str, List[Dict[str, Any]]] = {
         {"variable": "DOLAR_A3500", "descripcion": "Dólar Mayorista", "categoria": "dolar_y_cambiario", "compra": 1535.0, "venta": 1544.0, "valor": 1544.0, "valor_formateado": "$1.544,00", "variacion": "-0,10%", "fecha": "En vivo"},
         {"variable": "DOLAR_FUTURO", "descripcion": "Dólar Futuro", "categoria": "dolar_y_cambiario", "compra": 1563.0, "venta": 1563.5, "valor": 1563.5, "valor_formateado": "$1.563,50", "variacion": "0,00%", "fecha": "En vivo"}
     ],
-    "monedas": [],
+    "monedas": [
+        {"variable": "MONEDA_USDARS", "descripcion": "Dólar vs Peso Argentino (USD/ARS)", "categoria": "monedas", "valor_formateado": "$1.544,00 ARS", "variacion": "0,00%", "valor": 1544.0, "fecha": "En vivo"},
+        {"variable": "MONEDA_USDBRL", "descripcion": "Dólar vs Real Brasileño (USD/BRL)", "categoria": "monedas", "valor_formateado": "R$ 5,7600", "variacion": "0,00%", "valor": 5.76, "fecha": "En vivo"},
+        {"variable": "MONEDA_EURUSD", "descripcion": "Euro vs Dólar (EUR/USD)", "categoria": "monedas", "valor_formateado": "1,0855 USD", "variacion": "0,00%", "valor": 1.0855, "fecha": "En vivo"},
+        {"variable": "MONEDA_EURARS", "descripcion": "Euro vs Peso Argentino (EUR/ARS)", "categoria": "monedas", "valor_formateado": "$1.676,01 ARS", "variacion": "0,00%", "valor": 1676.01, "fecha": "En vivo"},
+        {"variable": "MONEDA_USDCLP", "descripcion": "Dólar vs Peso Chileno (USD/CLP)", "categoria": "monedas", "valor_formateado": "CLP$ 958,40", "variacion": "0,00%", "valor": 958.4, "fecha": "En vivo"}
+    ],
     "cripto": [],
     "cotizacion_bonos": [],
     "indices": [dict(x) for x in INDICES_BASE_MEMORIA],
@@ -1889,8 +1895,10 @@ def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
 def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     items = []
     hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
-    puntas_init = obtener_puntas_dolarito()
-    info_may = puntas_init.get("DOLAR_A3500") or {}
+
+    # Leer el último A3500 sin bloquearse esperando el lock de Dolarito
+    puntas_cache = _DOLARITO_CICLO_CACHE.get("data") or BASE_DOLARITO_EXACTA
+    info_may = puntas_cache.get("DOLAR_A3500") or BASE_DOLARITO_EXACTA["DOLAR_A3500"]
     usd_oficial = float(info_may.get("venta") or 1544.00)
     var_may_str = info_may.get("variacion") or "0,00%"
     var_may_num = normalizar_valor(var_may_str) or 0.0
@@ -1908,17 +1916,28 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
     })
 
     # Consultar cotizaciones y variaciones diarias en vivo en paralelo desde Yahoo Finance / Stooq
-    pares_fx = [
-        ("BRL=X", "usdbrl"),
-        ("EURUSD=X", "eurusd"),
-        ("CLP=X", "usdclp")
-    ]
+    pares_fx = [("BRL=X", "usdbrl"), ("EURUSD=X", "eurusd"), ("CLP=X", "usdclp")]
     with ThreadPoolExecutor(max_workers=3) as ex_fx:
         res_fx = dict(zip([p[0] for p in pares_fx], ex_fx.map(lambda p: fetch_quote_externa(p[0], p[1]), pares_fx)))
 
     q_brl = res_fx.get("BRL=X") or {}
     q_eur = res_fx.get("EURUSD=X") or {}
     q_clp = res_fx.get("CLP=X") or {}
+
+    # Respaldo instantáneo JSON abierto si Yahoo/Stooq no devolvieron algún par
+    if not (q_brl.get("price") and q_eur.get("price") and q_clp.get("price")):
+        try:
+            r_er = GLOBAL_HTTP_SESSION.get("https://open.er-api.com/v6/latest/USD", timeout=3.0)
+            if r_er.status_code == 200:
+                rates = r_er.json().get("rates") or {}
+                if not q_brl.get("price") and rates.get("BRL"):
+                    q_brl = {"price": float(rates["BRL"]), "change_pct": 0.0}
+                if not q_eur.get("price") and rates.get("EUR") and float(rates["EUR"]) > 0:
+                    q_eur = {"price": 1.0 / float(rates["EUR"]), "change_pct": 0.0}
+                if not q_clp.get("price") and rates.get("CLP"):
+                    q_clp = {"price": float(rates["CLP"]), "change_pct": 0.0}
+        except Exception:
+            pass
 
     val_brl = round(float(q_brl.get("price") or 5.76), 4)
     chg_brl = float(q_brl.get("change_pct") or 0.0)
@@ -1949,8 +1968,8 @@ def obtener_datos_monedas_y_dolar() -> List[Dict[str, Any]]:
         items.append({"variable": cod, "descripcion": desc, "categoria": "monedas", "valor_formateado": fmt, "variacion": var_str, "valor": val_n, "fecha": hora_vivo})
 
     for cod_d, desc_d in [("DOLAR_OFICIAL", "Dólar Oficial Minorista"), ("DOLAR_BLUE", "Dólar Blue")]:
-        if cod_d in puntas_init:
-            p_info = puntas_init[cod_d]
+        if cod_d in puntas_cache:
+            p_info = puntas_cache[cod_d]
             c_val = p_info["compra"]
             v_val = p_info["venta"]
             fmt_v = f"${v_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -2831,7 +2850,7 @@ def _safe_res(fut, default):
     if fut is None:
         return default
     try:
-        return fut.result(timeout=10)
+        return fut.result(timeout=18)
     except Exception:
         return default
 
