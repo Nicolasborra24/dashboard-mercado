@@ -829,65 +829,68 @@ AGRO_GRANOS_BASE = [
 ]
 
 def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
+    global CACHE_AGRO_PIZARRA
+    ts_ms = int(time.time() * 1000)
+    hora_vivo = datetime.utcnow().strftime("%H:%M:%S UTC")
     tc = tc_mayorista if tc_mayorista and tc_mayorista > 800 else 1545.50
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+    }
 
-    pizarras_ars = {}
-    pizarras_var = {}
-    try:
-        r = requests.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            mapa_nom = {"soja": "AGRO_SOJA", "maiz": "AGRO_MAIZ", "trigo": "AGRO_TRIGO", "girasol": "AGRO_GIRASOL", "sorgo": "AGRO_SORGO"}
-            for tr in soup.find_all("tr"):
-                c = tr.find_all(["td", "th"])
-                if len(c) >= 4:
-                    nom = c[0].get_text(strip=True).lower().replace("í", "i")
-                    if nom in mapa_nom:
-                        cod_g = mapa_nom[nom]
-                        v_n = normalizar_valor(c[1].get_text(strip=True))
-                        if v_n and v_n > 100:
-                            pizarras_ars[cod_g] = v_n
-                            pizarras_var[cod_g] = c[2].get_text(strip=True)
-    except Exception:
-        pass
+    pizarras_live: Dict[str, Dict[str, Any]] = {}
+    u_cac = f"https://www.cac.bcr.com.ar/es/precios-de-pizarra?_t={ts_ms}"
+    u_bcr = f"https://www.bcr.com.ar/es/mercados/mercado-de-granos/cotizaciones/cotizaciones-locales-0?_t={ts_ms}"
+    urls_pizarra = [
+        u_cac,
+        f"https://api.allorigins.win/raw?url={quote(u_cac, safe='')}",
+        f"https://corsproxy.io/?{quote(u_cac, safe='')}",
+        u_bcr,
+        f"https://indicadores.ar/indicadores-economicos?_t={ts_ms}",
+    ]
+    for url_p in urls_pizarra:
+        if len(pizarras_live) >= 5:
+            break
+        try:
+            r = GLOBAL_HTTP_SESSION.get(url_p, headers=hdrs, timeout=4.2, verify=False)
+            if r.status_code == 200 and r.text:
+                ext = _extraer_pizarra_rosario_html(r.text)
+                for k_g, v_g in ext.items():
+                    if k_g not in pizarras_live:
+                        pizarras_live[k_g] = v_g
+        except Exception:
+            pass
 
-    def worker_grano(info):
-        cod, desc, sym_y, sym_s, factor_tn, ratio_local, def_usd = info
-        chg_pct = 0.0
-        usd_cbot = None
-        if sym_y:
-            q = fetch_quote_externa(sym_y, sym_s)
-            if q and q.get("price"):
-                p_raw = float(q["price"])
-                if p_raw > 150:
-                    usd_cbot = round((p_raw / 100.0) / factor_tn * ratio_local, 2)
-                chg_pct = float(q.get("change_pct", 0.0))
+    resultado: Dict[str, Dict[str, Any]] = {}
+    for cod, desc, def_ars, def_usd in AGRO_GRANOS_BASE:
+        dato_vivo = pizarras_live.get(cod)
+        prev_cache = CACHE_AGRO_PIZARRA.get(cod)
 
-        v_raw = pizarras_ars.get(cod)
-        if v_raw:
-            if v_raw > 50000:
-                precio_ars = round(v_raw, 2)
-                precio_usd = round(precio_ars / tc, 2)
-            else:
-                precio_usd = round(v_raw, 2)
-                precio_ars = round(precio_usd * tc, 2)
-        elif usd_cbot and usd_cbot > 100:
-            precio_usd = usd_cbot
-            precio_ars = round(precio_usd * tc, 2)
+        if dato_vivo and dato_vivo.get("precio_ars"):
+            precio_ars = round(float(dato_vivo["precio_ars"]), 2)
+            precio_usd = round(precio_ars / tc, 2)
+            var_str = dato_vivo.get("variacion")
+            if not var_str:
+                if prev_cache and prev_cache.get("valor_ars") and abs(precio_ars - prev_cache["valor_ars"]) >= 1:
+                    chg = ((precio_ars - prev_cache["valor_ars"]) / prev_cache["valor_ars"]) * 100.0
+                    var_str = f"+{chg:.2f}%".replace(".", ",") if chg > 0 else f"{chg:.2f}%".replace(".", ",")
+                else:
+                    var_str = prev_cache.get("variacion", "0,00%") if prev_cache else "0,00%"
+        elif prev_cache:
+            precio_ars = prev_cache["valor_ars"]
+            precio_usd = round(precio_ars / tc, 2)
+            var_str = prev_cache.get("variacion", "0,00%")
         else:
-            precio_usd = def_usd
-            precio_ars = round(precio_usd * tc, 2)
+            precio_ars = def_ars
+            precio_usd = round(precio_ars / tc, 2) if tc > 800 else def_usd
+            var_str = "0,00%"
 
         fmt_ars = f"$ {precio_ars:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
         fmt_usd = f"US$ {precio_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-        if chg_pct != 0.0:
-            var_str = f"+{chg_pct:.2f}%".replace(".", ",") if chg_pct > 0 else f"{chg_pct:.2f}%".replace(".", ",")
-        else:
-            var_str = pizarras_var.get(cod) or "0,00%"
-
-        return cod, {
+        item_agro = {
             "variable": cod,
             "descripcion": desc,
             "categoria": "commodities_agro_energia",
@@ -898,12 +901,12 @@ def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, A
             "valor_formateado": f"{fmt_ars} / {fmt_usd}",
             "variacion": var_str,
             "valor": precio_usd,
-            "fecha": f"{fec_hoy} • En vivo"
+            "fecha": f"Pizarra Rosario • {hora_vivo}"
         }
+        CACHE_AGRO_PIZARRA[cod] = item_agro
+        resultado[cod] = item_agro
 
-    with ThreadPoolExecutor(max_workers=5) as ex:
-         pares = list(ex.map(worker_grano, AGRO_GRANOS_BASE))
-    return {k: v for k, v in pares}
+    return resultado
 
 def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
@@ -2772,6 +2775,11 @@ def ver_inflacion_implicita():
 @app.get("/api/dolar/dolarito")
 def ver_puntas_dolarito():
     return obtener_puntas_dolarito()
+
+@app.get("/api/agro/pizarra")
+def ver_agro_pizarra():
+    tc = CACHE_BANDAS_CAMBIARIAS.get("dolar_mayorista", 1545.50)
+    return obtener_agro_en_vivo(tc)
 
 @app.get("/api/dolar/bandas")
 def ver_bandas():

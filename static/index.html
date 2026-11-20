@@ -3219,6 +3219,31 @@
     window.sincronizarCaucionesRava();
     setInterval(actualizarPuntasDolarEnVivo, 8000);
     setInterval(() => { if (window.sincronizarAccionesArgentinaRava) window.sincronizarAccionesArgentinaRava(); }, 10000);
+    window.sincronizarPizarraRosarioCliente = async function() {
+      const ts = Date.now();
+      const dAgro = await fetchJsonSeguro("/api/agro/pizarra?t=" + ts);
+      if (dAgro && typeof dAgro === "object") {
+        if (!datosGlobales.commodities_agro_energia) datosGlobales.commodities_agro_energia = [];
+        Object.keys(dAgro).forEach(cod => {
+          const it = dAgro[cod];
+          if (!it || !it.valor_ars) return;
+          const vNuevo = parseFloat(it.valor_ars);
+          if (PRECIOS_ANTERIORES[cod] !== undefined && Math.abs(vNuevo - PRECIOS_ANTERIORES[cod]) >= 1) {
+            FLASH_REGISTRO[cod] = vNuevo > PRECIOS_ANTERIORES[cod] ? "flash-green" : "flash-red";
+            setTimeout(() => { FLASH_REGISTRO[cod] = ""; }, 1400);
+          }
+          PRECIOS_ANTERIORES[cod] = vNuevo;
+          const idx = datosGlobales.commodities_agro_energia.findIndex(x => x && x.variable === cod);
+          if (idx >= 0) datosGlobales.commodities_agro_energia[idx] = it;
+          else datosGlobales.commodities_agro_energia.push(it);
+        });
+        if (categoriaActiva === "commodities_agro_energia" || categoriaActiva === "home") {
+          renderizar(false);
+        }
+      }
+    };
+    window.sincronizarPizarraRosarioCliente();
+    setInterval(window.sincronizarPizarraRosarioCliente, 15000);
     setInterval(sincronizarEndpointsSecundarios, 8000);
     setInterval(() => { if (window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico(); }, 15000);
   </script>
