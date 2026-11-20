@@ -844,89 +844,123 @@ PETROLEO_TICKERS_TOTAL = [
 ]
 
 AGRO_GRANOS_BASE = [
-    ("AGRO_SOJA", "Soja (Pizarra Rosario / Matba)", "ZS=F", "zs.f", 0.367437, 0.72, 298.50),
-    ("AGRO_MAIZ", "Maíz (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 1.08, 186.00),
-    ("AGRO_TRIGO", "Trigo (Pizarra Rosario / Matba)", "ZW=F", "zw.f", 0.367437, 0.96, 208.50),
-    ("AGRO_GIRASOL", "Girasol (Pizarra Rosario / Matba)", None, None, 1.0, 1.0, 365.00),
-    ("AGRO_SORGO", "Sorgo (Pizarra Rosario / Matba)", "ZC=F", "zc.f", 0.393680, 0.92, 162.00),
+    ("AGRO_SOJA", "Soja (Pizarra Rosario)", 550000.0, 354.72, False, "="),
+    ("AGRO_MAIZ", "Maíz (Pizarra Rosario)", 271000.0, 174.78, False, "+0,00%"),
+    ("AGRO_TRIGO", "Trigo (Pizarra Rosario)", 286850.0, 185.00, False, "+0,00%"),
+    ("AGRO_GIRASOL", "Girasol (Pizarra Rosario)", 744240.0, 480.00, True, "+0,00%"),
+    ("AGRO_SORGO", "Sorgo (Pizarra Rosario)", 279090.0, 180.00, True, "+0,00%"),
 ]
 
-def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, Any]]:
-    fec_hoy = datetime.utcnow().strftime("%d %b %Y")
-    tc = tc_mayorista if tc_mayorista and tc_mayorista > 800 else 1545.50
+_BCR_CACHE = {"ts": 0.0, "datos": {}}
+_BCR_LOCK = threading.Lock()
 
-    pizarras_ars = {}
-    pizarras_var = {}
+def _parsear_tarjetas_bcr(html_txt: str) -> Dict[str, Dict[str, Any]]:
+    res: Dict[str, Dict[str, Any]] = {}
+    if not html_txt or len(html_txt) < 300:
+        return res
+    soup = BeautifulSoup(html_txt, "html.parser")
+    plano = soup.get_text(" ", strip=True)
+    m_fecha = re.search(r"Precios\s+Pizarra\s+del\s+d[ií]a\s+(\d{2}/\d{2}/20\d{2})", plano, re.IGNORECASE)
+    fecha_piz = m_fecha.group(1) if m_fecha else ""
+
+    granos_def = [
+        ("AGRO_TRIGO", r"TRIGO"),
+        ("AGRO_MAIZ", r"MA[IÍ]Z"),
+        ("AGRO_GIRASOL", r"GIRASOL"),
+        ("AGRO_SOJA", r"SOJA"),
+        ("AGRO_SORGO", r"SORGO"),
+    ]
+    posiciones = []
+    for cod, pat in granos_def:
+        m = re.search(r"" + pat + r"", plano)
+        if m:
+            posiciones.append((m.start(), cod))
+    posiciones.sort(key=lambda x: x[0])
+
+    for i, (start_idx, cod) in enumerate(posiciones):
+        end_idx = posiciones[i + 1][0] if i + 1 < len(posiciones) else min(len(plano), start_idx + 220)
+        bloque = plano[start_idx:end_idx]
+
+        # Ignorar subproductos si aparecieran más abajo
+        if any(w in bloque.lower() for w in ["aceite", "harina", "pellet"]):
+            continue
+
+        es_estimativo = bool(re.search(r"S/C|\(E\)", bloque, re.IGNORECASE))
+        m_ars = re.search(r"\$\s*([1-9]\d{2}\.\d{3}(?:,\d{1,2})?)", bloque)
+        m_usd = re.search(r"US\$\s*(?:\(E\)\s*)?(\d{2,4}(?:,\d{1,2})?)", bloque, re.IGNORECASE)
+
+        if m_ars:
+            p_ars = normalizar_valor(m_ars.group(1))
+            p_usd = normalizar_valor(m_usd.group(1)) if m_usd else None
+            if p_ars and 80000 <= p_ars <= 2500000:
+                res[cod] = {
+                    "precio_ars": p_ars,
+                    "precio_usd": p_usd,
+                    "estimativo": es_estimativo,
+                    "fecha_pizarra": fecha_piz,
+                }
+    return res
+
+def _obtener_cache_bcr_no_bloqueante() -> Dict[str, Dict[str, Any]]:
+    now = time.time()
+    if now - _BCR_CACHE["ts"] < 60.0 and _BCR_CACHE["datos"]:
+        return _BCR_CACHE["datos"]
+    if not _BCR_LOCK.acquire(blocking=False):
+        return _BCR_CACHE["datos"]
     try:
-        r = GLOBAL_HTTP_SESSION.get("https://indicadores.ar/indicadores-economicos", headers={"User-Agent": "Mozilla/5.0"}, timeout=3.5)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            mapa_nom = {"soja": "AGRO_SOJA", "maiz": "AGRO_MAIZ", "trigo": "AGRO_TRIGO", "girasol": "AGRO_GIRASOL", "sorgo": "AGRO_SORGO"}
-            for tr in soup.find_all("tr"):
-                c = tr.find_all(["td", "th"])
-                if len(c) >= 4:
-                    nom = c[0].get_text(strip=True).lower().replace("í", "i")
-                    if nom in mapa_nom:
-                        cod_g = mapa_nom[nom]
-                        v_n = normalizar_valor(c[1].get_text(strip=True))
-                        if v_n and v_n > 100:
-                            pizarras_ars[cod_g] = v_n
-                            pizarras_var[cod_g] = c[2].get_text(strip=True)
+        r = GLOBAL_HTTP_SESSION.get(
+            f"https://www.cac.bcr.com.ar/es/precios-de-pizarra?_t={int(now)}",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=3.0,
+            verify=False,
+        )
+        if r.status_code == 200 and r.text:
+            parsed = _parsear_tarjetas_bcr(r.text)
+            if len(parsed) >= 3:
+                _BCR_CACHE["datos"] = parsed
+        _BCR_CACHE["ts"] = time.time()
     except Exception:
-        pass
+        _BCR_CACHE["ts"] = time.time()
+    finally:
+        _BCR_LOCK.release()
+    return _BCR_CACHE["datos"]
 
-    def worker_grano(info):
-        cod, desc, sym_y, sym_s, factor_tn, ratio_local, def_usd = info
-        chg_pct = 0.0
-        usd_cbot = None
-        if sym_y:
-            q = fetch_quote_externa(sym_y, sym_s)
-            if q and q.get("price"):
-                p_raw = float(q["price"])
-                if p_raw > 150:
-                    usd_cbot = round((p_raw / 100.0) / factor_tn * ratio_local, 2)
-                chg_pct = float(q.get("change_pct", 0.0))
+def obtener_agro_en_vivo(tc_mayorista: float = 1545.50) -> Dict[str, Dict[str, Any]]:
+    tc = tc_mayorista if tc_mayorista and tc_mayorista > 800 else 1550.0
+    bcr_live = _obtener_cache_bcr_no_bloqueante()
+    salida: Dict[str, Dict[str, Any]] = {}
 
-        v_raw = pizarras_ars.get(cod)
-        if v_raw:
-            if v_raw > 50000:
-                precio_ars = round(v_raw, 2)
-                precio_usd = round(precio_ars / tc, 2)
-            else:
-                precio_usd = round(v_raw, 2)
-                precio_ars = round(precio_usd * tc, 2)
-        elif usd_cbot and usd_cbot > 100:
-            precio_usd = usd_cbot
-            precio_ars = round(precio_usd * tc, 2)
+    for cod, desc, def_ars, def_usd, def_est, def_var in AGRO_GRANOS_BASE:
+        vivo = bcr_live.get(cod)
+        if vivo and vivo.get("precio_ars"):
+            p_ars = round(float(vivo["precio_ars"]), 2)
+            p_usd = round(float(vivo["precio_usd"]), 2) if vivo.get("precio_usd") else round(p_ars / tc, 2)
+            es_est = bool(vivo.get("estimativo"))
+            f_piz = vivo.get("fecha_pizarra") or "Pizarra Rosario"
         else:
-            precio_usd = def_usd
-            precio_ars = round(precio_usd * tc, 2)
+            p_ars = def_ars
+            p_usd = def_usd
+            es_est = def_est
+            f_piz = "Pizarra Rosario"
 
-        fmt_ars = f"$ {precio_ars:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        fmt_usd = f"US$ {precio_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        suf_est = " (E)" if es_est else ""
+        fmt_ars = f"$ {p_ars:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + suf_est
+        fmt_usd = f"US$ {p_usd:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + suf_est
 
-        if chg_pct != 0.0:
-            var_str = f"+{chg_pct:.2f}%".replace(".", ",") if chg_pct > 0 else f"{chg_pct:.2f}%".replace(".", ",")
-        else:
-            var_str = pizarras_var.get(cod) or "0,00%"
-
-        return cod, {
+        salida[cod] = {
             "variable": cod,
             "descripcion": desc,
             "categoria": "commodities_agro_energia",
             "precio_ars": fmt_ars,
             "precio_usd": fmt_usd,
-            "valor_ars": precio_ars,
-            "valor_usd": precio_usd,
+            "valor_ars": p_ars,
+            "valor_usd": p_usd,
             "valor_formateado": f"{fmt_ars} / {fmt_usd}",
-            "variacion": var_str,
-            "valor": precio_usd,
-            "fecha": f"{fec_hoy} • En vivo"
+            "variacion": def_var,
+            "valor": p_usd,
+            "fecha": f"BCR {f_piz}" if f_piz != "Pizarra Rosario" else "Pizarra Rosario",
         }
-
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        pares = list(ex.map(worker_grano, AGRO_GRANOS_BASE))
-    return {k: v for k, v in pares}
+    return salida
 
 def obtener_datos_petroleo_en_vivo() -> List[Dict[str, Any]]:
     fec_hoy = datetime.utcnow().strftime("%d %b %Y")
