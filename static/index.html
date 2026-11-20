@@ -1188,7 +1188,7 @@
     // ============================================================================
     window.PUNTAS_DOLAR_VIVO = {};
 
-    window.registrarCambioPrecioDolar = function(cod, nuevoCompra, nuevoVenta, varFmt, fecStr) {
+    window.registrarCambioPrecioDolar = function(cod, nuevoCompra, nuevoVenta, varFmt, fecStr, varAnio = null) {
       const prevObj = window.PUNTAS_DOLAR_VIVO[cod] || {};
       const prevVenta = PRECIOS_ANTERIORES[cod] !== undefined ? PRECIOS_ANTERIORES[cod] : prevObj.venta;
       const prevCompra = prevObj.compra;
@@ -1215,6 +1215,7 @@
         compra: nuevoCompra,
         venta: nuevoVenta,
         variacion: varFmt || prevObj.variacion || "0,00%",
+        var_anio: varAnio || prevObj.var_anio || null,
         fecha: fecStr || new Date().toLocaleTimeString()
       };
     };
@@ -1340,7 +1341,8 @@
               info.compra || null,
               parseFloat(info.venta),
               info.variacion,
-              fecLimpia
+              fecLimpia,
+              info.var_anio || null
             );
           }
         });
@@ -1690,6 +1692,7 @@
           venta: pv.venta,
           valor: pv.venta,
           variacion: pv.variacion || item.variacion,
+          var_anio: pv.var_anio || item.var_anio,
           valor_formateado: "$" + Number(pv.venta).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         };
       }
@@ -1795,7 +1798,9 @@
                 <span>Mes <strong class="${String(item.var_mes).includes('-') ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${item.var_mes}</strong></span>
                 <span>Año <strong class="${String(item.var_anio).includes('-') ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${item.var_anio}</strong></span>
               </div>
-            ` : `<span class="text-slate-500 text-[9px] truncate">${compacta && item.var_mes ? 'M: ' + item.var_mes : fecha}</span>`}
+            ` : (item.var_anio ? `
+              <span class="num-editorial text-[10px] text-slate-400 truncate">Año: <strong class="${String(item.var_anio).includes('-') ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${item.var_anio}</strong></span>
+            ` : `<span class="text-slate-500 text-[9px] truncate">${compacta && item.var_mes ? 'M: ' + item.var_mes : fecha}</span>`)}
           </div>
         </div>`;
     }

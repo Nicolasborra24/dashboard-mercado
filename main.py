@@ -1412,15 +1412,15 @@ def obtener_datos_tasas_sjb() -> List[Dict[str, Any]]:
     return list(CACHE_TASAS_PERSISTENTE.values())
 
 BASE_DOLARITO_EXACTA: Dict[str, Dict[str, Any]] = {
-    "DOLAR_OFICIAL": {"compra": 1540.00, "venta": 1590.00, "variacion": "+0,30%", "fecha": "En vivo"},
-    "DOLAR_BLUE": {"compra": 1555.00, "venta": 1575.00, "variacion": "0,00%", "fecha": "En vivo"},
-    "DOLAR_TARJETA": {"compra": None, "venta": 2067.00, "variacion": "+0,30%", "fecha": "En vivo"},
-    "DOLAR_NETFLIX": {"compra": None, "venta": 2400.90, "variacion": "+0,30%", "fecha": "En vivo"},
-    "DOLAR_MEP": {"compra": None, "venta": 1652.69, "variacion": "+0,50%", "fecha": "AL30 / AL30D"},
-    "DOLAR_CCL": {"compra": None, "venta": 1749.47, "variacion": "+0,30%", "fecha": "AL30 / AL30C"},
-    "DOLAR_CRIPTO": {"compra": 1775.00, "venta": 1779.98, "variacion": "+1,10%", "fecha": "En vivo"},
-    "DOLAR_A3500": {"compra": 1565.00, "venta": 1565.00, "variacion": "0,00%", "fecha": "En vivo"},
-    "DOLAR_FUTURO": {"compra": 1580.00, "venta": 1582.50, "variacion": "0,00%", "fecha": "En vivo"}
+    "DOLAR_OFICIAL": {"compra": 1540.00, "venta": 1590.00, "variacion": "+0,30%", "var_anio": "+7,4%", "fecha": "En vivo"},
+    "DOLAR_BLUE": {"compra": 1555.00, "venta": 1575.00, "variacion": "0,00%", "var_anio": "+6,8%", "fecha": "En vivo"},
+    "DOLAR_TARJETA": {"compra": None, "venta": 2067.00, "variacion": "+0,30%", "var_anio": "+7,4%", "fecha": "En vivo"},
+    "DOLAR_NETFLIX": {"compra": None, "venta": 2400.90, "variacion": "+0,30%", "var_anio": "+7,4%", "fecha": "En vivo"},
+    "DOLAR_MEP": {"compra": None, "venta": 1652.69, "variacion": "+0,50%", "var_anio": "+11,6%", "fecha": "AL30 / AL30D"},
+    "DOLAR_CCL": {"compra": None, "venta": 1749.47, "variacion": "+0,30%", "var_anio": "+14,7%", "fecha": "AL30 / AL30C"},
+    "DOLAR_CRIPTO": {"compra": 1775.00, "venta": 1779.98, "variacion": "+1,10%", "var_anio": "+15,4%", "fecha": "En vivo"},
+    "DOLAR_A3500": {"compra": 1565.00, "venta": 1565.00, "variacion": "0,00%", "var_anio": "+7,4%", "fecha": "En vivo"},
+    "DOLAR_FUTURO": {"compra": 1580.00, "venta": 1582.50, "variacion": "0,00%", "var_anio": "+8,2%", "fecha": "En vivo"}
 }
 
 def _fmt_var_dolar(val_raw: Any, default_str: str = "0,00%") -> str:
@@ -1499,15 +1499,19 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
             m_u = re.search(r'"(?:ultimo|venta|valor|close|cierre|px_last|last)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
             m_c = re.search(r'"(?:compra|buy|bid)"\s*:\s*"?([+\-]?[\d\.,]+)"?', b, re.IGNORECASE)
             m_d = re.search(r'"(?:variacion|var_dia|dia|change|porc|var)"\s*:\s*"?([+\-−]?[\d\.,]+|-)"?', b, re.IGNORECASE)
+            m_a = re.search(r'"(?:var_anio|anio|anual|var_ytd|ytd)"\s*:\s*"?([+\-−]?[\d\.,]+|-)"?', b, re.IGNORECASE)
             vu = normalizar_valor(m_u.group(1)) if m_u else None
             vc = normalizar_valor(m_c.group(1)) if m_c else None
             vd_raw = m_d.group(1).strip() if m_d else None
+            va_num = normalizar_valor(m_a.group(1)) if (m_a and m_a.group(1).strip() != "-") else None
             if vu and 900 <= vu <= 5000:
                 solo_v = cod_t in ("DOLAR_MEP", "DOLAR_CCL", "DOLAR_TARJETA")
+                prev_def_a = BASE_DOLARITO_EXACTA.get(cod_t, {}).get("var_anio", "0,0%")
                 rava_directo[cod_t] = {
                     "compra": None if solo_v else (round(vc, 2) if (vc and vc > 900) else round(vu, 2)),
                     "venta": round(vu, 2),
                     "variacion": "0,00%" if vd_raw == "-" else _fmt_var_dolar(vd_raw, "0,00%"),
+                    "var_anio": _fmt_pct_con_signo(va_num) if va_num is not None else prev_def_a,
                     "fecha": "AL30 / AL30D" if cod_t == "DOLAR_MEP" else ("AL30 / AL30C" if cod_t == "DOLAR_CCL" else "En vivo")
                 }
 
@@ -1520,24 +1524,27 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                 if cod_t:
                     vu = normalizar_valor(celdas[1])
                     vd_raw = celdas[2].strip() if len(celdas) > 2 else "0,00%"
+                    va_num = normalizar_valor(celdas[4]) if (len(celdas) > 4 and celdas[4].strip() != "-") else None
                     if vu and 900 <= vu <= 5000:
                         solo_v = cod_t in ("DOLAR_MEP", "DOLAR_CCL", "DOLAR_TARJETA")
+                        prev_def_a = rava_directo.get(cod_t, {}).get("var_anio") or BASE_DOLARITO_EXACTA.get(cod_t, {}).get("var_anio", "0,0%")
                         rava_directo[cod_t] = {
                             "compra": None if solo_v else round(vu, 2),
                             "venta": round(vu, 2),
                             "variacion": "0,00%" if vd_raw == "-" else _fmt_var_dolar(vd_raw, "0,00%"),
+                            "var_anio": _fmt_pct_con_signo(va_num) if va_num is not None else prev_def_a,
                             "fecha": "AL30 / AL30D" if cod_t == "DOLAR_MEP" else ("AL30 / AL30C" if cod_t == "DOLAR_CCL" else "En vivo")
                         }
 
-        # 3. Texto plano de respaldo
+        # 3. Texto plano de respaldo capturando % DÍA, % MES y % AÑO
         plano = soup.get_text(" ", strip=True)
         patrones_plano = [
-            ("DOLAR_A3500", r'\bMAYORISTA\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)'),
-            ("DOLAR_OFICIAL", r'\bOFICIAL\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)'),
-            ("DOLAR_TARJETA", r'\bTARJETA\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)'),
-            ("DOLAR_MEP", r'\bMEP\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)'),
-            ("DOLAR_CCL", r'\bCCL\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)'),
-            ("DOLAR_CRIPTO", r'\bCRIPTO\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)')
+            ("DOLAR_A3500", r'\bMAYORISTA\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)'),
+            ("DOLAR_OFICIAL", r'\bOFICIAL\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)'),
+            ("DOLAR_TARJETA", r'\bTARJETA\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)'),
+            ("DOLAR_MEP", r'\bMEP\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)'),
+            ("DOLAR_CCL", r'\bCCL\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)'),
+            ("DOLAR_CRIPTO", r'\bCRIPTO\b\s+([\d]{1,2}\.[\d]{3},[\d]{2})\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)\s+(-|[+\-−]?[\d]+,[\d]+)')
         ]
         for cod_k, pat in patrones_plano:
             if cod_k not in rava_directo:
@@ -1545,12 +1552,15 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
                 if mt:
                     uv = normalizar_valor(mt.group(1))
                     dv = mt.group(2).strip()
+                    av = normalizar_valor(mt.group(4)) if mt.group(4).strip() != "-" else None
                     if uv and 900 <= uv <= 5000:
                         solo_v = cod_k in ("DOLAR_MEP", "DOLAR_CCL", "DOLAR_TARJETA")
+                        prev_def_a = BASE_DOLARITO_EXACTA.get(cod_k, {}).get("var_anio", "0,0%")
                         rava_directo[cod_k] = {
                             "compra": None if solo_v else round(uv, 2),
                             "venta": round(uv, 2),
                             "variacion": "0,00%" if dv == "-" else _fmt_var_dolar(dv, "0,00%"),
+                            "var_anio": _fmt_pct_con_signo(av) if av is not None else prev_def_a,
                             "fecha": "AL30 / AL30D" if cod_k == "DOLAR_MEP" else ("AL30 / AL30C" if cod_k == "DOLAR_CCL" else "En vivo")
                         }
 
@@ -1621,8 +1631,10 @@ def _obtener_puntas_dolarito_interno() -> Dict[str, Dict[str, Any]]:
     if v_of and v_of > 1000:
         if "DOLAR_TARJETA" not in datos_rava:
             res["DOLAR_TARJETA"]["venta"] = round(v_of * 1.30, 2)
+            res["DOLAR_TARJETA"]["var_anio"] = res["DOLAR_OFICIAL"].get("var_anio", "+7,4%")
         res["DOLAR_NETFLIX"]["venta"] = round(v_of * 1.51, 2)
         res["DOLAR_NETFLIX"]["variacion"] = res["DOLAR_OFICIAL"]["variacion"]
+        res["DOLAR_NETFLIX"]["var_anio"] = res["DOLAR_OFICIAL"].get("var_anio", "+7,4%")
 
     _DOLARITO_CICLO_CACHE["data"] = {k: dict(v) for k, v in res.items()}
     _DOLARITO_CICLO_CACHE["ts"] = time.time()
@@ -2930,6 +2942,7 @@ def worker_refresco_continuo():
                     "valor": v_v,
                     "valor_formateado": fmt_v,
                     "variacion": var_v,
+                    "var_anio": info_p.get("var_anio"),
                     "fecha": info_p.get("fecha", "En vivo")
                 })
             nuevo_agrupado["dolar_y_cambiario"] = lista_dolar_limpia
