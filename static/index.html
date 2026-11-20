@@ -853,10 +853,12 @@
     // ============================================================================
     // 4. MÓDULO: GRÁFICOS CHART.JS (CURVAS DE RENTA FIJA E INFLACIÓN IMPLÍCITA)
     // ============================================================================
+    let _ultimoHashCurva = "";
+    let _ultimoHashInflacion = "";
+
     function dibujarGraficoCurva() {
       const canvas = document.getElementById("canvas-curva-bonos");
       if (!canvas) return;
-      if (chartCurvaInstance) { chartCurvaInstance.destroy(); chartCurvaInstance = null; }
 
       const filas = obtenerFilasCurva(curvaActiva);
       const puntos = [];
@@ -915,6 +917,21 @@
         }
       }
 
+      const hashActual = JSON.stringify({ c: curvaActiva, m: monedaBonosActiva, p: puntos });
+      const canvasSigueVivo = chartCurvaInstance && chartCurvaInstance.canvas === canvas && document.body.contains(canvas);
+
+      if (canvasSigueVivo) {
+        if (hashActual === _ultimoHashCurva) return;
+        _ultimoHashCurva = hashActual;
+        chartCurvaInstance.data.datasets[0].data = puntos;
+        chartCurvaInstance.data.datasets[1].data = lineaTendencia;
+        chartCurvaInstance.update("none");
+        return;
+      }
+
+      if (chartCurvaInstance) { chartCurvaInstance.destroy(); chartCurvaInstance = null; }
+      _ultimoHashCurva = hashActual;
+
       chartCurvaInstance = new Chart(canvas.getContext("2d"), {
         type: "scatter",
         data: {
@@ -925,6 +942,7 @@
         },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: { duration: 250 },
           layout: { padding: { top: 24, right: 16, left: 10, bottom: 8 } },
           plugins: {
             legend: { display: true, position: "right", align: "start", labels: { color: "#94a3b8", usePointStyle: true, boxWidth: 22, padding: 14, font: { family: "'Inter', sans-serif", size: 11 } } },
@@ -950,9 +968,26 @@
     function dibujarGraficoInflacionImplicita() {
       const canvas = document.getElementById("canvas-inflacion-implicita");
       if (!canvas) return;
-      if (chartInflacionInstance) { chartInflacionInstance.destroy(); chartInflacionInstance = null; }
 
       const serie = obtenerSerieInflacionImplicita();
+      const hashActual = JSON.stringify(serie);
+      const canvasSigueVivo = chartInflacionInstance && chartInflacionInstance.canvas === canvas && document.body.contains(canvas);
+
+      if (canvasSigueVivo) {
+        if (hashActual === _ultimoHashInflacion) return;
+        _ultimoHashInflacion = hashActual;
+        chartInflacionInstance.data.labels = serie.map(s => s.mes);
+        chartInflacionInstance.data.datasets[0].data = serie.map(s => s.ipc_real);
+        chartInflacionInstance.data.datasets[1].data = serie.map(s => s.inf_implicita);
+        chartInflacionInstance.data.datasets[2].data = serie.map(s => s.tem_nominal);
+        chartInflacionInstance.data.datasets[3].data = serie.map(s => s.tem_cer);
+        chartInflacionInstance.update("none");
+        return;
+      }
+
+      if (chartInflacionInstance) { chartInflacionInstance.destroy(); chartInflacionInstance = null; }
+      _ultimoHashInflacion = hashActual;
+
       chartInflacionInstance = new Chart(canvas.getContext("2d"), {
         type: "bar",
         data: {
@@ -966,6 +1001,7 @@
         },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: { duration: 250 },
           layout: { padding: { top: 20, right: 16, left: 8, bottom: 6 } },
           plugins: {
             legend: { display: true, position: "top", align: "start", labels: { color: "#cbd5e1", boxWidth: 14, padding: 18, font: { family: "'Inter', sans-serif", size: 11 } } },
@@ -1097,7 +1133,7 @@
       else if (infImp && Object.keys(infImp).length > 0) datosInflacionImplicitaSJB = infImp;
       if (bandas && bandas.banda_inferior) datosBandasCambiarias = bandas;
       if (finviz && (finviz["1D"] || finviz["1W"])) datosFinvizSectores = finviz;
-      if (["cotizacion_bonos", "inflacion_y_ajuste"].includes(categoriaActiva)) renderizar(true);
+      if (["cotizacion_bonos", "inflacion_y_ajuste"].includes(categoriaActiva)) renderizar(false);
       else if (["dolar_y_cambiario", "indices"].includes(categoriaActiva)) renderizar(false);
     }
 
@@ -2509,6 +2545,7 @@
         if (gridInf) {
           const itemsInf = (datosGlobales.inflacion_y_ajuste || []).filter(i => i && i.variable !== "BRECHA_CAMBIARIA");
           gridInf.innerHTML = itemsInf.map(item => crearTarjeta(item, "inflacion_y_ajuste", valorOficial)).join("");
+          dibujarGraficoInflacionImplicita();
           return;
         }
       }
