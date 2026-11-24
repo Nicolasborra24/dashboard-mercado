@@ -3363,31 +3363,32 @@ def ver_aceptacion_gobierno():
 
 
 
+
 CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
     "finanzas_argy": [
         {
-            "titulo": "Resumen de mercado: dinámica de reservas del BCRA, tasas en pesos y flujo hacia activos locales",
-            "url": "https://finanzasargy.com/",
-            "seccion": "Mercado Local",
-            "fecha": "Reciente"
+            "titulo": "Seguimiento intradiario de dólar MEP, CCL, Blue y brechas cambiarias frente al mayorista",
+            "url": "https://x.com/FinanzasArgy",
+            "seccion": "@FinanzasArgy • X",
+            "fecha": "En vivo"
         },
         {
-            "titulo": "Dólar MEP, CCL y Blue: análisis de cotizaciones en tiempo real y cobertura cambiaria",
-            "url": "https://finanzasargy.com/",
-            "seccion": "Divisas",
-            "fecha": "Reciente"
+            "titulo": "Dinámica de reservas del BCRA, licitaciones del Tesoro y evolución de tasas en pesos",
+            "url": "https://x.com/FinanzasArgy",
+            "seccion": "@FinanzasArgy • X",
+            "fecha": "En vivo"
         },
         {
-            "titulo": "Superávit fiscal, desaceleración inflacionaria y el impacto en la curva soberana",
-            "url": "https://finanzasargy.substack.com/",
-            "seccion": "Macro & Deuda",
-            "fecha": "Reciente"
+            "titulo": "Cotizaciones de bonos soberanos, riesgo país EMBI+ y acciones líderes del S&P Merval",
+            "url": "https://x.com/FinanzasArgy",
+            "seccion": "@FinanzasArgy • X",
+            "fecha": "En vivo"
         },
         {
-            "titulo": "Principales índices globales, tasas de la Fed y drivers para el S&P Merval",
-            "url": "https://finanzasargy.com/",
-            "seccion": "Mercados",
-            "fecha": "Reciente"
+            "titulo": "Drivers globales: Wall Street, tasas de la Reserva Federal y commodities agropecuarios",
+            "url": "https://x.com/FinanzasArgy",
+            "seccion": "@FinanzasArgy • X",
+            "fecha": "En vivo"
         }
     ],
     "updated": ""
@@ -3396,123 +3397,142 @@ CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
 _NOTICIAS_CACHE_TS = 0.0
 _NOTICIAS_LOCK = threading.Lock()
 
-def _limpiar_fecha_rss(raw_f: str) -> str:
-    if not raw_f:
-        return "Reciente"
-    s = raw_f.strip()
-    m_rfc = re.search(r"(\d{1,2})\s+([A-Za-z]{3})\s+20\d{2}", s)
-    if m_rfc:
-        return f"{m_rfc.group(1)} {m_rfc.group(2)}"
-    m_iso = re.search(r"20\d{2}-(\d{2})-(\d{2})", s)
-    if m_iso:
-        mes_n = MESES_CORTOS_ES.get(int(m_iso.group(1)), m_iso.group(1))
-        return f"{int(m_iso.group(2))} {mes_n}"
-    return s[:18]
-
-def _parsear_feed_finanzas_argy(xml_txt: str) -> List[Dict[str, str]]:
-    items_out: List[Dict[str, str]] = []
-    if not xml_txt:
-        return items_out
-    soup = BeautifulSoup(xml_txt, "html.parser")
-    nodos = soup.find_all("item") or soup.find_all("entry")
-    vistos = set()
-    for it in nodos:
-        t_el = it.find("title")
-        l_el = it.find("link")
-        p_el = it.find("pubdate") or it.find("published") or it.find("updated")
-        tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
-        tit = re.sub(r"\s+", " ", tit).strip()
-        link = ""
-        if l_el:
-            link = l_el.get("href") or l_el.get_text(strip=True) or (str(l_el.next_sibling).strip() if l_el.next_sibling else "")
-        if not tit or len(tit) < 12 or not str(link).startswith("http"):
-            continue
-        k_norm = tit.lower()[:65]
-        if k_norm in vistos:
-            continue
-        vistos.add(k_norm)
-        fec = _limpiar_fecha_rss(p_el.get_text(strip=True) if p_el else "")
-        items_out.append({
-            "titulo": tit,
-            "url": str(link).strip(),
-            "seccion": "Finanzas Argy",
-            "fecha": fec
-        })
-        if len(items_out) >= 4:
-            break
-    return items_out
+def _limpiar_texto_post_x(raw_txt: str) -> str:
+    t = BeautifulSoup(str(raw_txt or ""), "html.parser").get_text(" ", strip=True)
+    t = re.sub(r"https?://\S+", "", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    if len(t) > 220:
+        t = t[:217].rstrip() + "..."
+    return t
 
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
     now = time.time()
-    if not forzar and (now - _NOTICIAS_CACHE_TS < 300.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
+    if not forzar and (now - _NOTICIAS_CACHE_TS < 180.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
         return CACHE_NOTICIAS_DRIVERS
     if not _NOTICIAS_LOCK.acquire(blocking=False):
         return CACHE_NOTICIAS_DRIVERS
     try:
         hdrs = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8"
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+            "Accept-Language": "es-AR,es;q=0.9,en;q=0.8"
         }
-        fa_items: List[Dict[str, str]] = []
+        posts_x: List[Dict[str, str]] = []
+        vistos = set()
 
-        # 1. Feed oficial Substack de Finanzas Argy
-        for u_feed in [
-            "https://finanzasargy.substack.com/feed",
-            f"https://api.allorigins.win/raw?url={quote('https://finanzasargy.substack.com/feed', safe='')}"
-        ]:
-            try:
-                r_sub = GLOBAL_HTTP_SESSION.get(u_feed, headers=hdrs, timeout=3.0, verify=False)
-                if r_sub.status_code == 200 and r_sub.text:
-                    parsed = _parsear_feed_finanzas_argy(r_sub.text)
-                    if len(parsed) >= 2:
-                        fa_items = parsed[:4]
-                        break
-            except Exception:
-                pass
+        # 1. X Syndication Timeline oficial de @FinanzasArgy
+        try:
+            u_syn = f"https://syndication.twitter.com/srv/timeline-profile/screen-name/FinanzasArgy?_t={int(now)}"
+            r_syn = GLOBAL_HTTP_SESSION.get(u_syn, headers=hdrs, timeout=4.0, verify=False)
+            if r_syn.status_code == 200 and r_syn.text:
+                m_next = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r_syn.text, re.DOTALL)
+                if m_next:
+                    data_nd = json.loads(m_next.group(1))
+                    entries = (
+                        data_nd.get("props", {})
+                        .get("pageProps", {})
+                        .get("timeline", {})
+                        .get("entries", [])
+                    )
+                    for ent in entries:
+                        tw = (ent.get("content") or {}).get("tweet") or {}
+                        full_txt = tw.get("full_text") or tw.get("text") or ""
+                        txt_limpio = _limpiar_texto_post_x(full_txt)
+                        tid = str(tw.get("id_str") or tw.get("id") or "").strip()
+                        if len(txt_limpio) < 22 or txt_limpio.lower()[:55] in vistos:
+                            continue
+                        vistos.add(txt_limpio.lower()[:55])
+                        created = str(tw.get("created_at") or "")
+                        fec_s = created[4:16] if len(created) >= 16 else "X • En vivo"
+                        posts_x.append({
+                            "titulo": txt_limpio,
+                            "url": f"https://x.com/FinanzasArgy/status/{tid}" if tid else "https://x.com/FinanzasArgy",
+                            "seccion": "@FinanzasArgy • X",
+                            "fecha": fec_s
+                        })
+                        if len(posts_x) >= 4:
+                            break
+        except Exception:
+            pass
 
-        # 2. Portada web de Finanzas Argy (finanzasargy.com)
-        if len(fa_items) < 4:
-            for u_web in [
-                "https://finanzasargy.com/",
-                f"https://api.allorigins.win/raw?url={quote('https://finanzasargy.com/', safe='')}"
+        # 2. Espejos RSS públicos de X (@FinanzasArgy)
+        if len(posts_x) < 4:
+            for u_rss in [
+                "https://xcancel.com/FinanzasArgy/rss",
+                "https://nitter.poast.org/FinanzasArgy/rss",
+                "https://nitter.privacydev.net/FinanzasArgy/rss"
             ]:
+                if len(posts_x) >= 4:
+                    break
                 try:
-                    r_fa = GLOBAL_HTTP_SESSION.get(u_web, headers=hdrs, timeout=3.0, verify=False)
-                    if r_fa.status_code == 200 and r_fa.text:
-                        soup_fa = BeautifulSoup(r_fa.text, "html.parser")
-                        vistos_fa = {x["titulo"].lower()[:55] for x in fa_items}
-                        for a in soup_fa.find_all("a", href=True):
-                            href = a["href"].strip()
-                            if any(x in href for x in ("/cotizaciones", "twitter.com", "x.com", "t.me", "whatsapp", "instagram", "#")):
+                    r_rss = GLOBAL_HTTP_SESSION.get(u_rss, headers=hdrs, timeout=3.0, verify=False)
+                    if r_rss.status_code == 200 and "<item" in r_rss.text.lower():
+                        soup_r = BeautifulSoup(r_rss.text, "html.parser")
+                        for it in soup_r.find_all("item"):
+                            t_el = it.find("title")
+                            l_el = it.find("link")
+                            p_el = it.find("pubdate")
+                            txt_limpio = _limpiar_texto_post_x(t_el.get_text(" ", strip=True) if t_el else "")
+                            if len(txt_limpio) < 22 or txt_limpio.lower()[:55] in vistos:
                                 continue
-                            tit = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
-                            tit = re.sub(r"\b(Econom[ií]a|Finanzas|Criptomonedas|Mercados)\s+\d{1,2}\s+de\s+[a-z]+\s+de\s+20\d{2}.*$", "", tit, flags=re.IGNORECASE).strip()
-                            if len(tit) < 24 or len(tit) > 165:
-                                continue
-                            if tit.lower().startswith(("dólar ", "dolar ", "panel ", "cotización")):
-                                continue
-                            full_u = href if href.startswith("http") else ("https://finanzasargy.com" + ("" if href.startswith("/") else "/") + href)
-                            if full_u.rstrip("/") == "https://finanzasargy.com":
-                                continue
-                            if tit.lower()[:55] in vistos_fa:
-                                continue
-                            vistos_fa.add(tit.lower()[:55])
-                            fa_items.append({"titulo": tit, "url": full_u, "seccion": "Finanzas Argy", "fecha": "En vivo"})
-                            if len(fa_items) >= 4:
+                            vistos.add(txt_limpio.lower()[:55])
+                            raw_l = l_el.get_text(strip=True) if l_el else ""
+                            m_st = re.search(r"/status/(\d+)", raw_l)
+                            url_x = f"https://x.com/FinanzasArgy/status/{m_st.group(1)}" if m_st else "https://x.com/FinanzasArgy"
+                            fec_r = p_el.get_text(strip=True)[5:22] if (p_el and len(p_el.get_text(strip=True)) >= 22) else "X • Reciente"
+                            posts_x.append({
+                                "titulo": txt_limpio,
+                                "url": url_x,
+                                "seccion": "@FinanzasArgy • X",
+                                "fecha": fec_r
+                            })
+                            if len(posts_x) >= 4:
                                 break
-                    if len(fa_items) >= 4:
-                        break
                 except Exception:
                     pass
 
-        if len(fa_items) >= 1:
-            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = fa_items[:4]
+        # 3. Feed público sincronizado de @FinanzasArgy (t.me/s/finanzasargy)
+        if len(posts_x) < 4:
+            try:
+                r_tg = GLOBAL_HTTP_SESSION.get("https://t.me/s/finanzasargy", headers=hdrs, timeout=3.5, verify=False)
+                if r_tg.status_code == 200 and r_tg.text:
+                    soup_tg = BeautifulSoup(r_tg.text, "html.parser")
+                    wraps = soup_tg.find_all("div", class_="tgme_widget_message_wrap")
+                    for w in reversed(wraps):
+                        msg_el = w.find("div", class_="tgme_widget_message_text")
+                        if not msg_el:
+                            continue
+                        txt_limpio = _limpiar_texto_post_x(msg_el.get_text(" ", strip=True))
+                        if len(txt_limpio) < 25 or txt_limpio.lower()[:55] in vistos:
+                            continue
+                        vistos.add(txt_limpio.lower()[:55])
+                        time_el = w.find("time")
+                        fec_tg = "X • Reciente"
+                        if time_el and time_el.get("datetime"):
+                            dt_s = time_el["datetime"]
+                            m_dt = re.search(r"20\d{2}-(\d{2})-(\d{2})T(\d{2}:\d{2})", dt_s)
+                            if m_dt:
+                                mes_n = MESES_CORTOS_ES.get(int(m_dt.group(1)), m_dt.group(1))
+                                fec_tg = f"{int(m_dt.group(2))} {mes_n} • {m_dt.group(3)}"
+                        posts_x.append({
+                            "titulo": txt_limpio,
+                            "url": "https://x.com/FinanzasArgy",
+                            "seccion": "@FinanzasArgy • X",
+                            "fecha": fec_tg
+                        })
+                        if len(posts_x) >= 4:
+                            break
+            except Exception:
+                pass
+
+        if len(posts_x) >= 1:
+            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = posts_x[:4]
 
         CACHE_NOTICIAS_DRIVERS["updated"] = datetime.utcnow().strftime("%H:%M:%S UTC")
         _NOTICIAS_CACHE_TS = time.time()
     except Exception:
-        _NOTICIAS_CACHE_TS = time.time() - 240.0
+        _NOTICIAS_CACHE_TS = time.time() - 120.0
     finally:
         _NOTICIAS_LOCK.release()
     return CACHE_NOTICIAS_DRIVERS
