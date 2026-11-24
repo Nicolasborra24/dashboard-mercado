@@ -3545,7 +3545,7 @@ KW_DRIVERS_USA = (
     "semiconductores", "chips", "tecnolog", "apple", "microsoft", "tesla", "fomc"
 )
 
-def _parsear_google_news_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str) -> List[Dict[str, Any]]:
+def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuente_default: str = "") -> List[Dict[str, Any]]:
     salida: List[Dict[str, Any]] = []
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -3564,15 +3564,19 @@ def _parsear_google_news_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str
             s_el = it.find("source")
             raw_tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
             raw_tit = re.sub(r"\s+", " ", raw_tit).strip()
-            fuente_nom = s_el.get_text(strip=True) if s_el else mercado_lbl
+            fuente_nom = s_el.get_text(strip=True) if s_el else (fuente_default or mercado_lbl)
             if " - " in raw_tit:
                 partes = raw_tit.rsplit(" - ", 1)
                 raw_tit = partes[0].strip()
-                if not s_el:
+                if not s_el and not fuente_default:
                     fuente_nom = partes[1].strip()
 
             link = l_el.get_text(strip=True) if l_el else (str(l_el.next_sibling).strip() if (l_el and l_el.next_sibling) else "")
-            if len(raw_tit) < 24 or not link.startswith("http"):
+            if not link.startswith("http") and it.find("guid"):
+                g_txt = it.find("guid").get_text(strip=True)
+                if g_txt.startswith("http"):
+                    link = g_txt
+            if len(raw_tit) < 22 or not link.startswith("http"):
                 continue
 
             ts_val = 0.0
@@ -3589,17 +3593,16 @@ def _parsear_google_news_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str
                 except Exception:
                     pass
 
-            # Etiquetar impacto según palabras clave
             t_low = raw_tit.lower()
-            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi")):
+            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi", "blue")):
                 imp_tag = "Dólar & Divisas"
-            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap")):
+            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap", "powell", "rates")):
                 imp_tag = "Tasas & Bancos Centrales"
-            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer")):
+            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer", "bond", "yield")):
                 imp_tag = "Renta Fija & Deuda"
-            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia")):
+            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia", "stocks", "dow")):
                 imp_tag = "Renta Variable"
-            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo")):
+            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo", "cpi", "gdp", "jobs")):
                 imp_tag = "Macroeconomía"
             else:
                 imp_tag = "Driver de Mercado"
@@ -3626,24 +3629,40 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     hoy_iso = ahora_ar.strftime("%Y-%m-%d")
 
     now = time.time()
-    # Refresco automático cada 5 minutos (300 segundos)
     if not forzar and (now - _NOTICIAS_CACHE_TS < 300.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
         return CACHE_NOTICIAS_DRIVERS
     if not _NOTICIAS_LOCK.acquire(blocking=False):
         return CACHE_NOTICIAS_DRIVERS
     try:
-        q_ar = quote("mercado financiero argentina dolar bonos merval bcra when:1d")
-        q_us = quote("wall street fed s&p 500 nasdaq treasury markets when:1d")
-        url_gn_ar = f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419"
-        url_gn_us = f"https://news.google.com/rss/search?q={q_us}&hl=es-419&gl=US&ceid=US:es-419"
+        q_ar = quote("dolar bonos merval bcra economia argentina")
+        q_us = quote("wall street fed s&p 500 nasdaq treasury yields")
+        feeds_ar = [
+            ("https://www.ambito.com/rss/pages/finanzas.xml", "Ámbito Finanzas"),
+            ("https://www.cronista.com/files/rss/finanzas-mercados.xml", "El Cronista"),
+            ("https://www.infobae.com/arc/outboundfeeds/rss/category/economia/", "Infobae Economía"),
+            (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
+        ]
+        feeds_us = [
+            ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "CNBC Finance"),
+            ("https://feeds.content.dowjones.io/public/rss/mw_topstories", "MarketWatch"),
+            (f"https://news.google.com/rss/search?q={q_us}&hl=es-419&gl=US&ceid=US:es-419", "")
+        ]
 
-        with ThreadPoolExecutor(max_workers=2) as ex_n:
-            f_ar = ex_n.submit(_parsear_google_news_rss, url_gn_ar, "Argentina", tz_ar, hoy_iso)
-            f_us = ex_n.submit(_parsear_google_news_rss, url_gn_us, "EE.UU.", tz_ar, hoy_iso)
-            res_ar = f_ar.result(timeout=6.0)
-            res_us = f_us.result(timeout=6.0)
+        res_ar: List[Dict[str, Any]] = []
+        res_us: List[Dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=6) as ex_n:
+            futs_ar = [ex_n.submit(_parsear_feed_rss, u, "Argentina", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_ar]
+            futs_us = [ex_n.submit(_parsear_feed_rss, u, "EE.UU.", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_us]
+            for f in futs_ar:
+                try: res_ar.extend(f.result(timeout=5.5))
+                except Exception: pass
+            for f in futs_us:
+                try: res_us.extend(f.result(timeout=5.5))
+                except Exception: pass
 
-        # Deduplicar y mantener al menos 6 de Argentina y 6 de EE.UU. (12 drivers en total)
+        res_ar.sort(key=lambda x: x["ts"], reverse=True)
+        res_us.sort(key=lambda x: x["ts"], reverse=True)
+
         vistos = set()
         lista_ar_limpia = []
         for it in res_ar:
@@ -3663,16 +3682,15 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             if len(lista_us_limpia) >= 6:
                 break
 
-        if len(lista_ar_limpia) >= 3:
+        if len(lista_ar_limpia) >= 2:
             CACHE_NOTICIAS_DRIVERS["argentina"] = [
                 {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
             ]
-        if len(lista_us_limpia) >= 3:
+        if len(lista_us_limpia) >= 2:
             CACHE_NOTICIAS_DRIVERS["estados_unidos"] = [
                 {k: v for k, v in x.items() if k != "ts"} for x in lista_us_limpia[:6]
             ]
 
-        # Seleccionar los Top 5 Drivers más relevantes combinando Argentina y EE.UU.
         combinados = []
         ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
         us_cur = CACHE_NOTICIAS_DRIVERS.get("estados_unidos", [])
