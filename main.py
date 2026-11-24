@@ -3365,6 +3365,7 @@ def ver_aceptacion_gobierno():
 
 
 
+
 CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
     "finanzas_argy": [
         {
@@ -3406,6 +3407,75 @@ def _limpiar_texto_post_x(raw_txt: str) -> str:
         t = t[:227].rstrip() + "..."
     return t
 
+def _parsear_posts_jina_x(raw_md: str, hoy_iso: str, tz_ar) -> List[Dict[str, Any]]:
+    """Extrae los posteos cronológicos más recientes del timeline de X vía Jina Reader ignorando el tweet fijado."""
+    salida: List[Dict[str, Any]] = []
+    if not raw_md or len(raw_md) < 200:
+        return salida
+
+    # Dividir por bloques de enlaces a /FinanzasArgy/status/<id>
+    bloques = re.split(r'(?=https?://(?:x|twitter)\.com/FinanzasArgy/status/\d+)', raw_md)
+    vistos = set()
+    now_ts = datetime.now(tz_ar).timestamp()
+
+    for b in bloques:
+        m_st = re.search(r'https?://(?:x|twitter)\.com/FinanzasArgy/status/(\d+)', b)
+        if not m_st:
+            continue
+        tid_int = int(m_st.group(1))
+        url_post = f"https://x.com/FinanzasArgy/status/{tid_int}"
+
+        # Ignorar el bloque si está marcado como Pinned / Fijado
+        if re.search(r'\b(Pinned|Fijado)\b', b[:160], re.IGNORECASE):
+            continue
+
+        # Extraer líneas útiles de texto del tweet
+        lineas_ok = []
+        fecha_detectada = ""
+        for ln in b.splitlines():
+            s = ln.strip()
+            if not s or s.startswith(("![", "http", "---", "===")):
+                continue
+            # Detectar marca temporal relativa ("2h", "35m", "14h") o fecha ("Nov 24", "Nov 23")
+            m_rel = re.fullmatch(r'(\d{1,2})\s*([mh])', s, re.IGNORECASE)
+            if m_rel and not fecha_detectada:
+                cant = int(m_rel.group(1))
+                un = m_rel.group(2).lower()
+                fecha_detectada = f"Hoy • Hace {cant}{un}"
+                continue
+            m_mes_d = re.search(r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\b', s)
+            if m_mes_d and len(s) <= 22 and not fecha_detectada:
+                fecha_detectada = f"{m_mes_d.group(2)} {m_mes_d.group(1)}"
+                continue
+
+            s_clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', s)
+            s_clean = re.sub(r'https?://\S+', '', s_clean).strip()
+            if len(s_clean) < 22:
+                continue
+            if re.match(r'^(@FinanzasArgy|Finanzas Argy|Quote|Replying to|Show more|Log in|Sign up)', s_clean, re.IGNORECASE):
+                continue
+            lineas_ok.append(s_clean)
+
+        texto_final = _limpiar_texto_post_x(" ".join(lineas_ok[:2]))
+        if len(texto_final) < 22:
+            continue
+        k_norm = texto_final.lower()[:60]
+        if k_norm in vistos:
+            continue
+        vistos.add(k_norm)
+
+        # Usar el Snowflake ID de X como clave cronológica exacta (a mayor ID, más reciente es el post)
+        salida.append({
+            "ts": float(tid_int),
+            "titulo": texto_final,
+            "url": url_post,
+            "seccion": "@FinanzasArgy • X",
+            "fecha": fecha_detectada or "X • Hoy"
+        })
+
+    salida.sort(key=lambda x: x["ts"], reverse=True)
+    return salida[:4]
+
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
     from datetime import timezone, timedelta
@@ -3414,7 +3484,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     hoy_iso = ahora_ar.strftime("%Y-%m-%d")
 
     now = time.time()
-    if not forzar and (now - _NOTICIAS_CACHE_TS < 60.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
+    if not forzar and (now - _NOTICIAS_CACHE_TS < 45.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
         return CACHE_NOTICIAS_DRIVERS
     if not _NOTICIAS_LOCK.acquire(blocking=False):
         return CACHE_NOTICIAS_DRIVERS
@@ -3425,61 +3495,10 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
             "Cache-Control": "no-cache"
         }
-        candidatos: List[Dict[str, Any]] = []
+        posts_x: List[Dict[str, Any]] = []
         vistos = set()
 
-        # 1. Feed en tiempo real de @FinanzasArgy (t.me/s/finanzasargy - replica X al instante con timestamp ISO)
-        try:
-            r_tg = GLOBAL_HTTP_SESSION.get(f"https://t.me/s/finanzasargy?_t={int(now)}", headers=hdrs, timeout=4.0, verify=False)
-            if r_tg.status_code == 200 and r_tg.text:
-                soup_tg = BeautifulSoup(r_tg.text, "html.parser")
-                wraps = soup_tg.find_all("div", class_="tgme_widget_message_wrap")
-                for w in reversed(wraps):
-                    msg_el = w.find("div", class_="tgme_widget_message_text")
-                    if not msg_el:
-                        continue
-                    txt_limpio = _limpiar_texto_post_x(msg_el.get_text(" ", strip=True))
-                    if len(txt_limpio) < 22:
-                        continue
-                    k_norm = txt_limpio.lower()[:60]
-                    if k_norm in vistos:
-                        continue
-                    vistos.add(k_norm)
-
-                    ts_sort = 0.0
-                    fec_lbl = "Hoy"
-                    time_el = w.find("time")
-                    if time_el and time_el.get("datetime"):
-                        try:
-                            dt_obj = datetime.fromisoformat(time_el["datetime"].replace("Z", "+00:00")).astimezone(tz_ar)
-                            ts_sort = dt_obj.timestamp()
-                            if dt_obj.strftime("%Y-%m-%d") == hoy_iso:
-                                fec_lbl = f"Hoy • {dt_obj.strftime('%H:%M')} hs"
-                            else:
-                                mes_n = MESES_CORTOS_ES.get(dt_obj.month, str(dt_obj.month))
-                                fec_lbl = f"{dt_obj.day} {mes_n} • {dt_obj.strftime('%H:%M')} hs"
-                        except Exception:
-                            pass
-
-                    # Buscar enlace directo a x.com/FinanzasArgy/status/... si viene embebido en el post
-                    url_x = "https://x.com/FinanzasArgy"
-                    for a_link in w.find_all("a", href=True):
-                        h_val = str(a_link["href"])
-                        if ("x.com/FinanzasArgy/status/" in h_val) or ("twitter.com/FinanzasArgy/status/" in h_val):
-                            url_x = h_val.replace("twitter.com", "x.com")
-                            break
-
-                    candidatos.append({
-                        "ts": ts_sort,
-                        "titulo": txt_limpio,
-                        "url": url_x,
-                        "seccion": "@FinanzasArgy • X",
-                        "fecha": fec_lbl
-                    })
-        except Exception:
-            pass
-
-        # 2. X Syndication Timeline oficial ordenado estrictamente por ID cronológico (ignora fijados viejos)
+        # 1. X Syndication Timeline oficial ordenado por Snowflake ID descendente (ignora fijados)
         try:
             u_syn = f"https://syndication.twitter.com/srv/timeline-profile/screen-name/FinanzasArgy?_t={int(now)}"
             r_syn = GLOBAL_HTTP_SESSION.get(u_syn, headers=hdrs, timeout=4.0, verify=False)
@@ -3498,27 +3517,21 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                         tw = (ent.get("content") or {}).get("tweet") or {}
                         tid_s = str(tw.get("id_str") or tw.get("id") or "0").strip()
                         tid_int = int(tid_s) if tid_s.isdigit() else 0
-                        tweets_raw.append((tid_int, tw))
-                    # Ordenar de mayor ID (más nuevo) a menor ID (descarta el tweet fijado antiguo)
+                        if tid_int > 0:
+                            tweets_raw.append((tid_int, tw))
                     tweets_raw.sort(key=lambda x: x[0], reverse=True)
 
                     for tid_int, tw in tweets_raw:
                         full_txt = tw.get("full_text") or tw.get("text") or ""
                         txt_limpio = _limpiar_texto_post_x(full_txt)
-                        if len(txt_limpio) < 22:
+                        if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
                             continue
-                        k_norm = txt_limpio.lower()[:60]
-                        if k_norm in vistos:
-                            continue
-                        vistos.add(k_norm)
-
-                        ts_sort = 0.0
-                        fec_lbl = "Hoy"
+                        vistos.add(txt_limpio.lower()[:60])
+                        fec_lbl = "X • Hoy"
                         created = str(tw.get("created_at") or "")
                         if created:
                             try:
                                 dt_tw = datetime.strptime(created, "%a %b %d %H:%M:%S %z %Y").astimezone(tz_ar)
-                                ts_sort = dt_tw.timestamp()
                                 if dt_tw.strftime("%Y-%m-%d") == hoy_iso:
                                     fec_lbl = f"Hoy • {dt_tw.strftime('%H:%M')} hs"
                                 else:
@@ -3526,35 +3539,138 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                                     fec_lbl = f"{dt_tw.day} {mes_n} • {dt_tw.strftime('%H:%M')} hs"
                             except Exception:
                                 pass
-
-                        candidatos.append({
-                            "ts": ts_sort,
+                        posts_x.append({
                             "titulo": txt_limpio,
-                            "url": f"https://x.com/FinanzasArgy/status/{tid_int}" if tid_int else "https://x.com/FinanzasArgy",
+                            "url": f"https://x.com/FinanzasArgy/status/{tid_int}",
                             "seccion": "@FinanzasArgy • X",
                             "fecha": fec_lbl
                         })
+                        if len(posts_x) >= 4:
+                            break
         except Exception:
             pass
 
-        # Ordenar todos los candidatos por fecha real más reciente primero
-        candidatos.sort(key=lambda x: x.get("ts", 0.0), reverse=True)
+        # 2. Espejos RSS activos de X (@FinanzasArgy)
+        if len(posts_x) < 4:
+            for u_rss in [
+                "https://xcancel.com/FinanzasArgy/rss",
+                "https://nitter.net/FinanzasArgy/rss"
+            ]:
+                if len(posts_x) >= 4:
+                    break
+                try:
+                    r_rss = GLOBAL_HTTP_SESSION.get(u_rss, headers=hdrs, timeout=3.5, verify=False)
+                    if r_rss.status_code == 200 and "<item" in r_rss.text.lower():
+                        soup_r = BeautifulSoup(r_rss.text, "html.parser")
+                        items_rss = []
+                        for it in soup_r.find_all("item"):
+                            l_el = it.find("link")
+                            raw_l = l_el.get_text(strip=True) if l_el else ""
+                            m_st = re.search(r"/status/(\d+)", raw_l)
+                            tid_int = int(m_st.group(1)) if m_st else 0
+                            items_rss.append((tid_int, it))
+                        items_rss.sort(key=lambda x: x[0], reverse=True)
 
-        if len(candidatos) >= 1:
-            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = [
-                {
-                    "titulo": c["titulo"],
-                    "url": c["url"],
-                    "seccion": c["seccion"],
-                    "fecha": c["fecha"]
-                }
-                for c in candidatos[:4]
-            ]
+                        for tid_int, it in items_rss:
+                            t_el = it.find("title")
+                            p_el = it.find("pubdate")
+                            txt_limpio = _limpiar_texto_post_x(t_el.get_text(" ", strip=True) if t_el else "")
+                            if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
+                                continue
+                            vistos.add(txt_limpio.lower()[:60])
+                            fec_lbl = "X • Hoy"
+                            if p_el:
+                                try:
+                                    from email.utils import parsedate_to_datetime
+                                    dt_r = parsedate_to_datetime(p_el.get_text(strip=True)).astimezone(tz_ar)
+                                    if dt_r.strftime("%Y-%m-%d") == hoy_iso:
+                                        fec_lbl = f"Hoy • {dt_r.strftime('%H:%M')} hs"
+                                    else:
+                                        mes_n = MESES_CORTOS_ES.get(dt_r.month, str(dt_r.month))
+                                        fec_lbl = f"{dt_r.day} {mes_n} • {dt_r.strftime('%H:%M')} hs"
+                                except Exception:
+                                    pass
+                            posts_x.append({
+                                "titulo": txt_limpio,
+                                "url": f"https://x.com/FinanzasArgy/status/{tid_int}" if tid_int else "https://x.com/FinanzasArgy",
+                                "seccion": "@FinanzasArgy • X",
+                                "fecha": fec_lbl
+                            })
+                            if len(posts_x) >= 4:
+                                break
+                except Exception:
+                    pass
+
+        # 3. Lector directo de perfil X (r.jina.ai/http://x.com/FinanzasArgy) ordenado por Snowflake ID
+        if len(posts_x) < 4:
+            try:
+                r_j = GLOBAL_HTTP_SESSION.get(
+                    f"https://r.jina.ai/http://x.com/FinanzasArgy?_t={int(now)}",
+                    headers=hdrs,
+                    timeout=5.0,
+                    verify=False
+                )
+                if r_j.status_code == 200 and r_j.text:
+                    parsed_j = _parsear_posts_jina_x(r_j.text, hoy_iso, tz_ar)
+                    for pj in parsed_j:
+                        if pj["titulo"].lower()[:60] not in vistos:
+                            vistos.add(pj["titulo"].lower()[:60])
+                            posts_x.append({
+                                "titulo": pj["titulo"],
+                                "url": pj["url"],
+                                "seccion": pj["seccion"],
+                                "fecha": pj["fecha"]
+                            })
+                        if len(posts_x) >= 4:
+                            break
+            except Exception:
+                pass
+
+        # 4. Último respaldo: canal sincronizado t.me/s/finanzasargy
+        if len(posts_x) < 4:
+            try:
+                r_tg = GLOBAL_HTTP_SESSION.get(f"https://t.me/s/finanzasargy?_t={int(now)}", headers=hdrs, timeout=3.5, verify=False)
+                if r_tg.status_code == 200 and r_tg.text:
+                    soup_tg = BeautifulSoup(r_tg.text, "html.parser")
+                    wraps = soup_tg.find_all("div", class_="tgme_widget_message_wrap")
+                    for w in reversed(wraps):
+                        msg_el = w.find("div", class_="tgme_widget_message_text")
+                        if not msg_el:
+                            continue
+                        txt_limpio = _limpiar_texto_post_x(msg_el.get_text(" ", strip=True))
+                        if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
+                            continue
+                        vistos.add(txt_limpio.lower()[:60])
+                        fec_lbl = "Reciente"
+                        time_el = w.find("time")
+                        if time_el and time_el.get("datetime"):
+                            try:
+                                dt_obj = datetime.fromisoformat(time_el["datetime"].replace("Z", "+00:00")).astimezone(tz_ar)
+                                if dt_obj.strftime("%Y-%m-%d") == hoy_iso:
+                                    fec_lbl = f"Hoy • {dt_obj.strftime('%H:%M')} hs"
+                                else:
+                                    mes_n = MESES_CORTOS_ES.get(dt_obj.month, str(dt_obj.month))
+                                    fec_lbl = f"{dt_obj.day} {mes_n} • {dt_obj.strftime('%H:%M')} hs"
+                            except Exception:
+                                pass
+                        posts_x.append({
+                            "titulo": txt_limpio,
+                            "url": "https://x.com/FinanzasArgy",
+                            "seccion": "@FinanzasArgy • X",
+                            "fecha": fec_lbl
+                        })
+                        if len(posts_x) >= 4:
+                            break
+            except Exception:
+                pass
+
+        if len(posts_x) >= 1:
+            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = posts_x[:4]
 
         CACHE_NOTICIAS_DRIVERS["updated"] = ahora_ar.strftime("%H:%M:%S")
         _NOTICIAS_CACHE_TS = time.time()
     except Exception:
-        _NOTICIAS_CACHE_TS = time.time() - 45.0
+        _NOTICIAS_CACHE_TS = time.time() - 30.0
     finally:
         _NOTICIAS_LOCK.release()
     return CACHE_NOTICIAS_DRIVERS
