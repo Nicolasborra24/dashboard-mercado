@@ -3631,10 +3631,12 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
         feeds_us = [
-            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TLT&region=US&lang=en-US", "Yahoo Finance"),
-            ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "CNBC Finance"),
-            ("https://feeds.content.dowjones.io/public/rss/mw_topstories", "MarketWatch"),
-            (f"https://news.google.com/rss/search?q={q_us}&hl=es-419&gl=US&ceid=US:es-419", "")
+            ("https://www.investing.com/rss/news_25.rss", "Investing.com"),
+            ("https://www.investing.com/rss/news_95.rss", "Investing Macro"),
+            ("https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", "NYTimes Business"),
+            ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "WSJ Markets"),
+            ("https://finance.yahoo.com/news/rssindex", "Yahoo Finance"),
+            ("https://www.cnbc.com/id/100003114/device/rss/rss.html", "CNBC")
         ]
 
         res_ar: List[Dict[str, Any]] = []
