@@ -451,7 +451,7 @@
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-solid fa-wheat-awn", iconoDer: "fa-solid fa-tractor text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/25 text-emerald-300" },
       calendario_licitaciones: { titulo: "Calendario de Licitaciones Primarias", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-regular fa-calendar-check", iconoDer: "fa-solid fa-gavel text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" },
       calendario_economico: { titulo: "Calendario Económico — Argentina y Estados Unidos", sub: "Agenda de Publicaciones e Indicadores Macroeconómicos", icono: "fa-solid fa-calendar-days", iconoDer: "fa-solid fa-clock-rotate-left text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      noticias_drivers: { titulo: "Noticias y Drivers del Mercado de Capitales", sub: "Bloomberg Línea Argentina • Ámbito Económico & Finanzas • Finanzas Argy (4 Titulares Recientes por Medio)", icono: "fa-regular fa-newspaper", iconoDer: "fa-solid fa-bolt text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/30 text-amber-300" },
+      noticias_drivers: { titulo: "Noticias y Drivers del Mercado de Capitales", sub: "Fuente Oficial: Finanzas Argy • 4 Titulares Recientes de Mercado", icono: "fa-regular fa-newspaper", iconoDer: "fa-solid fa-bolt text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/30 text-amber-300" },
       aceptacion_gobierno: { titulo: "Aceptación del Gobierno y Termómetro Social", sub: "Riesgo País • EMAE i.a. • Inflación i.a. • Desempleo EPH • Confianza Consumidor (ICC) • Confianza Gobierno (ICG)", icono: "fa-solid fa-landmark-dome", iconoDer: "fa-solid fa-temperature-half text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" }
     };
 
@@ -2997,55 +2997,18 @@
     };
 
 
+
     window.DATOS_NOTICIAS_DRIVERS = {
-      bloomberg: [
-        { titulo: "Riesgo país de Argentina podría oscilar entre 700 y 900 hasta las elecciones, dice Adcap", url: "https://www.bloomberglinea.com/tags/economia-argentina/", seccion: "Mercados & Deuda", fecha: "Reciente" },
-        { titulo: "Bausili ve señales de que Argentina empieza a pasar de la estabilidad al crecimiento", url: "https://www.bloomberglinea.com/latinoamerica/argentina/", seccion: "BCRA & Macro", fecha: "Reciente" },
-        { titulo: "Morgan Stanley: bonos argentinos ya descuentan escenarios de volatilidad electoral", url: "https://www.bloomberglinea.com/tags/economia-argentina/", seccion: "Renta Fija", fecha: "Reciente" },
-        { titulo: "Vaca Muerta: YPF consigue aprobación del RIGI para la inversión Argentina LNG", url: "https://www.bloomberglinea.com/latinoamerica/argentina/", seccion: "Acciones & Energía", fecha: "Reciente" }
-      ],
-      ambito: [
-        { titulo: "Bonos en dólares y acciones líderes operan con foco en reservas del BCRA y tasas", url: "https://www.ambito.com/contenidos/finanzas.html", seccion: "Finanzas", fecha: "Reciente" },
-        { titulo: "Dólar financiero (MEP y CCL): cómo evolucionan las brechas frente al mayorista", url: "https://www.ambito.com/contenidos/economia.html", seccion: "Cambiario", fecha: "Reciente" },
-        { titulo: "Licitaciones del Tesoro y curva en pesos: qué tasas convalida el mercado en LECAP y CER", url: "https://www.ambito.com/contenidos/finanzas.html", seccion: "Renta Fija ARS", fecha: "Reciente" },
-        { titulo: "Wall Street y ADRs argentinos siguen de cerca los datos de actividad e inflación de EE.UU.", url: "https://www.ambito.com/contenidos/finanzas.html", seccion: "Mercados Globales", fecha: "Reciente" }
-      ],
       finanzas_argy: [
         { titulo: "Resumen de mercado: dinámica de reservas del BCRA, tasas en pesos y flujo hacia activos locales", url: "https://finanzasargy.com/", seccion: "Mercado Local", fecha: "Reciente" },
         { titulo: "Dólar MEP, CCL y Blue: análisis de cotizaciones en tiempo real y cobertura cambiaria", url: "https://finanzasargy.com/", seccion: "Divisas", fecha: "Reciente" },
-        { titulo: "Superávit fiscal, desaceleración inflacionaria y el impacto en la curva soberana", url: "https://substack.com/@finanzasargy", seccion: "Macro & Deuda", fecha: "Reciente" },
+        { titulo: "Superávit fiscal, desaceleración inflacionaria y el impacto en la curva soberana", url: "https://finanzasargy.substack.com/", seccion: "Macro & Deuda", fecha: "Reciente" },
         { titulo: "Principales índices globales, tasas de la Fed y drivers para el S&P Merval", url: "https://finanzasargy.com/", seccion: "Mercados", fecha: "Reciente" }
       ],
       updated: ""
     };
 
     window.cargandoNoticiasDrivers = false;
-
-    window.parsearRssClienteNoticias = function(xmlStr, secDef) {
-      const out = [];
-      if (!xmlStr || !xmlStr.includes("<item")) return out;
-      try {
-        const doc = new DOMParser().parseFromString(xmlStr, "text/xml");
-        const items = Array.from(doc.querySelectorAll("item"));
-        const kw = /dolar|dólar|bcra|bono|accion|merval|riesgo|tasa|inflaci|reserva|wall street|fed|tesoro|lecap|cer|mep|ccl|licitaci|deuda|mercado|inversi|ypf|rigi|superavit|pbi|pib|emae|fmi|caputo|bausili|adr|byma|cedear|cripto|bitcoin|nasdaq|s&p|soja|banco/i;
-        for (const it of items) {
-          const tit = (it.querySelector("title")?.textContent || "").replace(/\s+/g, " ").trim();
-          const link = (it.querySelector("link")?.textContent || "").trim();
-          const pub = (it.querySelector("pubDate")?.textContent || "").trim();
-          if (!tit || tit.length < 18 || !link.startsWith("http")) continue;
-          if (!kw.test(tit)) continue;
-          if (out.some(x => x.titulo.toLowerCase().slice(0, 55) === tit.toLowerCase().slice(0, 55))) continue;
-          out.push({
-            titulo: tit,
-            url: link,
-            seccion: secDef,
-            fecha: pub ? pub.slice(5, 22) : "En vivo"
-          });
-          if (out.length >= 4) break;
-        }
-      } catch (e) {}
-      return out;
-    };
 
     window.sincronizarNoticiasDrivers = async function(forzar = false) {
       if (window.cargandoNoticiasDrivers && !forzar) return;
@@ -3054,11 +3017,20 @@
 
       try {
         const resp = await fetchJsonSeguro("/api/noticias-drivers?forzar=" + (forzar ? "true" : "false") + "&t=" + Date.now());
-        if (resp && typeof resp === "object") {
-          if (Array.isArray(resp.bloomberg) && resp.bloomberg.length > 0) window.DATOS_NOTICIAS_DRIVERS.bloomberg = resp.bloomberg.slice(0, 4);
-          if (Array.isArray(resp.ambito) && resp.ambito.length > 0) window.DATOS_NOTICIAS_DRIVERS.ambito = resp.ambito.slice(0, 4);
-          if (Array.isArray(resp.finanzas_argy) && resp.finanzas_argy.length > 0) window.DATOS_NOTICIAS_DRIVERS.finanzas_argy = resp.finanzas_argy.slice(0, 4);
+        if (resp && Array.isArray(resp.finanzas_argy) && resp.finanzas_argy.length > 0) {
+          window.DATOS_NOTICIAS_DRIVERS.finanzas_argy = resp.finanzas_argy.slice(0, 4);
           if (resp.updated) window.DATOS_NOTICIAS_DRIVERS.updated = resp.updated;
+        } else {
+          // Respaldo rápido con timeout de 3s al feed RSS de Finanzas Argy via rss2json
+          const rssJson = await fetchJsonSeguro("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent("https://finanzasargy.substack.com/feed"));
+          if (rssJson && Array.isArray(rssJson.items) && rssJson.items.length > 0) {
+            window.DATOS_NOTICIAS_DRIVERS.finanzas_argy = rssJson.items.slice(0, 4).map(it => ({
+              titulo: String(it.title || "").trim(),
+              url: String(it.link || "https://finanzasargy.com/").trim(),
+              seccion: "Finanzas Argy",
+              fecha: it.pubDate ? String(it.pubDate).slice(0, 10) : "En vivo"
+            }));
+          }
         }
       } catch (e) {
       } finally {
@@ -3068,113 +3040,66 @@
     };
 
     window.renderizarSeccionNoticiasDrivers = function() {
-      const medios = [
-        {
-          id: "bloomberg",
-          nombre: "Bloomberg Línea Argentina",
-          subtitulo: "Mercados • Macroeconomía & Empresas",
-          urlPortada: "https://www.bloomberglinea.com/latinoamerica/argentina/",
-          icono: "fa-solid fa-globe",
-          accentIcon: "bg-cyan-500/20 border-cyan-500/35 text-cyan-300",
-          accentBadge: "bg-cyan-950/70 text-cyan-300 border-cyan-500/30",
-          accentBorder: "hover:border-cyan-500/40",
-          numColor: "text-cyan-400",
-          noticias: (window.DATOS_NOTICIAS_DRIVERS.bloomberg || []).slice(0, 4)
-        },
-        {
-          id: "ambito",
-          nombre: "Ámbito Económico y Finanzas",
-          subtitulo: "Renta Fija • Dólar • Acciones & Economía",
-          urlPortada: "https://www.ambito.com/contenidos/finanzas.html",
-          icono: "fa-solid fa-newspaper",
-          accentIcon: "bg-sky-500/20 border-sky-500/35 text-sky-300",
-          accentBadge: "bg-sky-950/70 text-sky-300 border-sky-500/30",
-          accentBorder: "hover:border-sky-500/40",
-          numColor: "text-sky-400",
-          noticias: (window.DATOS_NOTICIAS_DRIVERS.ambito || []).slice(0, 4)
-        },
-        {
-          id: "finanzas_argy",
-          nombre: "Finanzas Argy",
-          subtitulo: "Pulso Bursátil • Divisas & Drivers Locales",
-          urlPortada: "https://finanzasargy.com/",
-          icono: "fa-solid fa-bolt",
-          accentIcon: "bg-amber-500/20 border-amber-500/35 text-amber-300",
-          accentBadge: "bg-amber-950/70 text-amber-300 border-amber-500/30",
-          accentBorder: "hover:border-amber-500/40",
-          numColor: "text-amber-400",
-          noticias: (window.DATOS_NOTICIAS_DRIVERS.finanzas_argy || []).slice(0, 4)
-        }
-      ];
+      const noticias = (window.DATOS_NOTICIAS_DRIVERS.finanzas_argy || []).slice(0, 4);
 
-      const tarjetasMediosHtml = medios.map(m => {
-        const listaNotas = m.noticias.map((n, idx) => `
-          <a href="${n.url}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-slate-800/55 bg-slate-950/55 hover:bg-slate-900/80 ${m.accentBorder} p-3.5 transition">
-            <div class="flex items-start gap-3">
-              <span class="font-mono text-xs font-extrabold ${m.numColor} pt-0.5 shrink-0">0${idx + 1}</span>
-              <div class="flex-1 min-w-0 space-y-1.5">
-                <p class="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white leading-snug line-clamp-3">
-                  ${n.titulo}
-                </p>
-                <div class="flex items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
-                  <span class="px-2 py-0.5 rounded border ${m.accentBadge} truncate">${n.seccion || "Mercado"}</span>
-                  <span class="flex items-center gap-1 shrink-0 text-slate-400 group-hover:text-cyan-300 transition">
-                    <span>${n.fecha || "Reciente"}</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                  </span>
-                </div>
+      const listaNotas = noticias.map((n, idx) => `
+        <a href="${n.url}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-slate-800/55 bg-slate-950/55 hover:bg-slate-900/80 hover:border-amber-500/40 p-4 transition">
+          <div class="flex items-start gap-3.5">
+            <span class="font-mono text-sm font-extrabold text-amber-400 pt-0.5 shrink-0">0${idx + 1}</span>
+            <div class="flex-1 min-w-0 space-y-2">
+              <p class="text-xs sm:text-sm font-semibold text-slate-100 group-hover:text-white leading-snug">
+                ${n.titulo}
+              </p>
+              <div class="flex items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
+                <span class="px-2 py-0.5 rounded border bg-amber-950/70 text-amber-300 border-amber-500/30 truncate">${n.seccion || "Finanzas Argy"}</span>
+                <span class="flex items-center gap-1.5 shrink-0 text-slate-400 group-hover:text-amber-300 transition">
+                  <span>${n.fecha || "Reciente"}</span>
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </span>
               </div>
             </div>
-          </a>
-        `).join("");
-
-        return `
-          <article class="neon-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
-            <div class="space-y-4">
-              <div class="border-b border-slate-800/55 pb-3.5 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-xl border ${m.accentIcon} flex items-center justify-center text-xs shrink-0">
-                    <i class="${m.icono}"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide truncate">${m.nombre}</h3>
-                    <p class="text-[10px] font-mono text-slate-400 truncate">${m.subtitulo}</p>
-                  </div>
-                </div>
-                <a href="${m.urlPortada}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800/60 text-[10px] font-mono text-slate-300 hover:text-white transition shrink-0 flex items-center gap-1" title="Abrir portal">
-                  <span>Portal</span>
-                  <i class="fa-solid fa-external-link-alt text-[9px]"></i>
-                </a>
-              </div>
-
-              <div class="space-y-2.5">
-                ${listaNotas}
-              </div>
-            </div>
-
-            <div class="pt-2 border-t border-slate-800/45 flex items-center justify-between text-[10px] font-mono text-slate-400">
-              <span>4 titulares recientes • Mercado de Capitales</span>
-              <span class="text-emerald-400/90 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Activo</span>
-            </div>
-          </article>
-        `;
-      }).join("");
+          </div>
+        </a>
+      `).join("");
 
       return `
         <div class="space-y-4">
           ${renderizarBarraSeccion(window.CONFIG_SECCIONES.noticias_drivers)}
 
           <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] font-mono text-slate-400">
-            <span>Cobertura curada de Mercado de Capitales, Macroeconomía y Divisas • Hacé clic en cualquier titular para leer la nota completa</span>
+            <span>Titulares recientes de Mercado de Capitales • Hacé clic en cualquier noticia para abrir la nota</span>
             <button onclick="window.sincronizarNoticiasDrivers(true)" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-amber-500/20 border border-slate-800/60 hover:border-amber-500/35 text-slate-200 hover:text-amber-300 transition flex items-center gap-1.5">
               <i class="fa-solid fa-rotate ${window.cargandoNoticiasDrivers ? 'fa-spin text-amber-400' : 'text-amber-400'}"></i>
-              <span>${window.cargandoNoticiasDrivers ? 'Actualizando titulares...' : 'Actualizar noticias'}</span>
+              <span>${window.cargandoNoticiasDrivers ? 'Actualizando...' : 'Actualizar noticias'}</span>
             </button>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            ${tarjetasMediosHtml}
-          </div>
+          <article class="neon-card rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="border-b border-slate-800/55 pb-3.5 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl border bg-amber-500/20 border-amber-500/35 text-amber-300 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-sm sm:text-base font-extrabold text-white tracking-wide truncate">Finanzas Argy</h3>
+                  <p class="text-[11px] font-mono text-slate-400 truncate">Pulso Bursátil • Divisas & Drivers Locales</p>
+                </div>
+              </div>
+              <a href="https://finanzasargy.com/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800/60 text-[11px] font-mono text-slate-300 hover:text-white transition shrink-0 flex items-center gap-1.5">
+                <span>Abrir portal</span>
+                <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+              </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${listaNotas}
+            </div>
+
+            <div class="pt-2 border-t border-slate-800/45 flex items-center justify-between text-[10px] font-mono text-slate-400">
+              <span>Fuente única: Finanzas Argy • 4 noticias recientes</span>
+              <span class="text-emerald-400/90 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Activo</span>
+            </div>
+          </article>
         </div>
       `;
     };
