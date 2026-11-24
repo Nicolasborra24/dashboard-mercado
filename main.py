@@ -3517,37 +3517,16 @@ KW_DRIVERS_USA = (
 )
 
 def _traducir_titular_es(texto: str) -> str:
-    """Traduce titulares financieros de ingles a espanol con fallback doble."""
     if not texto or len(texto.strip()) < 5:
         return texto
-    hdrs = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-    }
-    for u in (
-        f"https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=es&q={quote(texto)}",
-        f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q={quote(texto)}"
-    ):
-        try:
-            r = requests.get(u, headers=hdrs, timeout=3.0)
-            if r.status_code == 200:
-                data = r.json()
-                if isinstance(data, list) and data:
-                    if isinstance(data[0], str) and data[0].strip():
-                        return data[0].strip()
-                    if isinstance(data[0], list):
-                        partes = [seg[0] for seg in data[0] if isinstance(seg, list) and seg and seg[0]]
-                        trad = "".join(partes).strip()
-                        if trad:
-                            return trad
-        except Exception:
-            pass
+    hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
     try:
-        u_mm = f"https://api.mymemory.translated.net/get?q={quote(texto[:450])}&langpair=en|es"
-        r2 = requests.get(u_mm, headers=hdrs, timeout=3.0)
-        if r2.status_code == 200:
-            trad2 = (r2.json().get("responseData") or {}).get("translatedText", "").strip()
-            if trad2 and trad2.lower() != texto.lower():
-                return trad2
+        u = f"https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=es&q={quote(texto)}"
+        r = requests.get(u, headers=hdrs, timeout=2.5)
+        if r.status_code == 200:
+            data = r.json()
+            if isinstance(data, list) and data and isinstance(data[0], str) and data[0].strip():
+                return data[0].strip()
     except Exception:
         pass
     return texto
@@ -3559,22 +3538,17 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
         "Accept": "application/rss+xml, application/xml, text/xml, */*"
     }
     try:
-        r = GLOBAL_HTTP_SESSION.get(url_rss, headers=hdrs, timeout=3.0, verify=False)
+        r = GLOBAL_HTTP_SESSION.get(url_rss, headers=hdrs, timeout=4.5, verify=False)
         xml_txt = r.content.decode("utf-8", errors="replace")
         if r.status_code != 200 or "<item" not in xml_txt.lower():
             return salida
         soup = BeautifulSoup(xml_txt, "html.parser")
         from email.utils import parsedate_to_datetime
-        ruido_editorial = (
-            "401(k)", "retirement", "personal finance", "how to ", "why ", "opinion:",
-            "review:", "best credit cards", "mortgage rates today", "lottery", "powerball"
-        )
         for it in soup.find_all("item"):
             t_el = it.find("title")
             l_el = it.find("link")
             p_el = it.find("pubdate")
             s_el = it.find("source")
-            d_el = it.find("description")
             raw_tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
             raw_tit = re.sub(r"\s+", " ", raw_tit).strip()
             fuente_nom = s_el.get_text(strip=True) if s_el else (fuente_default or mercado_lbl)
@@ -3592,18 +3566,6 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
             if len(raw_tit) < 22 or not link.startswith("http"):
                 continue
 
-            t_low = raw_tit.lower()
-            if any(bad in t_low for bad in ruido_editorial):
-                continue
-
-            # Si el titulo de EE.UU. no trae cifras/datos duros, enriquecer con la 1ra oracion de la bajada
-            if mercado_lbl == "EE.UU." and d_el and not re.search(r"\d+[%\.]|\$\d+|fed|fomc|cpi|pce|gdp|yield|s&p|nasdaq|dow", t_low):
-                desc_txt = BeautifulSoup(d_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True)
-                desc_txt = re.sub(r"\s+", " ", desc_txt).strip()
-                primera_oracion = desc_txt.split(". ")[0].strip()
-                if 25 <= len(primera_oracion) <= 130 and primera_oracion.lower() not in t_low:
-                    raw_tit = f"{raw_tit}: {primera_oracion}"
-
             ts_val = 0.0
             fec_lbl = "Hoy • En vivo"
             if p_el:
@@ -3618,15 +3580,16 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
                 except Exception:
                     pass
 
-            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi", "blue", "dollar", "fx")):
+            t_low = raw_tit.lower()
+            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi", "blue")):
                 imp_tag = "Dólar & Divisas"
-            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap", "powell", "rates", "yield")):
+            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap", "powell", "rates")):
                 imp_tag = "Tasas & Bancos Centrales"
-            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer", "bond", "credit")):
+            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer", "bond", "yield")):
                 imp_tag = "Renta Fija & Deuda"
-            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia", "stocks", "dow", "chips", "tech")):
+            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia", "stocks", "dow")):
                 imp_tag = "Renta Variable"
-            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo", "cpi", "gdp", "jobs", "oil", "gold")):
+            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo", "cpi", "gdp", "jobs")):
                 imp_tag = "Macroeconomía"
             else:
                 imp_tag = "Driver de Mercado"
@@ -3666,23 +3629,21 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
         feeds_us = [
-            ("https://www.investing.com/rss/news_25.rss", "Investing Markets"),
+            ("https://www.investing.com/rss/news_25.rss", "Investing.com"),
             ("https://www.investing.com/rss/news_95.rss", "Investing Macro"),
-            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI,NVDA,TLT,GC=F&region=US&lang=en-US", "Yahoo Finance"),
-            ("https://www.cnbc.com/id/15839069/device/rss/rss.html", "CNBC Investing"),
-            ("https://www.cnbc.com/id/20910258/device/rss/rss.html", "CNBC Economy")
+            ("https://www.cnbc.com/id/15839069/device/rss/rss.html", "CNBC Investing")
         ]
 
         res_ar: List[Dict[str, Any]] = []
         res_us: List[Dict[str, Any]] = []
-        with ThreadPoolExecutor(max_workers=9) as ex_n:
+        with ThreadPoolExecutor(max_workers=7) as ex_n:
             futs_ar = [ex_n.submit(_parsear_feed_rss, u, "Argentina", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_ar]
             futs_us = [ex_n.submit(_parsear_feed_rss, u, "EE.UU.", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_us]
             for f in futs_ar:
-                try: res_ar.extend(f.result(timeout=3.2))
+                try: res_ar.extend(f.result(timeout=5.0))
                 except Exception: pass
             for f in futs_us:
-                try: res_us.extend(f.result(timeout=3.2))
+                try: res_us.extend(f.result(timeout=5.0))
                 except Exception: pass
 
         res_ar.sort(key=lambda x: x["ts"], reverse=True)
@@ -3712,12 +3673,12 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                 {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
             ]
         if len(lista_us_limpia) >= 1:
-            us_traducidos = []
+            us_trad = []
             for x in lista_us_limpia[:6]:
                 item_clean = {k: v for k, v in x.items() if k != "ts"}
                 item_clean["titulo"] = _traducir_titular_es(item_clean["titulo"])
-                us_traducidos.append(item_clean)
-            CACHE_NOTICIAS_DRIVERS["estados_unidos"] = us_traducidos
+                us_trad.append(item_clean)
+            CACHE_NOTICIAS_DRIVERS["estados_unidos"] = us_trad
 
         combinados = []
         ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
