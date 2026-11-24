@@ -3021,33 +3021,6 @@
           window.DATOS_NOTICIAS_DRIVERS.finanzas_argy = resp.finanzas_argy.slice(0, 4);
           if (resp.updated) window.DATOS_NOTICIAS_DRIVERS.updated = resp.updated;
         }
-        // Contraste directo en vivo desde navegador vía Jina Reader para @FinanzasArgy en X
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 3500);
-        try {
-          const rJ = await fetch("https://r.jina.ai/http://x.com/FinanzasArgy", { signal: ctrl.signal, cache: "no-store" });
-          clearTimeout(tid);
-          if (rJ.ok) {
-            const txtJ = await rJ.text();
-            const vistosJ = new Set();
-            const postsJ = [];
-            for (const rawL of txtJ.split("\n")) {
-              const lClean = rawL.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/https?:\/\/\S+/g, "").trim();
-              if (lClean.length < 35 || lClean.length > 220) continue;
-              if (/log in|sign up|don’t miss|new to x|terms of service|privacy policy|cookie policy|finanzasargy|pinned|posts|replies|media|likes/i.test(lClean)) continue;
-              const k = lClean.toLowerCase().slice(0, 55);
-              if (vistosJ.has(k)) continue;
-              vistosJ.add(k);
-              postsJ.push({ titulo: lClean, url: "https://x.com/FinanzasArgy", seccion: "@FinanzasArgy • X", fecha: "X • En vivo" });
-              if (postsJ.length >= 4) break;
-            }
-            if (postsJ.length >= 2) {
-              window.DATOS_NOTICIAS_DRIVERS.finanzas_argy = postsJ;
-            }
-          }
-        } catch (errJ) {
-          clearTimeout(tid);
-        }
       } catch (e) {
       } finally {
         window.cargandoNoticiasDrivers = false;
