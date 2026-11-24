@@ -3526,6 +3526,32 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             except Exception:
                 pass
 
+        # 4. Respaldo directo de perfil público de X (@FinanzasArgy) vía lector texto limpio
+        if len(posts_x) < 4:
+            try:
+                r_jina = GLOBAL_HTTP_SESSION.get("https://r.jina.ai/http://x.com/FinanzasArgy", headers=hdrs, timeout=4.5, verify=False)
+                if r_jina.status_code == 200 and r_jina.text:
+                    for linea in r_jina.text.splitlines():
+                        l_clean = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", linea).strip()
+                        l_clean = re.sub(r"https?://\S+", "", l_clean).strip()
+                        if len(l_clean) < 35 or len(l_clean) > 220:
+                            continue
+                        if any(skip in l_clean.lower() for skip in ("log in", "sign up", "don’t miss", "new to x", "terms of service", "privacy policy", "cookie policy", "finanzasargy", "pinned", "posts", "replies", "media", "likes")):
+                            continue
+                        if l_clean.lower()[:55] in vistos:
+                            continue
+                        vistos.add(l_clean.lower()[:55])
+                        posts_x.append({
+                            "titulo": l_clean,
+                            "url": "https://x.com/FinanzasArgy",
+                            "seccion": "@FinanzasArgy • X",
+                            "fecha": "X • Reciente"
+                        })
+                        if len(posts_x) >= 4:
+                            break
+            except Exception:
+                pass
+
         if len(posts_x) >= 1:
             CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = posts_x[:4]
 
