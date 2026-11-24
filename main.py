@@ -717,21 +717,73 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
     }
     return CACHE_ACCIONES_ARGENTINA
 
+def _extraer_rp_de_rava_api() -> Optional[Dict[str, float]]:
+    """Consulta las APIs JSON internas de Rava Bursatil para Riesgo Pais y Merval."""
+    ts_ms = int(time.time() * 1000)
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://www.rava.com",
+        "Referer": "https://www.rava.com/"
+    }
+    # 1. Endpoint REST v3 publico de Rava (POST / GET)
+    endpoints_post = [
+        ("https://clasico.rava.com/lib/restapi/v3/publico/cotizaciones/buscador", {"especie": "RIESGO PAIS"}),
+        ("https://clasico.rava.com/lib/restapi/v3/publico/cotizaciones/especies", {"especie": "RIESGO PAIS"}),
+    ]
+    for url_p, payload in endpoints_post:
+        try:
+            r = GLOBAL_HTTP_SESSION.post(url_p, data=payload, headers=hdrs, timeout=3.5, verify=False)
+            if r.status_code == 200 and r.text.strip():
+                txt = r.text
+                m_u = re.search(r'"(?:ultimo|cierre|valor|px_last|close)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?', txt, re.IGNORECASE)
+                if m_u:
+                    v_rp = _parse_float_limpio(m_u.group(1))
+                    if v_rp and 100 <= v_rp <= 5000:
+                        res: Dict[str, float] = {"ult": v_rp}
+                        m_d = re.search(r'"(?:variacion|var_dia|dia|porc)"\s*:\s*"?([+\-−]?\d{1,2}[\.,]\d{1,2})"?', txt, re.IGNORECASE)
+                        m_m = re.search(r'"(?:var_mes|mes|mensual)"\s*:\s*"?([+\-−]?\d{1,3}[\.,]\d{1,2})"?', txt, re.IGNORECASE)
+                        m_a = re.search(r'"(?:var_anio|anio|anual|ytd)"\s*:\s*"?([+\-−]?\d{1,3}[\.,]\d{1,2})"?', txt, re.IGNORECASE)
+                        if m_d and _parse_float_limpio(m_d.group(1)) is not None: res["dia"] = float(_parse_float_limpio(m_d.group(1)))
+                        if m_m and _parse_float_limpio(m_m.group(1)) is not None: res["mes"] = float(_parse_float_limpio(m_m.group(1)))
+                        if m_a and _parse_float_limpio(m_a.group(1)) is not None: res["anio"] = float(_parse_float_limpio(m_a.group(1)))
+                        return res
+        except Exception:
+            pass
+
+    # 2. Endpoints GET de perfil / cotizaciones de Rava (directo y via proxy)
+    urls_get = [
+        f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}",
+        f"https://www.rava.com/cotizaciones/indices?_t={ts_ms}",
+        f"https://api.allorigins.win/raw?url={quote(f'https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}', safe='')}",
+        f"https://corsproxy.io/?{quote(f'https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}', safe='')}"
+    ]
+    for u in urls_get:
+        try:
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=3.5, verify=False)
+            if r.status_code == 200 and len(r.text) > 300:
+                ext = _extraer_rp_y_merval_de_html_rava(r.text)
+                if "RIESGO_PAIS" in ext and ext["RIESGO_PAIS"].get("ult"):
+                    return ext["RIESGO_PAIS"]
+        except Exception:
+            pass
+    return None
+
 def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
-    """Consulta https://bondterminal.com/ (directo y via puentes) para obtener Riesgo Pais en vivo."""
+    """Consulta BondTerminal (HTML, JSON embebido y endpoints internos) como unico respaldo."""
     ts_ms = int(time.time() * 1000)
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
         "Referer": "https://bondterminal.com/"
     }
     candidatos = [
         f"https://bondterminal.com/?_t={ts_ms}",
         f"https://bondterminal.com/api/riesgo-pais?_t={ts_ms}",
-        f"https://bondterminal.com/api/market?_t={ts_ms}",
-        f"https://bondterminal.com/api/data?_t={ts_ms}",
+        f"https://bondterminal.com/api/embi?_t={ts_ms}",
+        f"https://bondterminal.com/api/indicators?_t={ts_ms}",
+        f"https://bondterminal.com/api/summary?_t={ts_ms}",
         f"https://api.allorigins.win/raw?url={quote(f'https://bondterminal.com/?_t={ts_ms}', safe='')}",
         f"https://corsproxy.io/?{quote(f'https://bondterminal.com/?_t={ts_ms}', safe='')}"
     ]
@@ -742,7 +794,7 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
                 continue
             txt = r.text
             for pat_json in [
-                r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*\{[^{}]*?"(?:valor|value|last|ultimo|price|puntos)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?',
+                r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp|spread)"\s*:\s*\{[^{}]*?"(?:valor|value|last|ultimo|price|puntos|current)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?',
                 r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?'
             ]:
                 m_j = re.search(pat_json, txt, re.IGNORECASE)
@@ -759,19 +811,14 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
 
             plano = BeautifulSoup(txt, "html.parser").get_text(" ", strip=True)
             m_txt = re.search(
-                r'(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)(?:\s*(?:pb|bps|pts))?(?:\s*\(?([+\-−]?\d{1,2}[,\.]\d{1,2})\s*%?\)?)?',
+                r'(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)',
                 plano,
                 re.IGNORECASE
             )
             if m_txt:
                 v_rp = _parse_float_limpio(m_txt.group(1))
                 if v_rp and 100 <= v_rp <= 5000:
-                    res_bt = {"ult": v_rp}
-                    if m_txt.group(2):
-                        vd = _parse_float_limpio(m_txt.group(2))
-                        if vd is not None and -45 <= vd <= 45:
-                            res_bt["dia"] = vd
-                    return res_bt
+                    return {"ult": v_rp}
         except Exception:
             pass
     return None
@@ -893,46 +940,29 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
         }
     }
     rp_vivo_ok = False
+    rp_fuente = "CACHE"
     merval_ars_ok = False
     merval_usd_ok = False
-    ts_ms = int(time.time() * 1000)
-    hdrs_rava = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
-        "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
-        "Cache-Control": "no-cache",
-        "Referer": "https://www.rava.com/"
-    }
 
     html_comp = obtener_html_rava_compartido(ttl=4.0)
     if html_comp:
         ext_c = _extraer_rp_y_merval_de_html_rava(html_comp)
         for k_e, v_e in ext_c.items():
             datos[k_e].update(v_e)
-            if k_e == "RIESGO_PAIS": rp_vivo_ok = True
-            elif k_e == "MERVAL_ARS": merval_ars_ok = True
-            elif k_e == "MERVAL_USD": merval_usd_ok = True
+            if k_e == "RIESGO_PAIS":
+                rp_vivo_ok = True
+                rp_fuente = "RAVA_HTML"
+            elif k_e == "MERVAL_ARS":
+                merval_ars_ok = True
+            elif k_e == "MERVAL_USD":
+                merval_usd_ok = True
 
-    urls_rava = [
-        f"https://www.rava.com/cotizaciones/indices?_t={ts_ms}",
-        f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}",
-        f"https://www.rava.com/perfil/MERVAL?_t={ts_ms}",
-        f"https://api.allorigins.win/raw?url={quote(f'https://www.rava.com/cotizaciones/indices?_t={ts_ms}', safe='')}"
-    ]
-    for u_rp in urls_rava:
-        if rp_vivo_ok and merval_ars_ok and merval_usd_ok:
-            break
-        try:
-            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.5, verify=False)
-            if rr.status_code == 200 and len(rr.text) > 400:
-                ext = _extraer_rp_y_merval_de_html_rava(rr.text)
-                for k_e, v_e in ext.items():
-                    datos[k_e].update(v_e)
-                    if k_e == "RIESGO_PAIS": rp_vivo_ok = True
-                    elif k_e == "MERVAL_ARS": merval_ars_ok = True
-                    elif k_e == "MERVAL_USD": merval_usd_ok = True
-        except Exception:
-            pass
+    if not rp_vivo_ok:
+        rava_api = _extraer_rp_de_rava_api()
+        if rava_api and rava_api.get("ult"):
+            datos["RIESGO_PAIS"].update(rava_api)
+            rp_vivo_ok = True
+            rp_fuente = "RAVA_API"
 
     if merval_ars_ok and not merval_usd_ok:
         ccl_rava = (_DOLARITO_CICLO_CACHE.get("data") or {}).get("DOLAR_CCL") or BASE_DOLARITO_EXACTA.get("DOLAR_CCL") or {}
@@ -947,6 +977,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
         if bt_rp and bt_rp.get("ult"):
             datos["RIESGO_PAIS"].update(bt_rp)
             rp_vivo_ok = True
+            rp_fuente = "BONDTERMINAL"
 
     res_out = {}
     config_items = [
@@ -970,7 +1001,8 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             "var_anio": var_anio,
             "valor": round(float(d_info["ult"]), 2),
             "fecha": f"Mes: {var_mes} | Año: {var_anio}",
-            "_live": rp_vivo_ok if cod == "RIESGO_PAIS" else True
+            "_live": rp_vivo_ok if cod == "RIESGO_PAIS" else True,
+            "_fuente": rp_fuente if cod == "RIESGO_PAIS" else "RAVA"
         }
     return res_out
 
