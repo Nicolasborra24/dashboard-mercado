@@ -161,7 +161,7 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 space-y-4 sm:space-y-5">
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 space-y-2.5 sm:space-y-3">
     <div class="border-b border-slate-800/45 pb-3">
       <div class="flex flex-col lg:flex-row items-stretch gap-2 sm:gap-2.5">
         <button onclick="filtrarCategoria('home', event)" class="nav-tab active py-2 lg:py-0 px-5 rounded-xl lg:rounded-2xl neon-tab text-white font-bold text-xs transition flex flex-row lg:flex-col justify-center items-center gap-2 lg:gap-1 shadow-lg shrink-0">
@@ -451,7 +451,7 @@
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-solid fa-wheat-awn", iconoDer: "fa-solid fa-tractor text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/25 text-emerald-300" },
       calendario_licitaciones: { titulo: "Calendario de Licitaciones Primarias", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-regular fa-calendar-check", iconoDer: "fa-solid fa-gavel text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" },
       calendario_economico: { titulo: "Calendario Económico — Argentina y Estados Unidos", sub: "Agenda de Publicaciones e Indicadores Macroeconómicos", icono: "fa-solid fa-calendar-days", iconoDer: "fa-solid fa-clock-rotate-left text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      noticias_drivers: { titulo: "Noticias y Drivers de Mercado — Argentina & Wall Street", sub: "Radar Inteligente Gemini • Top 5 Drivers del Día + 12 Titulares Clave (Auto-refresco cada 5 min)", icono: "fa-solid fa-wand-magic-sparkles", iconoDer: "fa-solid fa-bolt text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/30 text-amber-300" },
+      noticias_drivers: { titulo: "Noticias y Drivers de Mercado — Argentina & Wall Street", sub: "", icono: "fa-solid fa-bolt", iconoDer: "fa-solid fa-newspaper text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/30 text-amber-300" },
       aceptacion_gobierno: { titulo: "Aceptación del Gobierno y Termómetro Social", sub: "Riesgo País • EMAE i.a. • Inflación i.a. • Desempleo EPH • Confianza Consumidor (ICC) • Confianza Gobierno (ICG)", icono: "fa-solid fa-landmark-dome", iconoDer: "fa-solid fa-temperature-half text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" }
     };
 
@@ -1754,10 +1754,10 @@
       if (["RESULTADO_FISCAL", "RECAUDACION_TRIBUTARIA", "SALARIO_MINIMO", "JUBILACION_MINIMA", "CANASTA_BASICA_TOTAL", "CANASTA_BASICA_ALIMENTARIA"].includes(item.variable) && !valFmt.startsWith("$")) valFmt = `$${valFmt}`;
       if (item.variable === "RIESGO_PAIS" && !valFmt.toLowerCase().includes("pb")) valFmt = `${valFmt} pb`;
 
-      const clsCardPad = compacta ? "rounded-xl px-3.5 py-2.5" : "rounded-2xl px-4 py-3.5";
+      const clsCardPad = compacta ? "rounded-xl px-3 py-1.5" : "rounded-2xl px-4 py-3.5";
       const clsTitulo = compacta ? "text-[11px]" : "text-xs";
       const clsValor = compacta ? "text-lg xl:text-[21px]" : "text-2xl sm:text-[26px]";
-      const clsFooter = compacta ? "mt-1.5 pt-1 text-[10px]" : "mt-2.5 pt-1.5 text-[11px]";
+      const clsFooter = compacta ? "mt-1 pt-0.5 text-[10px]" : "mt-2.5 pt-1.5 text-[11px]";
 
       return `
         <div class="neon-card ${clsCardPad} flex flex-col justify-between ${animFlash ? 'card-' + animFlash : ''}">
@@ -3065,7 +3065,7 @@
     window.sincronizarNoticiasDrivers = async function(forzar = false) {
       if (window.cargandoNoticiasDrivers && !forzar) return;
       window.cargandoNoticiasDrivers = true;
-      if (categoriaActiva === "noticias_drivers") renderizar(true);
+      if (categoriaActiva === "noticias_drivers" || categoriaActiva === "home") renderizar(categoriaActiva === "noticias_drivers");
 
       try {
         const resp = await fetchJsonSeguro("/api/noticias-drivers?forzar=" + (forzar ? "true" : "false") + "&t=" + Date.now());
@@ -3078,7 +3078,7 @@
       } catch (e) {
       } finally {
         window.cargandoNoticiasDrivers = false;
-        if (categoriaActiva === "noticias_drivers") renderizar(true);
+        if (categoriaActiva === "noticias_drivers" || categoriaActiva === "home") renderizar(categoriaActiva === "noticias_drivers");
       }
     };
 
@@ -3162,24 +3162,12 @@
       return `
         <div class="space-y-5">
           ${renderizarBarraSeccion(window.CONFIG_SECCIONES.noticias_drivers)}
-
-          <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] font-mono text-slate-400">
-            <span class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              <span>Curaduría en tiempo real Gemini • ${totalDrivers} drivers activos (Argentina + EE.UU.) • Actualización automática cada 5 min</span>
-            </span>
-            <button onclick="window.sincronizarNoticiasDrivers(true)" class="px-3 py-1 rounded-lg bg-slate-900 hover:bg-amber-500/20 border border-slate-800/60 hover:border-amber-500/35 text-slate-200 hover:text-amber-300 transition flex items-center gap-1.5">
-              <i class="fa-solid fa-wand-magic-sparkles ${window.cargandoNoticiasDrivers ? 'fa-spin text-amber-400' : 'text-amber-400'}"></i>
-              <span>${window.cargandoNoticiasDrivers ? 'Escaneando mercado...' : 'Refrescar con Gemini'}</span>
-            </button>
-          </div>
-
           <!-- Bloque Superior: Top 5 Noticias y Drivers Más Relevantes del Día -->
           <section class="space-y-2.5">
             <div class="flex items-center justify-between px-1">
               <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-2">
                 <i class="fa-solid fa-fire text-amber-400"></i>
-                <span>Top 5 Drivers Más Relevantes de la Rueda (Selección Gemini)</span>
+                <span>Top 5 Drivers Más Relevantes de la Rueda</span>
               </h3>
               <span class="text-[10px] font-mono text-slate-400">Mayor impacto en precios y tasas</span>
             </div>
@@ -3369,14 +3357,46 @@
         const b2 = window.BLOQUES_HOME[2];
         const b3 = window.BLOQUES_HOME[3];
 
+        const top5Home = ((window.DATOS_NOTICIAS_DRIVERS && window.DATOS_NOTICIAS_DRIVERS.top5) || []).slice(0, 5);
+        const top5HomeHtml = top5Home.length > 0 ? `
+          <section class="space-y-1">
+            <div class="rounded-lg px-3 py-1 flex items-center justify-between overflow-hidden relative section-bar-amber">
+              <div class="flex items-center gap-2 z-10">
+                <div class="w-4 h-4 rounded flex items-center justify-center border text-[9px] bg-amber-500/20 border-amber-500/30 text-amber-300"><i class="fa-solid fa-bolt"></i></div>
+                <h2 class="text-[10px] font-bold tracking-wider text-white uppercase">TOP 5 DRIVERS DE MERCADO</h2>
+              </div>
+              <button onclick="filtrarCategoria('noticias_drivers', null)" class="z-10 text-[10px] font-mono text-amber-300 hover:text-white transition flex items-center gap-1">
+                <span>Ver todos</span>
+                <i class="fa-solid fa-chevron-right text-[8px]"></i>
+              </button>
+              <div class="absolute right-10 top-1/2 -translate-y-1/2 h-[1.5px] w-1/3 opacity-75 glow-flare-amber"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1.5">
+              ${top5Home.map((n, idx) => {
+                const esUsa = String(n.mercado || "").includes("EE.UU");
+                return `
+                  <a href="${n.url}" target="_blank" rel="noopener noreferrer" class="group neon-card rounded-xl px-2.5 py-1.5 flex flex-col justify-between gap-1 hover:border-amber-400/45 transition">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="font-mono text-[9px] font-black text-amber-300">#0${idx + 1} • ${esUsa ? "🇺🇸 EE.UU." : "🇦🇷 ARG"}</span>
+                      <span class="text-[9px] font-mono text-slate-400 truncate">${n.impacto || ""}</span>
+                    </div>
+                    <p class="text-[11px] font-semibold text-slate-200 group-hover:text-white leading-tight line-clamp-2" title="${n.titulo}">
+                      ${n.titulo}
+                    </p>
+                  </a>`;
+              }).join("")}
+            </div>
+          </section>` : "";
+
         contenedor.innerHTML = `
-          <div class="space-y-2.5">
+          <div class="space-y-1.5">
             ${b0 ? renderBloqueCompacto(b0, "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6") : ""}
             ${b1 ? renderBloqueCompacto(b1, "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6") : ""}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
               ${b2 ? renderBloqueCompacto(b2, "grid-cols-2 sm:grid-cols-3") : ""}
               ${b3 ? renderBloqueCompacto(b3, "grid-cols-2 sm:grid-cols-3") : ""}
             </div>
+            ${top5HomeHtml}
           </div>`;
         return;
       }
