@@ -3236,6 +3236,170 @@ def ver_estado_mae():
     return fetch_estado_mae()
 
 
+
+CACHE_ACEPTACION_GOBIERNO: Dict[str, Any] = {
+    "icg": {
+        "mes_label": "Nov 2026",
+        "mes_mandato": 35,
+        "valor": 2.04,
+        "valor_formateado": "2,04 pts",
+        "variacion_mensual": "+4,1%",
+        "variacion_interanual": "-17,5%",
+        "comparativa_anteriores": [
+            {
+                "presidente": "Mauricio Macri",
+                "periodo": "Nov 2018 (Mes 35)",
+                "valor": 1.77,
+                "valor_formateado": "1,77 pts",
+                "diferencia_pct": 15.2,
+                "diferencia_formateada": "+15,2%",
+                "estado": "Más alto"
+            },
+            {
+                "presidente": "Alberto Fernández",
+                "periodo": "Nov 2022 (Mes 35)",
+                "valor": 1.19,
+                "valor_formateado": "1,19 pts",
+                "diferencia_pct": 71.1,
+                "diferencia_formateada": "+71,1%",
+                "estado": "Más alto"
+            }
+        ],
+        "componentes": [
+            {"nombre": "Honestidad de los funcionarios", "valor": 2.41, "variacion": "+1,4%"},
+            {"nombre": "Capacidad para resolver problemas", "valor": 2.40, "variacion": "+5,6%"},
+            {"nombre": "Eficiencia en el gasto público", "valor": 2.08, "variacion": "+4,5%"},
+            {"nombre": "Evaluación general del gobierno", "valor": 1.69, "variacion": "+3,6%"},
+            {"nombre": "Preocupación por el interés general", "valor": 1.60, "variacion": "+6,4%"}
+        ]
+    },
+    "icc": {
+        "mes_label": "Nov 2026",
+        "valor": 40.99,
+        "valor_formateado": "40,99 pts",
+        "variacion_mensual": "-1,27%",
+        "variacion_interanual": "-10,98%"
+    }
+}
+
+_UTDT_CACHE_TS = 0.0
+_UTDT_LOCK = threading.Lock()
+
+def actualizar_aceptacion_utdt() -> Dict[str, Any]:
+    global _UTDT_CACHE_TS, CACHE_ACEPTACION_GOBIERNO
+    now = time.time()
+    if now - _UTDT_CACHE_TS < 21600.0:
+        return CACHE_ACEPTACION_GOBIERNO
+    if not _UTDT_LOCK.acquire(blocking=False):
+        return CACHE_ACEPTACION_GOBIERNO
+    try:
+        hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        # 1. ICG UTDT (Escuela de Gobierno)
+        r_icg = GLOBAL_HTTP_SESSION.get("https://www.utdt.edu/ver_contenido.php?id_contenido=1439&id_item_menu=2964", headers=hdrs, timeout=5.0, verify=False)
+        if r_icg.status_code == 200 and r_icg.text:
+            plano = BeautifulSoup(r_icg.text, "html.parser").get_text(" ", strip=True)
+            m_icg = re.search(
+                r"El ICG de ([a-záéíóú]+) fue de (\d+,\d+) puntos,\s*nivel que representa (?:un aumento|una disminuci[oó]n|una ca[ií]da) del (\d+,\d+)% respecto del mes anterior\.\s*El nivel de confianza en el mes (\d+) de la presidencia de Javier Milei es (\d+,\d+)% (mayor|menor) que el de la presidencia de Mauricio Macri,\s*y (\d+,\d+)% (mayor|menor) que el de la de Alberto Fern[aá]ndez",
+                plano,
+                re.IGNORECASE
+            )
+            if m_icg:
+                mes_nom = m_icg.group(1).capitalize()
+                val_icg = normalizar_valor(m_icg.group(2))
+                var_m_num = normalizar_valor(m_icg.group(3))
+                es_baja = "disminuci" in m_icg.group(0).lower() or "ca" in m_icg.group(0).lower()
+                var_m_str = f"{'-' if es_baja else '+'}{m_icg.group(3)}%"
+                mes_mandato = int(m_icg.group(4))
+                pct_macri = normalizar_valor(m_icg.group(5))
+                dir_macri = m_icg.group(6).lower()
+                pct_alberto = normalizar_valor(m_icg.group(7))
+                dir_alberto = m_icg.group(8).lower()
+
+                if val_icg and pct_macri is not None and pct_alberto is not None:
+                    signed_macri = pct_macri if dir_macri == "mayor" else -pct_macri
+                    signed_alberto = pct_alberto if dir_alberto == "mayor" else -pct_alberto
+                    val_macri = round(val_icg / (1.0 + signed_macri / 100.0), 2)
+                    val_alberto = round(val_icg / (1.0 + signed_alberto / 100.0), 2)
+                    CACHE_ACEPTACION_GOBIERNO["icg"].update({
+                        "mes_label": f"{mes_nom[:3]} 2026",
+                        "mes_mandato": mes_mandato,
+                        "valor": val_icg,
+                        "valor_formateado": f"{m_icg.group(2)} pts",
+                        "variacion_mensual": var_m_str,
+                        "comparativa_anteriores": [
+                            {
+                                "presidente": "Mauricio Macri",
+                                "periodo": f"Mes {mes_mandato} de mandato",
+                                "valor": val_macri,
+                                "valor_formateado": f"{val_macri:.2f} pts".replace(".", ","),
+                                "diferencia_pct": signed_macri,
+                                "diferencia_formateada": f"{'+' if signed_macri >= 0 else ''}{signed_macri:.1f}%".replace(".", ","),
+                                "estado": "Más alto" if signed_macri >= 0 else "Más bajo"
+                            },
+                            {
+                                "presidente": "Alberto Fernández",
+                                "periodo": f"Mes {mes_mandato} de mandato",
+                                "valor": val_alberto,
+                                "valor_formateado": f"{val_alberto:.2f} pts".replace(".", ","),
+                                "diferencia_pct": signed_alberto,
+                                "diferencia_formateada": f"{'+' if signed_alberto >= 0 else ''}{signed_alberto:.1f}%".replace(".", ","),
+                                "estado": "Más alto" if signed_alberto >= 0 else "Más bajo"
+                            }
+                        ]
+                    })
+
+        # 2. ICC UTDT (Centro de Investigación en Finanzas)
+        r_icc = GLOBAL_HTTP_SESSION.get("https://www.utdt.edu/ver_contenido.php?id_contenido=2575&id_item_menu=4982", headers=hdrs, timeout=5.0, verify=False)
+        if r_icc.status_code == 200 and r_icc.text:
+            plano_icc = BeautifulSoup(r_icc.text, "html.parser").get_text(" ", strip=True)
+            m_icc = re.search(
+                r"([A-ZÁÉÍÓÚ][a-záéíóú]+ 20\d{2})\s+LA CONFIANZA DE LOS CONSUMIDORES (SUBE|CAE|BAJA) (\d+(?:,\d+)?)%",
+                plano_icc
+            )
+            if m_icc:
+                mes_icc = m_icc.group(1)
+                sube_icc = m_icc.group(2).upper() == "SUBE"
+                var_icc_str = f"{'+' if sube_icc else '-'}{m_icc.group(3)}%"
+                CACHE_ACEPTACION_GOBIERNO["icc"]["mes_label"] = mes_icc
+                CACHE_ACEPTACION_GOBIERNO["icc"]["variacion_mensual"] = var_icc_str
+                # Recalcular nivel si avanzó respecto al dato base de Noviembre 2026 (40.99)
+                if "noviembre 2026" not in mes_icc.lower():
+                    v_var = normalizar_valor(m_icc.group(3)) or 0.0
+                    factor = (1.0 + v_var / 100.0) if sube_icc else (1.0 - v_var / 100.0)
+                    nuevo_icc = round(CACHE_ACEPTACION_GOBIERNO["icc"]["valor"] * factor, 2)
+                    CACHE_ACEPTACION_GOBIERNO["icc"]["valor"] = nuevo_icc
+                    CACHE_ACEPTACION_GOBIERNO["icc"]["valor_formateado"] = f"{nuevo_icc:.2f} pts".replace(".", ",")
+        _UTDT_CACHE_TS = time.time()
+    except Exception:
+        _UTDT_CACHE_TS = time.time() - 18000.0
+    finally:
+        _UTDT_LOCK.release()
+    return CACHE_ACEPTACION_GOBIERNO
+
+@app.get("/api/aceptacion-gobierno")
+def ver_aceptacion_gobierno():
+    datos_utdt = actualizar_aceptacion_utdt()
+    with CACHE_LOCK:
+        rp_obj = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), None)
+        icc_micro = next((x for x in CACHE_VARIABLES.get("micro_y_sectores", []) if x.get("variable") == "CONFIANZA_CONSUMIDOR"), None)
+        icg_micro = next((x for x in CACHE_VARIABLES.get("micro_y_sectores", []) if x.get("variable") == "CONFIANZA_GOBIERNO"), None)
+        if icc_micro and datos_utdt.get("icc"):
+            icc_micro["valor"] = datos_utdt["icc"]["valor"]
+            icc_micro["valor_formateado"] = datos_utdt["icc"]["valor_formateado"]
+            icc_micro["variacion"] = datos_utdt["icc"]["variacion_mensual"]
+            icc_micro["fecha"] = f"UTDT {datos_utdt['icc']['mes_label']}"
+        if icg_micro and datos_utdt.get("icg"):
+            icg_micro["valor"] = datos_utdt["icg"]["valor"]
+            icg_micro["valor_formateado"] = datos_utdt["icg"]["valor_formateado"]
+            icg_micro["variacion"] = datos_utdt["icg"]["variacion_mensual"]
+            icg_micro["fecha"] = f"UTDT {datos_utdt['icg']['mes_label']}"
+        return {
+            "riesgo_pais": rp_obj,
+            "icg": datos_utdt.get("icg"),
+            "icc": datos_utdt.get("icc"),
+            "updated": ULTIMA_ACTUALIZACION
+        }
+
 @app.get("/api/calendario/economico")
 def ver_calendario_economico(desde: Optional[str] = Query(None), hasta: Optional[str] = Query(None)):
     indec = extraer_calendario_indec()

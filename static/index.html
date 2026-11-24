@@ -186,7 +186,8 @@
             <button onclick="filtrarCategoria('micro_y_sectores', event)" class="nav-tab px-2.5 py-2 sm:py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-industry text-orange-400 text-[10px]"></i><span class="truncate">Micro / Real</span></button>
             <button onclick="filtrarCategoria('commodities_agro_energia', event)" class="nav-tab px-2.5 py-2 sm:py-1.5 rounded-xl neon-tab text-slate-300 transition truncate flex items-center justify-center gap-1.5"><i class="fa-solid fa-wheat-awn text-lime-400 text-[10px]"></i><span class="truncate">Agro & Energía</span></button>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-1.5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+            <button onclick="filtrarCategoria('aceptacion_gobierno', event)" class="nav-tab sm:col-span-1 lg:col-span-2 px-3 py-2 sm:py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-emerald-500/30"><i class="fa-solid fa-landmark-dome text-emerald-400 text-[11px]"></i><span class="truncate font-semibold">Aceptación del Gobierno</span></button>
             <button onclick="filtrarCategoria('calendario_licitaciones', event)" class="nav-tab sm:col-span-1 lg:col-span-2 px-3 py-2 sm:py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-cyan-500/30"><i class="fa-regular fa-calendar-check text-cyan-400 text-[11px]"></i><span class="truncate font-semibold">Calendario Licitaciones</span></button>
             <button onclick="filtrarCategoria('calendario_economico', event)" class="nav-tab sm:col-span-1 lg:col-span-2 px-3 py-2 sm:py-1.5 rounded-xl neon-tab text-slate-200 transition truncate flex items-center justify-center gap-2 border-purple-500/25"><i class="fa-solid fa-calendar-days text-purple-400 text-[11px]"></i><span class="truncate font-semibold">Calendario Económico (ARG / EE.UU.)</span></button>
           </div>
@@ -448,7 +449,8 @@
       micro_y_sectores: { titulo: "Economía Real, Crédito y Actividad Productiva", sub: "Construcción, Industria, Consumo y Crédito", icono: "fa-solid fa-industry", iconoDer: "fa-solid fa-city text-amber-400/80", barra: "section-bar-amber", flare: "glow-flare-amber", badge: "bg-amber-500/20 border-amber-500/25 text-amber-300" },
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-solid fa-wheat-awn", iconoDer: "fa-solid fa-tractor text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/25 text-emerald-300" },
       calendario_licitaciones: { titulo: "Calendario de Licitaciones Primarias", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-regular fa-calendar-check", iconoDer: "fa-solid fa-gavel text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" },
-      calendario_economico: { titulo: "Calendario Económico — Argentina y Estados Unidos", sub: "Agenda de Publicaciones e Indicadores Macroeconómicos", icono: "fa-solid fa-calendar-days", iconoDer: "fa-solid fa-clock-rotate-left text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" }
+      calendario_economico: { titulo: "Calendario Económico — Argentina y Estados Unidos", sub: "Agenda de Publicaciones e Indicadores Macroeconómicos", icono: "fa-solid fa-calendar-days", iconoDer: "fa-solid fa-clock-rotate-left text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
+      aceptacion_gobierno: { titulo: "Aceptación del Gobierno y Humor Social", sub: "Riesgo País EMBI+ • Confianza del Consumidor (ICC) • Confianza en el Gobierno (ICG Di Tella)", icono: "fa-solid fa-landmark-dome", iconoDer: "fa-solid fa-chart-simple text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" }
     };
 
     window.BLOQUES_HOME = [
@@ -2579,12 +2581,276 @@
         </div>`;
     };
 
+
+    // ============================================================================
+    // MÓDULO: ACEPTACIÓN DEL GOBIERNO (RIESGO PAÍS + ICC & ICG DI TELLA)
+    // ============================================================================
+    window.DATOS_ACEPTACION_GOBIERNO = {
+      icg: {
+        mes_label: "Nov 2026",
+        mes_mandato: 35,
+        valor: 2.04,
+        valor_formateado: "2,04 pts",
+        variacion_mensual: "+4,1%",
+        variacion_interanual: "-17,5%",
+        comparativa_anteriores: [
+          {
+            presidente: "Mauricio Macri",
+            periodo: "Nov 2018 (Mes 35)",
+            valor: 1.77,
+            valor_formateado: "1,77 pts",
+            diferencia_pct: 15.2,
+            diferencia_formateada: "+15,2%",
+            estado: "Más alto"
+          },
+          {
+            presidente: "Alberto Fernández",
+            periodo: "Nov 2022 (Mes 35)",
+            valor: 1.19,
+            valor_formateado: "1,19 pts",
+            diferencia_pct: 71.1,
+            diferencia_formateada: "+71,1%",
+            estado: "Más alto"
+          }
+        ],
+        componentes: [
+          { nombre: "Honestidad de los funcionarios", valor: 2.41, variacion: "+1,4%" },
+          { nombre: "Capacidad para resolver problemas", valor: 2.40, variacion: "+5,6%" },
+          { nombre: "Eficiencia en el gasto público", valor: 2.08, variacion: "+4,5%" },
+          { nombre: "Evaluación general del gobierno", valor: 1.69, variacion: "+3,6%" },
+          { nombre: "Preocupación por el interés general", valor: 1.60, variacion: "+6,4%" }
+        ]
+      },
+      icc: {
+        mes_label: "Nov 2026",
+        valor: 40.99,
+        valor_formateado: "40,99 pts",
+        variacion_mensual: "-1,27%",
+        variacion_interanual: "-10,98%"
+      }
+    };
+
+    window.sincronizarAceptacionGobierno = async function() {
+      const resp = await fetchJsonSeguro("/api/aceptacion-gobierno?t=" + Date.now());
+      if (resp && typeof resp === "object") {
+        if (resp.icg) window.DATOS_ACEPTACION_GOBIERNO.icg = resp.icg;
+        if (resp.icc) window.DATOS_ACEPTACION_GOBIERNO.icc = resp.icc;
+        if (resp.riesgo_pais && resp.riesgo_pais.valor) {
+          if (!datosGlobales.indices) datosGlobales.indices = [...window.INDICES_ESTATICOS_BASE];
+          const idx = datosGlobales.indices.findIndex(x => x && x.variable === "RIESGO_PAIS");
+          if (idx >= 0) datosGlobales.indices[idx] = resp.riesgo_pais;
+        }
+        if (categoriaActiva === "aceptacion_gobierno") renderizar(true);
+      }
+    };
+
+    window.renderizarSeccionAceptacionGobierno = function() {
+      const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) ? datosGlobales.indices : window.INDICES_ESTATICOS_BASE;
+      const rpItem = fuenteIndices.find(x => x && x.variable === "RIESGO_PAIS") || {
+        variable: "RIESGO_PAIS",
+        descripcion: "Riesgo País EMBI+",
+        valor_formateado: "1.038 pb",
+        variacion: "+11,5%",
+        var_mes: "+31,9%",
+        var_anio: "+81,8%",
+        valor: 1038
+      };
+
+      const icg = window.DATOS_ACEPTACION_GOBIERNO.icg;
+      const icc = window.DATOS_ACEPTACION_GOBIERNO.icc;
+      const animRp = FLASH_REGISTRO["RIESGO_PAIS"] || "";
+
+      const renderBadgeVar = (vStr, invertir = false) => {
+        const s = String(vStr || "0,0%").trim();
+        const esPos = s.includes("+");
+        const esNeg = s.includes("-") || s.includes("−");
+        if (!esPos && !esNeg) {
+          return `<span class="text-slate-400 num-editorial text-xs font-semibold flex items-center gap-1"><span class="text-[8px]">▪</span><span>${s}</span></span>`;
+        }
+        const bueno = invertir ? esNeg : esPos;
+        const cls = bueno ? "text-emerald-400" : "text-rose-400";
+        const flecha = esPos ? "▲" : "▼";
+        return `<span class="${cls} num-editorial text-xs font-bold flex items-center gap-1"><span class="text-[9px]">${flecha}</span><span>${s}</span></span>`;
+      };
+
+      const comparativasHtml = (icg.comparativa_anteriores || []).map(comp => {
+        const esMasAlto = Number(comp.diferencia_pct) >= 0;
+        const badgeColor = esMasAlto
+          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/35"
+          : "bg-rose-500/15 text-rose-300 border-rose-500/35";
+        const barraActualPct = Math.min(100, Math.round((icg.valor / 5.0) * 100));
+        const barraPrevPct = Math.min(100, Math.round((comp.valor / 5.0) * 100));
+
+        return `
+          <div class="rounded-xl border border-slate-800/55 bg-slate-950/60 p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-white">vs. ${comp.presidente}</div>
+                <div class="text-[11px] font-mono text-slate-400">${comp.periodo}</div>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border font-mono text-xs font-extrabold ${badgeColor}">
+                <span>${esMasAlto ? "▲" : "▼"} ${comp.diferencia_formateada}</span>
+                <span class="uppercase text-[10px] tracking-wider">(${comp.estado})</span>
+              </div>
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <div class="space-y-1">
+                <div class="flex justify-between text-[11px] font-mono">
+                  <span class="text-cyan-300 font-semibold">Javier Milei (${icg.mes_label})</span>
+                  <span class="text-white font-bold">${icg.valor_formateado} / 5,00</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800/60">
+                  <div class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full" style="width: ${barraActualPct}%;"></div>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex justify-between text-[11px] font-mono">
+                  <span class="text-slate-400">${comp.presidente} (${comp.periodo})</span>
+                  <span class="text-slate-300 font-semibold">${comp.valor_formateado} / 5,00</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800/60">
+                  <div class="h-full bg-slate-500/70 rounded-full" style="width: ${barraPrevPct}%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+
+      const componentesHtml = (icg.componentes || []).map(c => {
+        const pct = Math.min(100, Math.round((c.valor / 5.0) * 100));
+        const pos = String(c.variacion || "").includes("+");
+        return `
+          <div class="flex items-center gap-3 text-xs font-mono py-1.5 px-2.5 rounded-lg hover:bg-slate-900/50 transition">
+            <span class="w-56 sm:w-64 shrink-0 text-slate-200 font-sans font-medium truncate" title="${c.nombre}">${c.nombre}</span>
+            <div class="flex-1 h-2.5 rounded-full bg-slate-950 border border-slate-800/55 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full" style="width: ${pct}%;"></div>
+            </div>
+            <span class="w-16 text-right font-bold text-white shrink-0">${Number(c.valor).toFixed(2).replace(".", ",")}</span>
+            <span class="w-16 text-right font-bold ${pos ? "text-emerald-400" : "text-rose-400"} shrink-0">${c.variacion}</span>
+          </div>`;
+      }).join("");
+
+      return `
+        <div class="space-y-5">
+          ${renderizarBarraSeccion(window.CONFIG_SECCIONES.aceptacion_gobierno)}
+
+          <!-- Fila Superior: 3 Tarjetas Principales -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Tarjeta 1: Riesgo País -->
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between ${animRp ? "card-" + animRp : ""}">
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Riesgo País EMBI+</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">JP Morgan • En vivo</span>
+                </div>
+                <div class="mt-3">
+                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial ${animRp}">${rpItem.valor_formateado}</span>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                ${renderBadgeVar(rpItem.variacion, true)}
+                <div class="flex items-center gap-2.5 num-editorial text-[11px] text-slate-400">
+                  <span>Mes <strong class="${String(rpItem.var_mes || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_mes || "-"}</strong></span>
+                  <span>Año <strong class="${String(rpItem.var_anio || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_anio || "-"}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta 2: Índice de Confianza del Consumidor (ICC) -->
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza del Consumidor (ICC)</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">CIF • UTDT</span>
+                </div>
+                <div class="mt-3">
+                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icc.valor_formateado}</span>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  ${renderBadgeVar(icc.variacion_mensual, false)}
+                  <span class="text-[10px] font-mono text-slate-400">m/m</span>
+                </div>
+                <div class="text-[11px] font-mono text-slate-400">
+                  i.a.: <strong class="${String(icc.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icc.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icc.mes_label}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta 3: Índice de Confianza en el Gobierno (ICG Di Tella) -->
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between border-emerald-500/30">
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza en el Gobierno (ICG)</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">UTDT • Escala 0–5</span>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2.5">
+                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icg.valor_formateado}</span>
+                  <span class="text-xs font-mono text-cyan-300">Mes ${icg.mes_mandato} de gestión</span>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  ${renderBadgeVar(icg.variacion_mensual, false)}
+                  <span class="text-[10px] font-mono text-slate-400">m/m</span>
+                </div>
+                <div class="text-[11px] font-mono text-slate-400">
+                  i.a.: <strong class="${String(icg.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icg.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icg.mes_label}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque Central: Contraste Histórico ICG Di Tella vs 2 Gobiernos Anteriores -->
+          <div class="rounded-2xl border border-slate-800/50 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl space-y-4">
+            <div class="border-b border-slate-800/50 pb-3 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-xs">
+                  <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div>
+                  <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">Contraste Histórico ICG Di Tella — Misma Altura del Mandato (Mes ${icg.mes_mandato})</h3>
+                  <p class="text-[11px] text-slate-400 font-mono">Diferencia porcentual del nivel actual (${icg.valor_formateado}) frente a las dos presidencias anteriores</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800/60 text-slate-300">Escuela de Gobierno • UTDT</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              ${comparativasHtml}
+            </div>
+          </div>
+
+          <!-- Desglose de los 5 Subíndices del ICG Di Tella -->
+          <div class="rounded-2xl border border-slate-800/50 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl space-y-3">
+            <div class="border-b border-slate-800/50 pb-2.5 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-cyan-400 text-xs"></i>
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Desglose por Subíndices del ICG (${icg.mes_label})</h3>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">Puntaje (0 a 5) y variación mensual</span>
+            </div>
+            <div class="space-y-1">
+              ${componentesHtml}
+            </div>
+          </div>
+        </div>`;
+    };
+
     // ============================================================================
     // 6. MOTOR DE RENDERIZADO PRINCIPAL (CON PROTECCIÓN ANTI-PARPADEO DE WIDGETS)
     // ============================================================================
     function renderizar(forzarReconstruccion = false) {
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
+      if (categoriaActiva === "aceptacion_gobierno") {
+        vistaMontadaActual = "aceptacion_gobierno";
+        contenedor.innerHTML = window.renderizarSeccionAceptacionGobierno();
+        return;
+      }
       if (categoriaActiva === "calendario_licitaciones") {
         vistaMontadaActual = "calendario_licitaciones";
         contenedor.innerHTML = window.renderizarSeccionCalendarioMAE();
@@ -3314,6 +3580,7 @@
       document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
       if (ev && ev.currentTarget) ev.currentTarget.classList.add("active");
       if (cat === "calendario_economico" && window.sincronizarCalendarioEconomico) window.sincronizarCalendarioEconomico();
+      if (cat === "aceptacion_gobierno" && window.sincronizarAceptacionGobierno) window.sincronizarAceptacionGobierno();
       renderizar(true);
     }
 
@@ -3520,6 +3787,7 @@
     ejecutarSinSolapar("cauciones", window.sincronizarCaucionesRava);
     ejecutarSinSolapar("acciones", window.sincronizarAccionesArgentinaRava);
     ejecutarSinSolapar("cal_eco", window.sincronizarCalendarioEconomico);
+    ejecutarSinSolapar("aceptacion_gob", window.sincronizarAceptacionGobierno);
     ejecutarSinSolapar("licit", window.sincronizarLicitacionesA3);
 
     // Pulso principal cada 8s (datos en vivo) y calendarios cada 45s si están activos
