@@ -3629,9 +3629,9 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
         feeds_us = [
-            ("https://www.infobae.com/arc/outboundfeeds/rss/category/america/eeuu/", "Infobae EE.UU."),
-            ("https://www.ambito.com/rss/pages/economia.xml", "Ámbito Global"),
-            ("https://feeds.bbci.co.uk/mundo/topics/c2dwqd1zr92t/rss.xml", "BBC Economía"),
+            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI,NVDA,AAPL,MSFT,TLT,GC=F,CL=F&region=US&lang=en-US", "Yahoo Finance"),
+            ("https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "MarketWatch"),
+            ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069", "CNBC Markets"),
             ("https://www.eleconomista.es/rss/rss-mercados.php", "El Economista")
         ]
 
@@ -3660,9 +3660,22 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             if len(lista_ar_limpia) >= 6:
                 break
 
+        kw_wallstreet = (
+            "wall street", "s&p", "nasdaq", "dow", "fed", "federal reserve", "powell",
+            "treasury", "yield", "inflation", "cpi", "pce", "gdp", "jobs", "payroll",
+            "nvidia", "apple", "microsoft", "alphabet", "amazon", "meta", "tesla", "semiconductor",
+            "oil", "gold", "bitcoin", "stocks", "market", "tariff", "trump", "rate",
+            "bolsa", "tesoro", "reserva federal", "eeuu", "ee.uu.", "estados unidos", "tasa", "petróleo", "oro"
+        )
+        kw_descartar = ("plazo fijo", "anses", "inaes", "papa", "francisco", "españa", "ibex", "madrid", "bcra", "merval", "milei", "caputo")
         lista_us_limpia = []
         for it in res_us:
-            k = it["titulo"].lower()[:55]
+            tl = it["titulo"].lower()
+            if any(b in tl for b in kw_descartar):
+                continue
+            if not any(ok in tl for ok in kw_wallstreet):
+                continue
+            k = tl[:55]
             if k not in vistos:
                 vistos.add(k)
                 lista_us_limpia.append(it)
