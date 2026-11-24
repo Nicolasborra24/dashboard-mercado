@@ -3593,21 +3593,43 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
     return salida
 
 def _traducir_titular_es(texto: str) -> str:
-    """Traduce titulares financieros de ingles a espanol usando Google Translate GTX."""
+    """Traduce titulares financieros de ingles a espanol con fallback doble."""
     if not texto or len(texto.strip()) < 5:
         return texto
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    }
+    # 1. Google Translate clients5 / gtx
+    for u in (
+        f"https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=es&q={quote(texto)}",
+        f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q={quote(texto)}"
+    ):
+        try:
+            r = requests.get(u, headers=hdrs, timeout=3.0)
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, list) and data:
+                    if isinstance(data[0], str) and data[0].strip():
+                        return data[0].strip()
+                    if isinstance(data[0], list):
+                        partes = [seg[0] for seg in data[0] if isinstance(seg, list) and seg and seg[0]]
+                        trad = "".join(partes).strip()
+                        if trad:
+                            return trad
+        except Exception:
+            pass
+    # 2. Respaldo gratuito MyMemory
     try:
-        u = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q={quote(texto)}"
-        r = GLOBAL_HTTP_SESSION.get(u, timeout=2.5, verify=False)
-        if r.status_code == 200:
-            data = r.json()
-            partes = [seg[0] for seg in (data[0] or []) if seg and seg[0]]
-            trad = "".join(partes).strip()
-            if trad:
-                return trad
+        u_mm = f"https://api.mymemory.translated.net/get?q={quote(texto[:450])}&langpair=en|es"
+        r2 = requests.get(u_mm, headers=hdrs, timeout=3.0)
+        if r2.status_code == 200:
+            trad2 = (r2.json().get("responseData") or {}).get("translatedText", "").strip()
+            if trad2 and trad2.lower() != texto.lower():
+                return trad2
     except Exception:
         pass
     return texto
+
 
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
