@@ -290,6 +290,8 @@ MAPEO = {
     "indigencia": ("INDIGENCIA", "Tasa de Indigencia", "macro_y_fiscal"),
     "empleo público": ("EMPLEO_PUBLICO", "Empleo Público", "macro_y_fiscal"),
     "trabajadores registrados": ("TRABAJADORES_REGISTRADOS", "Trabajadores Registrados", "macro_y_fiscal"),
+    "desempleo": ("DESEMPLEO", "Tasa de Desempleo (EPH)", "macro_y_fiscal"),
+    "tasa de desempleo": ("DESEMPLEO", "Tasa de Desempleo (EPH)", "macro_y_fiscal"),
     "créditos hipotecarios": ("CREDITOS_HIPOTECARIOS", "Créditos Hipotecarios", "micro_y_sectores"),
     "préstamos al sector privado": ("PRESTAMOS_PRIVADOS", "Préstamos Sector Privado", "micro_y_sectores"),
     "isac (construcción)": ("ISAC_CONSTRUCCION", "ISAC Construcción", "micro_y_sectores"),
