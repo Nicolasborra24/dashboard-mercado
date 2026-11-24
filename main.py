@@ -3366,30 +3366,135 @@ def ver_aceptacion_gobierno():
 
 
 
+
 CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
-    "finanzas_argy": [
+    "top5": [
         {
-            "titulo": "Seguimiento intradiario de dólar MEP, CCL, Blue y brechas cambiarias frente al mayorista",
-            "url": "https://x.com/FinanzasArgy",
-            "seccion": "@FinanzasArgy • X",
+            "titulo": "Wall Street rebota con fuerza: Nasdaq +6,51% y S&P 500 +4,73% impulsados por el rally de Nvidia (+31,48%) tras el regreso de Jensen Huang",
+            "url": "https://www.ambito.com/finanzas/wall-street-rebota-67-el-nasdaq-al-frente-el-nuevo-nombramiento-jensen-huang-nvidia-n6348272",
+            "fuente": "Wall Street • Tech & IA",
+            "mercado": "EE.UU.",
+            "impacto": "Alcista Tech / Riesgo",
             "fecha": "Hoy • En vivo"
         },
         {
-            "titulo": "Dinámica de reservas del BCRA, licitaciones del Tesoro y evolución de tasas en pesos",
-            "url": "https://x.com/FinanzasArgy",
-            "seccion": "@FinanzasArgy • X",
+            "titulo": "Dólar en Argentina: el oficial se ubica en $1.600, el MEP en $1.696,42 y el CCL en $1.851,48 con foco en reservas del BCRA",
+            "url": "https://tn.com.ar/economia/2026/11/24/dolar-oficial-hoy-y-dolar-blue-a-cuanto-cotizan-este-martes-24-de-noviembre/",
+            "fuente": "Mercado Cambiario AR",
+            "mercado": "Argentina",
+            "impacto": "Divisas & Brechas",
             "fecha": "Hoy • En vivo"
         },
         {
-            "titulo": "Cotizaciones de bonos soberanos, riesgo país EMBI+ y acciones líderes del S&P Merval",
-            "url": "https://x.com/FinanzasArgy",
-            "seccion": "@FinanzasArgy • X",
+            "titulo": "La Reserva Federal mantiene tono hawkish de cara a la reunión de diciembre con el bono del Tesoro a 10 años en 4,92%",
+            "url": "https://es.dailyforex.com/stock-market-today/2026/11/23-a-24-semana-sp500-y-7-magnificas-atraviesa-fase-de-correccion/252080",
+            "fuente": "Fed & Tasas UST",
+            "mercado": "EE.UU.",
+            "impacto": "Tasas & Liquidez",
             "fecha": "Hoy • En vivo"
         },
         {
-            "titulo": "Drivers globales: Wall Street, tasas de la Reserva Federal y commodities agropecuarios",
-            "url": "https://x.com/FinanzasArgy",
-            "seccion": "@FinanzasArgy • X",
+            "titulo": "Bonos soberanos argentinos y S&P Merval operan atentos a la dinámica del Riesgo País y las tasas en pesos",
+            "url": "https://www.cronista.com/finanzas-mercados/",
+            "fuente": "Renta Fija & Merval",
+            "mercado": "Argentina",
+            "impacto": "Bonos & Acciones",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Agenda clave en EE.UU.: inversores aguardan Confianza del Consumidor hoy y el índice de inflación PCE junto al PIB del 3T",
+            "url": "https://cincodias.elpais.com/mercados-financieros/2026-11-24/la-bolsa-y-el-ibex-35.html",
+            "fuente": "Macro EE.UU.",
+            "mercado": "EE.UU.",
+            "impacto": "Driver Macro",
+            "fecha": "Hoy • En vivo"
+        }
+    ],
+    "argentina": [
+        {
+            "titulo": "Dólar oficial en $1.600 y dólares financieros (MEP $1.696,42 / CCL $1.851,48) marcan el pulso cambiario de la rueda",
+            "url": "https://tn.com.ar/economia/2026/11/24/dolar-oficial-hoy-y-dolar-blue-a-cuanto-cotizan-este-martes-24-de-noviembre/",
+            "fuente": "Cambiario",
+            "impacto": "Dólar & Brechas",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Dólar Blue opera en $1.675 y mantiene una brecha del 5% frente al tipo de cambio oficial minorista",
+            "url": "https://www.lanacion.com.ar/economia/dolar/dolar-blue-hoy-a-cuanto-cotiza-el-martes-24-de-noviembre-nid24112026/",
+            "fuente": "Mercado Paralelo",
+            "impacto": "Divisas",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Deuda soberana en dólares y Riesgo País EMBI+: el mercado evalúa paridades de Bonares y Globales",
+            "url": "https://www.ambito.com/contenidos/finanzas.html",
+            "fuente": "Bonos Soberanos",
+            "impacto": "Renta Fija USD",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Curva en pesos (LECAP, BONCAP y CER) y tasas de caución bursátil bajo la lupa de la mesa de dinero",
+            "url": "https://www.cronista.com/finanzas-mercados/",
+            "fuente": "Tasas & Pesos",
+            "impacto": "Renta Fija ARS",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "S&P Merval y ADRs argentinos en Nueva York acompañan el rebote de los índices estadounidenses",
+            "url": "https://www.infobae.com/economia/",
+            "fuente": "Renta Variable",
+            "impacto": "Acciones & ADRs",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Acumulación de reservas del BCRA, superávit fiscal y expectativas de inflación REM marcan el horizonte macro",
+            "url": "https://www.iprofesional.com/finanzas",
+            "fuente": "Macro & BCRA",
+            "impacto": "Fundamentales",
+            "fecha": "Hoy • En vivo"
+        }
+    ],
+    "estados_unidos": [
+        {
+            "titulo": "Nasdaq Composite salta +6,51% y S&P 500 +4,73% en su mejor rueda desde abril tras el regreso de Jensen Huang a Nvidia (+31,48%)",
+            "url": "https://www.ambito.com/finanzas/wall-street-rebota-67-el-nasdaq-al-frente-el-nuevo-nombramiento-jensen-huang-nvidia-n6348272",
+            "fuente": "Wall Street",
+            "impacto": "Tecnología & IA",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Semiconductores lideran la recuperación global: el ETF SMHX trepa +13,92% con fuertes alzas en Micron (+19%) e Intel (+16,3%)",
+            "url": "https://www.cnbc.com/markets/",
+            "fuente": "Semiconductores",
+            "impacto": "Chips & Hardware",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "La Fed sostiene un discurso restrictivo: Anna Paulson (Fed Filadelfia) advierte que la política monetaria debe seguir firme hacia el 2%",
+            "url": "https://es.dailyforex.com/stock-market-today/2026/11/23-a-24-semana-sp500-y-7-magnificas-atraviesa-fase-de-correccion/252080",
+            "fuente": "Reserva Federal",
+            "impacto": "Política Monetaria",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Rendimiento del Bono del Tesoro de EE.UU. a 10 años (UST 10Y) se sostiene en torno al 4,92% antes de la reunión del FOMC de diciembre",
+            "url": "https://www.marketwatch.com/markets",
+            "fuente": "US Treasuries",
+            "impacto": "Curva Soberana",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Expectativa por el dato de Confianza del Consumidor (Conference Board), revisión del PIB del 3T e inflación PCE subyacente",
+            "url": "https://cincodias.elpais.com/mercados-financieros/2026-11-24/la-bolsa-y-el-ibex-35.html",
+            "fuente": "Calendario Macro",
+            "impacto": "Datos Clave EE.UU.",
+            "fecha": "Hoy • En vivo"
+        },
+        {
+            "titulo": "Oro (US$ 3.651/oz, +3,87%) y Bitcoin (US$ 61.175, +4,91%) rebotan junto con el apetito por riesgo global",
+            "url": "https://finance.yahoo.com/",
+            "fuente": "Commodities & Cripto",
+            "impacto": "Activos Globales",
             "fecha": "Hoy • En vivo"
         }
     ],
@@ -3399,82 +3504,92 @@ CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
 _NOTICIAS_CACHE_TS = 0.0
 _NOTICIAS_LOCK = threading.Lock()
 
-def _limpiar_texto_post_x(raw_txt: str) -> str:
-    t = BeautifulSoup(str(raw_txt or ""), "html.parser").get_text(" ", strip=True)
-    t = re.sub(r"https?://\S+", "", t)
-    t = re.sub(r"\s+", " ", t).strip()
-    if len(t) > 230:
-        t = t[:227].rstrip() + "..."
-    return t
+KW_DRIVERS_AR = (
+    "dolar", "dólar", "bcra", "bono", "bonos", "merval", "riesgo pais", "riesgo país",
+    "tasa", "tasas", "inflacion", "inflación", "reserva", "reservas", "lecap", "cer",
+    "mep", "ccl", "licitacion", "licitación", "deuda", "ypf", "rigi", "caputo", "bausili",
+    "adr", "adrs", "byma", "cedear", "emae", "fmi", "banco central", "acciones"
+)
 
-def _parsear_posts_jina_x(raw_md: str, hoy_iso: str, tz_ar) -> List[Dict[str, Any]]:
-    """Extrae los posteos cronológicos más recientes del timeline de X vía Jina Reader ignorando el tweet fijado."""
+KW_DRIVERS_USA = (
+    "wall street", "fed", "reserva federal", "s&p", "nasdaq", "dow jones", "nvidia",
+    "treasury", "bonos del tesoro", "powell", "inflacion", "inflación", "pce", "pib",
+    "gdp", "tasas", "types", "tipos", "petroleo", "petróleo", "oro", "bitcoin", "ia",
+    "semiconductores", "chips", "tecnolog", "apple", "microsoft", "tesla", "fomc"
+)
+
+def _parsear_google_news_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str) -> List[Dict[str, Any]]:
     salida: List[Dict[str, Any]] = []
-    if not raw_md or len(raw_md) < 200:
-        return salida
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+    }
+    try:
+        r = GLOBAL_HTTP_SESSION.get(url_rss, headers=hdrs, timeout=4.5, verify=False)
+        if r.status_code != 200 or "<item" not in r.text.lower():
+            return salida
+        soup = BeautifulSoup(r.text, "html.parser")
+        from email.utils import parsedate_to_datetime
+        for it in soup.find_all("item"):
+            t_el = it.find("title")
+            l_el = it.find("link")
+            p_el = it.find("pubdate")
+            s_el = it.find("source")
+            raw_tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
+            raw_tit = re.sub(r"\s+", " ", raw_tit).strip()
+            fuente_nom = s_el.get_text(strip=True) if s_el else mercado_lbl
+            if " - " in raw_tit:
+                partes = raw_tit.rsplit(" - ", 1)
+                raw_tit = partes[0].strip()
+                if not s_el:
+                    fuente_nom = partes[1].strip()
 
-    # Dividir por bloques de enlaces a /FinanzasArgy/status/<id>
-    bloques = re.split(r'(?=https?://(?:x|twitter)\.com/FinanzasArgy/status/\d+)', raw_md)
-    vistos = set()
-    now_ts = datetime.now(tz_ar).timestamp()
-
-    for b in bloques:
-        m_st = re.search(r'https?://(?:x|twitter)\.com/FinanzasArgy/status/(\d+)', b)
-        if not m_st:
-            continue
-        tid_int = int(m_st.group(1))
-        url_post = f"https://x.com/FinanzasArgy/status/{tid_int}"
-
-        # Ignorar el bloque si está marcado como Pinned / Fijado
-        if re.search(r'\b(Pinned|Fijado)\b', b[:160], re.IGNORECASE):
-            continue
-
-        # Extraer líneas útiles de texto del tweet
-        lineas_ok = []
-        fecha_detectada = ""
-        for ln in b.splitlines():
-            s = ln.strip()
-            if not s or s.startswith(("![", "http", "---", "===")):
-                continue
-            # Detectar marca temporal relativa ("2h", "35m", "14h") o fecha ("Nov 24", "Nov 23")
-            m_rel = re.fullmatch(r'(\d{1,2})\s*([mh])', s, re.IGNORECASE)
-            if m_rel and not fecha_detectada:
-                cant = int(m_rel.group(1))
-                un = m_rel.group(2).lower()
-                fecha_detectada = f"Hoy • Hace {cant}{un}"
-                continue
-            m_mes_d = re.search(r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\b', s)
-            if m_mes_d and len(s) <= 22 and not fecha_detectada:
-                fecha_detectada = f"{m_mes_d.group(2)} {m_mes_d.group(1)}"
+            link = l_el.get_text(strip=True) if l_el else (str(l_el.next_sibling).strip() if (l_el and l_el.next_sibling) else "")
+            if len(raw_tit) < 24 or not link.startswith("http"):
                 continue
 
-            s_clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', s)
-            s_clean = re.sub(r'https?://\S+', '', s_clean).strip()
-            if len(s_clean) < 22:
-                continue
-            if re.match(r'^(@FinanzasArgy|Finanzas Argy|Quote|Replying to|Show more|Log in|Sign up)', s_clean, re.IGNORECASE):
-                continue
-            lineas_ok.append(s_clean)
+            ts_val = 0.0
+            fec_lbl = "Hoy • En vivo"
+            if p_el:
+                try:
+                    dt_p = parsedate_to_datetime(p_el.get_text(strip=True)).astimezone(tz_ar)
+                    ts_val = dt_p.timestamp()
+                    if dt_p.strftime("%Y-%m-%d") == hoy_iso:
+                        fec_lbl = f"Hoy • {dt_p.strftime('%H:%M')} hs"
+                    else:
+                        mes_n = MESES_CORTOS_ES.get(dt_p.month, str(dt_p.month))
+                        fec_lbl = f"{dt_p.day} {mes_n} • {dt_p.strftime('%H:%M')} hs"
+                except Exception:
+                    pass
 
-        texto_final = _limpiar_texto_post_x(" ".join(lineas_ok[:2]))
-        if len(texto_final) < 22:
-            continue
-        k_norm = texto_final.lower()[:60]
-        if k_norm in vistos:
-            continue
-        vistos.add(k_norm)
+            # Etiquetar impacto según palabras clave
+            t_low = raw_tit.lower()
+            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi")):
+                imp_tag = "Dólar & Divisas"
+            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap")):
+                imp_tag = "Tasas & Bancos Centrales"
+            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer")):
+                imp_tag = "Renta Fija & Deuda"
+            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia")):
+                imp_tag = "Renta Variable"
+            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo")):
+                imp_tag = "Macroeconomía"
+            else:
+                imp_tag = "Driver de Mercado"
 
-        # Usar el Snowflake ID de X como clave cronológica exacta (a mayor ID, más reciente es el post)
-        salida.append({
-            "ts": float(tid_int),
-            "titulo": texto_final,
-            "url": url_post,
-            "seccion": "@FinanzasArgy • X",
-            "fecha": fecha_detectada or "X • Hoy"
-        })
-
+            salida.append({
+                "ts": ts_val,
+                "titulo": raw_tit,
+                "url": link,
+                "fuente": fuente_nom[:28],
+                "mercado": mercado_lbl,
+                "impacto": imp_tag,
+                "fecha": fec_lbl
+            })
+    except Exception:
+        pass
     salida.sort(key=lambda x: x["ts"], reverse=True)
-    return salida[:4]
+    return salida
 
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
@@ -3484,193 +3599,72 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     hoy_iso = ahora_ar.strftime("%Y-%m-%d")
 
     now = time.time()
-    if not forzar and (now - _NOTICIAS_CACHE_TS < 45.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
+    # Refresco automático cada 5 minutos (300 segundos)
+    if not forzar and (now - _NOTICIAS_CACHE_TS < 300.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
         return CACHE_NOTICIAS_DRIVERS
     if not _NOTICIAS_LOCK.acquire(blocking=False):
         return CACHE_NOTICIAS_DRIVERS
     try:
-        hdrs = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
-            "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
-            "Cache-Control": "no-cache"
-        }
-        posts_x: List[Dict[str, Any]] = []
+        q_ar = quote("mercado financiero argentina dolar bonos merval bcra when:1d")
+        q_us = quote("wall street fed s&p 500 nasdaq treasury markets when:1d")
+        url_gn_ar = f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419"
+        url_gn_us = f"https://news.google.com/rss/search?q={q_us}&hl=es-419&gl=US&ceid=US:es-419"
+
+        with ThreadPoolExecutor(max_workers=2) as ex_n:
+            f_ar = ex_n.submit(_parsear_google_news_rss, url_gn_ar, "Argentina", tz_ar, hoy_iso)
+            f_us = ex_n.submit(_parsear_google_news_rss, url_gn_us, "EE.UU.", tz_ar, hoy_iso)
+            res_ar = f_ar.result(timeout=6.0)
+            res_us = f_us.result(timeout=6.0)
+
+        # Deduplicar y mantener al menos 6 de Argentina y 6 de EE.UU. (12 drivers en total)
         vistos = set()
+        lista_ar_limpia = []
+        for it in res_ar:
+            k = it["titulo"].lower()[:55]
+            if k not in vistos:
+                vistos.add(k)
+                lista_ar_limpia.append(it)
+            if len(lista_ar_limpia) >= 6:
+                break
 
-        # 1. X Syndication Timeline oficial ordenado por Snowflake ID descendente (ignora fijados)
-        try:
-            u_syn = f"https://syndication.twitter.com/srv/timeline-profile/screen-name/FinanzasArgy?_t={int(now)}"
-            r_syn = GLOBAL_HTTP_SESSION.get(u_syn, headers=hdrs, timeout=4.0, verify=False)
-            if r_syn.status_code == 200 and r_syn.text:
-                m_next = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r_syn.text, re.DOTALL)
-                if m_next:
-                    data_nd = json.loads(m_next.group(1))
-                    entries = (
-                        data_nd.get("props", {})
-                        .get("pageProps", {})
-                        .get("timeline", {})
-                        .get("entries", [])
-                    )
-                    tweets_raw = []
-                    for ent in entries:
-                        tw = (ent.get("content") or {}).get("tweet") or {}
-                        tid_s = str(tw.get("id_str") or tw.get("id") or "0").strip()
-                        tid_int = int(tid_s) if tid_s.isdigit() else 0
-                        if tid_int > 0:
-                            tweets_raw.append((tid_int, tw))
-                    tweets_raw.sort(key=lambda x: x[0], reverse=True)
+        lista_us_limpia = []
+        for it in res_us:
+            k = it["titulo"].lower()[:55]
+            if k not in vistos:
+                vistos.add(k)
+                lista_us_limpia.append(it)
+            if len(lista_us_limpia) >= 6:
+                break
 
-                    for tid_int, tw in tweets_raw:
-                        full_txt = tw.get("full_text") or tw.get("text") or ""
-                        txt_limpio = _limpiar_texto_post_x(full_txt)
-                        if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
-                            continue
-                        vistos.add(txt_limpio.lower()[:60])
-                        fec_lbl = "X • Hoy"
-                        created = str(tw.get("created_at") or "")
-                        if created:
-                            try:
-                                dt_tw = datetime.strptime(created, "%a %b %d %H:%M:%S %z %Y").astimezone(tz_ar)
-                                if dt_tw.strftime("%Y-%m-%d") == hoy_iso:
-                                    fec_lbl = f"Hoy • {dt_tw.strftime('%H:%M')} hs"
-                                else:
-                                    mes_n = MESES_CORTOS_ES.get(dt_tw.month, str(dt_tw.month))
-                                    fec_lbl = f"{dt_tw.day} {mes_n} • {dt_tw.strftime('%H:%M')} hs"
-                            except Exception:
-                                pass
-                        posts_x.append({
-                            "titulo": txt_limpio,
-                            "url": f"https://x.com/FinanzasArgy/status/{tid_int}",
-                            "seccion": "@FinanzasArgy • X",
-                            "fecha": fec_lbl
-                        })
-                        if len(posts_x) >= 4:
-                            break
-        except Exception:
-            pass
+        if len(lista_ar_limpia) >= 3:
+            CACHE_NOTICIAS_DRIVERS["argentina"] = [
+                {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
+            ]
+        if len(lista_us_limpia) >= 3:
+            CACHE_NOTICIAS_DRIVERS["estados_unidos"] = [
+                {k: v for k, v in x.items() if k != "ts"} for x in lista_us_limpia[:6]
+            ]
 
-        # 2. Espejos RSS activos de X (@FinanzasArgy)
-        if len(posts_x) < 4:
-            for u_rss in [
-                "https://xcancel.com/FinanzasArgy/rss",
-                "https://nitter.net/FinanzasArgy/rss"
-            ]:
-                if len(posts_x) >= 4:
-                    break
-                try:
-                    r_rss = GLOBAL_HTTP_SESSION.get(u_rss, headers=hdrs, timeout=3.5, verify=False)
-                    if r_rss.status_code == 200 and "<item" in r_rss.text.lower():
-                        soup_r = BeautifulSoup(r_rss.text, "html.parser")
-                        items_rss = []
-                        for it in soup_r.find_all("item"):
-                            l_el = it.find("link")
-                            raw_l = l_el.get_text(strip=True) if l_el else ""
-                            m_st = re.search(r"/status/(\d+)", raw_l)
-                            tid_int = int(m_st.group(1)) if m_st else 0
-                            items_rss.append((tid_int, it))
-                        items_rss.sort(key=lambda x: x[0], reverse=True)
-
-                        for tid_int, it in items_rss:
-                            t_el = it.find("title")
-                            p_el = it.find("pubdate")
-                            txt_limpio = _limpiar_texto_post_x(t_el.get_text(" ", strip=True) if t_el else "")
-                            if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
-                                continue
-                            vistos.add(txt_limpio.lower()[:60])
-                            fec_lbl = "X • Hoy"
-                            if p_el:
-                                try:
-                                    from email.utils import parsedate_to_datetime
-                                    dt_r = parsedate_to_datetime(p_el.get_text(strip=True)).astimezone(tz_ar)
-                                    if dt_r.strftime("%Y-%m-%d") == hoy_iso:
-                                        fec_lbl = f"Hoy • {dt_r.strftime('%H:%M')} hs"
-                                    else:
-                                        mes_n = MESES_CORTOS_ES.get(dt_r.month, str(dt_r.month))
-                                        fec_lbl = f"{dt_r.day} {mes_n} • {dt_r.strftime('%H:%M')} hs"
-                                except Exception:
-                                    pass
-                            posts_x.append({
-                                "titulo": txt_limpio,
-                                "url": f"https://x.com/FinanzasArgy/status/{tid_int}" if tid_int else "https://x.com/FinanzasArgy",
-                                "seccion": "@FinanzasArgy • X",
-                                "fecha": fec_lbl
-                            })
-                            if len(posts_x) >= 4:
-                                break
-                except Exception:
-                    pass
-
-        # 3. Lector directo de perfil X (r.jina.ai/http://x.com/FinanzasArgy) ordenado por Snowflake ID
-        if len(posts_x) < 4:
-            try:
-                r_j = GLOBAL_HTTP_SESSION.get(
-                    f"https://r.jina.ai/http://x.com/FinanzasArgy?_t={int(now)}",
-                    headers=hdrs,
-                    timeout=5.0,
-                    verify=False
-                )
-                if r_j.status_code == 200 and r_j.text:
-                    parsed_j = _parsear_posts_jina_x(r_j.text, hoy_iso, tz_ar)
-                    for pj in parsed_j:
-                        if pj["titulo"].lower()[:60] not in vistos:
-                            vistos.add(pj["titulo"].lower()[:60])
-                            posts_x.append({
-                                "titulo": pj["titulo"],
-                                "url": pj["url"],
-                                "seccion": pj["seccion"],
-                                "fecha": pj["fecha"]
-                            })
-                        if len(posts_x) >= 4:
-                            break
-            except Exception:
-                pass
-
-        # 4. Último respaldo: canal sincronizado t.me/s/finanzasargy
-        if len(posts_x) < 4:
-            try:
-                r_tg = GLOBAL_HTTP_SESSION.get(f"https://t.me/s/finanzasargy?_t={int(now)}", headers=hdrs, timeout=3.5, verify=False)
-                if r_tg.status_code == 200 and r_tg.text:
-                    soup_tg = BeautifulSoup(r_tg.text, "html.parser")
-                    wraps = soup_tg.find_all("div", class_="tgme_widget_message_wrap")
-                    for w in reversed(wraps):
-                        msg_el = w.find("div", class_="tgme_widget_message_text")
-                        if not msg_el:
-                            continue
-                        txt_limpio = _limpiar_texto_post_x(msg_el.get_text(" ", strip=True))
-                        if len(txt_limpio) < 22 or txt_limpio.lower()[:60] in vistos:
-                            continue
-                        vistos.add(txt_limpio.lower()[:60])
-                        fec_lbl = "Reciente"
-                        time_el = w.find("time")
-                        if time_el and time_el.get("datetime"):
-                            try:
-                                dt_obj = datetime.fromisoformat(time_el["datetime"].replace("Z", "+00:00")).astimezone(tz_ar)
-                                if dt_obj.strftime("%Y-%m-%d") == hoy_iso:
-                                    fec_lbl = f"Hoy • {dt_obj.strftime('%H:%M')} hs"
-                                else:
-                                    mes_n = MESES_CORTOS_ES.get(dt_obj.month, str(dt_obj.month))
-                                    fec_lbl = f"{dt_obj.day} {mes_n} • {dt_obj.strftime('%H:%M')} hs"
-                            except Exception:
-                                pass
-                        posts_x.append({
-                            "titulo": txt_limpio,
-                            "url": "https://x.com/FinanzasArgy",
-                            "seccion": "@FinanzasArgy • X",
-                            "fecha": fec_lbl
-                        })
-                        if len(posts_x) >= 4:
-                            break
-            except Exception:
-                pass
-
-        if len(posts_x) >= 1:
-            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = posts_x[:4]
+        # Seleccionar los Top 5 Drivers más relevantes combinando Argentina y EE.UU.
+        combinados = []
+        ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
+        us_cur = CACHE_NOTICIAS_DRIVERS.get("estados_unidos", [])
+        for i in range(3):
+            if i < len(us_cur):
+                item_u = dict(us_cur[i])
+                item_u["mercado"] = "EE.UU."
+                combinados.append(item_u)
+            if i < len(ar_cur):
+                item_a = dict(ar_cur[i])
+                item_a["mercado"] = "Argentina"
+                combinados.append(item_a)
+        if combinados:
+            CACHE_NOTICIAS_DRIVERS["top5"] = combinados[:5]
 
         CACHE_NOTICIAS_DRIVERS["updated"] = ahora_ar.strftime("%H:%M:%S")
         _NOTICIAS_CACHE_TS = time.time()
     except Exception:
-        _NOTICIAS_CACHE_TS = time.time() - 30.0
+        _NOTICIAS_CACHE_TS = time.time() - 240.0
     finally:
         _NOTICIAS_LOCK.release()
     return CACHE_NOTICIAS_DRIVERS
