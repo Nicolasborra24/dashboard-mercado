@@ -3239,6 +3239,7 @@ def ver_estado_mae():
 
 
 
+
 CACHE_ACEPTACION_GOBIERNO: Dict[str, Any] = {
     "icg": {
         "mes_label": "Nov 2026",
@@ -3248,43 +3249,17 @@ CACHE_ACEPTACION_GOBIERNO: Dict[str, Any] = {
         "variacion_mensual": "+4,1%",
         "variacion_interanual": "-17,5%",
         "comparativa_anteriores": [
-            {
-                "presidente": "Mauricio Macri",
-                "periodo": "Nov 2018 (Mes 35)",
-                "valor": 1.77,
-                "valor_formateado": "1,77 pts",
-                "diferencia_pct": 15.2,
-                "diferencia_formateada": "+15,2%",
-                "estado": "Más alto"
-            },
-            {
-                "presidente": "Alberto Fernández",
-                "periodo": "Nov 2022 (Mes 35)",
-                "valor": 1.19,
-                "valor_formateado": "1,19 pts",
-                "diferencia_pct": 71.1,
-                "diferencia_formateada": "+71,1%",
-                "estado": "Más alto"
-            },
-            {
-                "presidente": "Cristina Fernández (II)",
-                "periodo": "Nov 2014 (Mes 35)",
-                "valor": 1.76,
-                "valor_formateado": "1,76 pts",
-                "diferencia_pct": 15.9,
-                "diferencia_formateada": "+15,9%",
-                "estado": "Más alto"
-            }
+            {"presidente": "Mauricio Macri", "periodo": "Nov 2018 (Mes 35)", "valor": 1.77, "valor_formateado": "1,77 pts", "diferencia_pct": 15.2, "diferencia_formateada": "+15,2%", "estado": "Más alto"},
+            {"presidente": "Alberto Fernández", "periodo": "Nov 2022 (Mes 35)", "valor": 1.19, "valor_formateado": "1,19 pts", "diferencia_pct": 71.1, "diferencia_formateada": "+71,1%", "estado": "Más alto"},
+            {"presidente": "Cristina Fernández (II)", "periodo": "Nov 2014 (Mes 35)", "valor": 1.76, "valor_formateado": "1,76 pts", "diferencia_pct": 15.9, "diferencia_formateada": "+15,9%", "estado": "Más alto"}
         ],
         "historico_3_gobiernos": {
             "icg_promedio": 1.57,
             "icc_promedio": 40.68,
             "riesgo_pais_promedio": 1298.0,
-            "detalle": [
-                {"presidente": "Alberto Fernández", "periodo": "Nov 2022 (Mes 35)", "icg": 1.19, "icc": 37.51, "riesgo_pais": 2415},
-                {"presidente": "Mauricio Macri", "periodo": "Nov 2018 (Mes 35)", "icg": 1.77, "icc": 37.43, "riesgo_pais": 695},
-                {"presidente": "Cristina Fernández (II)", "periodo": "Nov 2014 (Mes 35)", "icg": 1.76, "icc": 47.10, "riesgo_pais": 785}
-            ]
+            "emae_ia_promedio": -0.9,
+            "inflacion_ia_promedio": 59.2,
+            "desempleo_promedio": 8.1
         },
         "componentes": [
             {"nombre": "Honestidad de los funcionarios", "valor": 2.41, "variacion": "+1,4%"},
@@ -3315,7 +3290,6 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
         return CACHE_ACEPTACION_GOBIERNO
     try:
         hdrs = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-        # 1. ICG UTDT (Escuela de Gobierno)
         r_icg = GLOBAL_HTTP_SESSION.get("https://www.utdt.edu/ver_contenido.php?id_contenido=1439&id_item_menu=2964", headers=hdrs, timeout=5.0, verify=False)
         if r_icg.status_code == 200 and r_icg.text:
             plano = BeautifulSoup(r_icg.text, "html.parser").get_text(" ", strip=True)
@@ -3327,7 +3301,6 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
             if m_icg:
                 mes_nom = m_icg.group(1).capitalize()
                 val_icg = normalizar_valor(m_icg.group(2))
-                var_m_num = normalizar_valor(m_icg.group(3))
                 es_baja = "disminuci" in m_icg.group(0).lower() or "ca" in m_icg.group(0).lower()
                 var_m_str = f"{'-' if es_baja else '+'}{m_icg.group(3)}%"
                 mes_mandato = int(m_icg.group(4))
@@ -3335,14 +3308,13 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
                 dir_macri = m_icg.group(6).lower()
                 pct_alberto = normalizar_valor(m_icg.group(7))
                 dir_alberto = m_icg.group(8).lower()
-
                 if val_icg and pct_macri is not None and pct_alberto is not None:
-                    signed_macri = pct_macri if dir_macri == "mayor" else -pct_macri
-                    signed_alberto = pct_alberto if dir_alberto == "mayor" else -pct_alberto
-                    val_macri = round(val_icg / (1.0 + signed_macri / 100.0), 2)
-                    val_alberto = round(val_icg / (1.0 + signed_alberto / 100.0), 2)
-                    val_cfk = 1.76
-                    signed_cfk = round(((val_icg / val_cfk) - 1.0) * 100.0, 1)
+                    s_macri = pct_macri if dir_macri == "mayor" else -pct_macri
+                    s_alberto = pct_alberto if dir_alberto == "mayor" else -pct_alberto
+                    v_macri = round(val_icg / (1.0 + s_macri / 100.0), 2)
+                    v_alberto = round(val_icg / (1.0 + s_alberto / 100.0), 2)
+                    v_cfk = 1.76
+                    s_cfk = round(((val_icg / v_cfk) - 1.0) * 100.0, 1)
                     CACHE_ACEPTACION_GOBIERNO["icg"].update({
                         "mes_label": f"{mes_nom[:3]} 2026",
                         "mes_mandato": mes_mandato,
@@ -3350,57 +3322,20 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
                         "valor_formateado": f"{m_icg.group(2)} pts",
                         "variacion_mensual": var_m_str,
                         "comparativa_anteriores": [
-                            {
-                                "presidente": "Mauricio Macri",
-                                "periodo": f"Mes {mes_mandato} de mandato",
-                                "valor": val_macri,
-                                "valor_formateado": f"{val_macri:.2f} pts".replace(".", ","),
-                                "diferencia_pct": signed_macri,
-                                "diferencia_formateada": f"{'+' if signed_macri >= 0 else ''}{signed_macri:.1f}%".replace(".", ","),
-                                "estado": "Más alto" if signed_macri >= 0 else "Más bajo"
-                            },
-                            {
-                                "presidente": "Alberto Fernández",
-                                "periodo": f"Mes {mes_mandato} de mandato",
-                                "valor": val_alberto,
-                                "valor_formateado": f"{val_alberto:.2f} pts".replace(".", ","),
-                                "diferencia_pct": signed_alberto,
-                                "diferencia_formateada": f"{'+' if signed_alberto >= 0 else ''}{signed_alberto:.1f}%".replace(".", ","),
-                                "estado": "Más alto" if signed_alberto >= 0 else "Más bajo"
-                            },
-                            {
-                                "presidente": "Cristina Fernández (II)",
-                                "periodo": f"Mes {mes_mandato} de mandato",
-                                "valor": val_cfk,
-                                "valor_formateado": f"{val_cfk:.2f} pts".replace(".", ","),
-                                "diferencia_pct": signed_cfk,
-                                "diferencia_formateada": f"{'+' if signed_cfk >= 0 else ''}{signed_cfk:.1f}%".replace(".", ","),
-                                "estado": "Más alto" if signed_cfk >= 0 else "Más bajo"
-                            }
+                            {"presidente": "Mauricio Macri", "periodo": f"Mes {mes_mandato}", "valor": v_macri, "valor_formateado": f"{v_macri:.2f} pts".replace(".", ","), "diferencia_pct": s_macri, "diferencia_formateada": f"{'+' if s_macri >= 0 else ''}{s_macri:.1f}%".replace(".", ","), "estado": "Más alto" if s_macri >= 0 else "Más bajo"},
+                            {"presidente": "Alberto Fernández", "periodo": f"Mes {mes_mandato}", "valor": v_alberto, "valor_formateado": f"{v_alberto:.2f} pts".replace(".", ","), "diferencia_pct": s_alberto, "diferencia_formateada": f"{'+' if s_alberto >= 0 else ''}{s_alberto:.1f}%".replace(".", ","), "estado": "Más alto" if s_alberto >= 0 else "Más bajo"},
+                            {"presidente": "Cristina Fernández (II)", "periodo": f"Mes {mes_mandato}", "valor": v_cfk, "valor_formateado": f"{v_cfk:.2f} pts".replace(".", ","), "diferencia_pct": s_cfk, "diferencia_formateada": f"{'+' if s_cfk >= 0 else ''}{s_cfk:.1f}%".replace(".", ","), "estado": "Más alto" if s_cfk >= 0 else "Más bajo"}
                         ]
                     })
-
-        # 2. ICC UTDT (Centro de Investigación en Finanzas)
         r_icc = GLOBAL_HTTP_SESSION.get("https://www.utdt.edu/ver_contenido.php?id_contenido=2575&id_item_menu=4982", headers=hdrs, timeout=5.0, verify=False)
         if r_icc.status_code == 200 and r_icc.text:
             plano_icc = BeautifulSoup(r_icc.text, "html.parser").get_text(" ", strip=True)
-            m_icc = re.search(
-                r"([A-ZÁÉÍÓÚ][a-záéíóú]+ 20\d{2})\s+LA CONFIANZA DE LOS CONSUMIDORES (SUBE|CAE|BAJA) (\d+(?:,\d+)?)%",
-                plano_icc
-            )
+            m_icc = re.search(r"([A-ZÁÉÍÓÚ][a-záéíóú]+ 20\d{2})\s+LA CONFIANZA DE LOS CONSUMIDORES (SUBE|CAE|BAJA) (\d+(?:,\d+)?)%", plano_icc)
             if m_icc:
                 mes_icc = m_icc.group(1)
                 sube_icc = m_icc.group(2).upper() == "SUBE"
-                var_icc_str = f"{'+' if sube_icc else '-'}{m_icc.group(3)}%"
                 CACHE_ACEPTACION_GOBIERNO["icc"]["mes_label"] = mes_icc
-                CACHE_ACEPTACION_GOBIERNO["icc"]["variacion_mensual"] = var_icc_str
-                # Recalcular nivel si avanzó respecto al dato base de Noviembre 2026 (40.99)
-                if "noviembre 2026" not in mes_icc.lower():
-                    v_var = normalizar_valor(m_icc.group(3)) or 0.0
-                    factor = (1.0 + v_var / 100.0) if sube_icc else (1.0 - v_var / 100.0)
-                    nuevo_icc = round(CACHE_ACEPTACION_GOBIERNO["icc"]["valor"] * factor, 2)
-                    CACHE_ACEPTACION_GOBIERNO["icc"]["valor"] = nuevo_icc
-                    CACHE_ACEPTACION_GOBIERNO["icc"]["valor_formateado"] = f"{nuevo_icc:.2f} pts".replace(".", ",")
+                CACHE_ACEPTACION_GOBIERNO["icc"]["variacion_mensual"] = f"{'+' if sube_icc else '-'}{m_icc.group(3)}%"
         _UTDT_CACHE_TS = time.time()
     except Exception:
         _UTDT_CACHE_TS = time.time() - 18000.0
@@ -3413,20 +3348,14 @@ def ver_aceptacion_gobierno():
     datos_utdt = actualizar_aceptacion_utdt()
     with CACHE_LOCK:
         rp_obj = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), None)
-        icc_micro = next((x for x in CACHE_VARIABLES.get("micro_y_sectores", []) if x.get("variable") == "CONFIANZA_CONSUMIDOR"), None)
-        icg_micro = next((x for x in CACHE_VARIABLES.get("micro_y_sectores", []) if x.get("variable") == "CONFIANZA_GOBIERNO"), None)
-        if icc_micro and datos_utdt.get("icc"):
-            icc_micro["valor"] = datos_utdt["icc"]["valor"]
-            icc_micro["valor_formateado"] = datos_utdt["icc"]["valor_formateado"]
-            icc_micro["variacion"] = datos_utdt["icc"]["variacion_mensual"]
-            icc_micro["fecha"] = f"UTDT {datos_utdt['icc']['mes_label']}"
-        if icg_micro and datos_utdt.get("icg"):
-            icg_micro["valor"] = datos_utdt["icg"]["valor"]
-            icg_micro["valor_formateado"] = datos_utdt["icg"]["valor_formateado"]
-            icg_micro["variacion"] = datos_utdt["icg"]["variacion_mensual"]
-            icg_micro["fecha"] = f"UTDT {datos_utdt['icg']['mes_label']}"
+        emae_obj = next((x for x in CACHE_VARIABLES.get("macro_y_fiscal", []) if x.get("variable") == "EMAE_ACTIVIDAD"), None)
+        inf_ia_obj = next((x for x in CACHE_VARIABLES.get("inflacion_y_ajuste", []) if x.get("variable") == "INFLACION_INTERANUAL"), None)
+        desempleo_obj = next((x for x in CACHE_VARIABLES.get("macro_y_fiscal", []) if x.get("variable") == "DESEMPLEO"), None)
         return {
             "riesgo_pais": rp_obj,
+            "emae": emae_obj,
+            "inflacion_interanual": inf_ia_obj,
+            "desempleo": desempleo_obj,
             "icg": datos_utdt.get("icg"),
             "icc": datos_utdt.get("icc"),
             "updated": ULTIMA_ACTUALIZACION

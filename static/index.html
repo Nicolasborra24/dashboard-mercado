@@ -450,7 +450,7 @@
       commodities_agro_energia: { titulo: "Commodities Agropecuarios y Energía", sub: "Granos y Energía", icono: "fa-solid fa-wheat-awn", iconoDer: "fa-solid fa-tractor text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/25 text-emerald-300" },
       calendario_licitaciones: { titulo: "Calendario de Licitaciones Primarias", sub: "Agenda Oficial de Licitaciones Primarias", icono: "fa-regular fa-calendar-check", iconoDer: "fa-solid fa-gavel text-cyan-400/80", barra: "section-bar-cyan", flare: "glow-flare-cyan", badge: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" },
       calendario_economico: { titulo: "Calendario Económico — Argentina y Estados Unidos", sub: "Agenda de Publicaciones e Indicadores Macroeconómicos", icono: "fa-solid fa-calendar-days", iconoDer: "fa-solid fa-clock-rotate-left text-purple-400/80", barra: "section-bar-purple", flare: "glow-flare-purple", badge: "bg-purple-500/20 border-purple-400/40 text-purple-300" },
-      aceptacion_gobierno: { titulo: "Aceptación del Gobierno y Humor Social", sub: "Riesgo País EMBI+ • Confianza del Consumidor (ICC) • Confianza en el Gobierno (ICG Di Tella)", icono: "fa-solid fa-landmark-dome", iconoDer: "fa-solid fa-chart-simple text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" }
+      aceptacion_gobierno: { titulo: "Aceptación del Gobierno y Termómetro Social", sub: "Riesgo País • EMAE i.a. • Inflación i.a. • Desempleo EPH • Confianza Consumidor (ICC) • Confianza Gobierno (ICG)", icono: "fa-solid fa-landmark-dome", iconoDer: "fa-solid fa-temperature-half text-emerald-400/80", barra: "section-bar-emerald", flare: "glow-flare-emerald", badge: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" }
     };
 
     window.BLOQUES_HOME = [
@@ -2585,6 +2585,8 @@
     // ============================================================================
     // MÓDULO: ACEPTACIÓN DEL GOBIERNO (RIESGO PAÍS + ICC & ICG DI TELLA)
     // ============================================================================
+
+
     window.DATOS_ACEPTACION_GOBIERNO = {
       icg: {
         mes_label: "Nov 2026",
@@ -2594,43 +2596,17 @@
         variacion_mensual: "+4,1%",
         variacion_interanual: "-17,5%",
         comparativa_anteriores: [
-          {
-            presidente: "Mauricio Macri",
-            periodo: "Nov 2018 (Mes 35)",
-            valor: 1.77,
-            valor_formateado: "1,77 pts",
-            diferencia_pct: 15.2,
-            diferencia_formateada: "+15,2%",
-            estado: "Más alto"
-          },
-          {
-            presidente: "Alberto Fernández",
-            periodo: "Nov 2022 (Mes 35)",
-            valor: 1.19,
-            valor_formateado: "1,19 pts",
-            diferencia_pct: 71.1,
-            diferencia_formateada: "+71,1%",
-            estado: "Más alto"
-          },
-          {
-            presidente: "Cristina Fernández (II)",
-            periodo: "Nov 2014 (Mes 35)",
-            valor: 1.76,
-            valor_formateado: "1,76 pts",
-            diferencia_pct: 15.9,
-            diferencia_formateada: "+15,9%",
-            estado: "Más alto"
-          }
+          { presidente: "Mauricio Macri", periodo: "Nov 2018 (Mes 35)", valor: 1.77, valor_formateado: "1,77 pts", diferencia_pct: 15.2, diferencia_formateada: "+15,2%", estado: "Más alto" },
+          { presidente: "Alberto Fernández", periodo: "Nov 2022 (Mes 35)", valor: 1.19, valor_formateado: "1,19 pts", diferencia_pct: 71.1, diferencia_formateada: "+71,1%", estado: "Más alto" },
+          { presidente: "Cristina Fernández (II)", periodo: "Nov 2014 (Mes 35)", valor: 1.76, valor_formateado: "1,76 pts", diferencia_pct: 15.9, diferencia_formateada: "+15,9%", estado: "Más alto" }
         ],
         historico_3_gobiernos: {
           icg_promedio: 1.57,
           icc_promedio: 40.68,
           riesgo_pais_promedio: 1298.0,
-          detalle: [
-            { presidente: "Alberto Fernández", periodo: "Nov 2022 (Mes 35)", icg: 1.19, icc: 37.51, riesgo_pais: 2415 },
-            { presidente: "Mauricio Macri", periodo: "Nov 2018 (Mes 35)", icg: 1.77, icc: 37.43, riesgo_pais: 695 },
-            { presidente: "Cristina Fernández (II)", periodo: "Nov 2014 (Mes 35)", icg: 1.76, icc: 47.10, riesgo_pais: 785 }
-          ]
+          emae_ia_promedio: -0.9,
+          inflacion_ia_promedio: 59.2,
+          desempleo_promedio: 8.1
         },
         componentes: [
           { nombre: "Honestidad de los funcionarios", valor: 2.41, variacion: "+1,4%" },
@@ -2659,47 +2635,101 @@
           const idx = datosGlobales.indices.findIndex(x => x && x.variable === "RIESGO_PAIS");
           if (idx >= 0) datosGlobales.indices[idx] = resp.riesgo_pais;
         }
+        if (resp.emae && resp.emae.valor !== undefined) {
+          if (!datosGlobales.macro_y_fiscal) datosGlobales.macro_y_fiscal = [];
+          const idxE = datosGlobales.macro_y_fiscal.findIndex(x => x && x.variable === "EMAE_ACTIVIDAD");
+          if (idxE >= 0) datosGlobales.macro_y_fiscal[idxE] = resp.emae;
+          else datosGlobales.macro_y_fiscal.push(resp.emae);
+        }
+        if (resp.inflacion_interanual && resp.inflacion_interanual.valor !== undefined) {
+          if (!datosGlobales.inflacion_y_ajuste) datosGlobales.inflacion_y_ajuste = [];
+          const idxI = datosGlobales.inflacion_y_ajuste.findIndex(x => x && x.variable === "INFLACION_INTERANUAL");
+          if (idxI >= 0) datosGlobales.inflacion_y_ajuste[idxI] = resp.inflacion_interanual;
+          else datosGlobales.inflacion_y_ajuste.push(resp.inflacion_interanual);
+        }
+        if (resp.desempleo && resp.desempleo.valor !== undefined) {
+          if (!datosGlobales.macro_y_fiscal) datosGlobales.macro_y_fiscal = [];
+          const idxD = datosGlobales.macro_y_fiscal.findIndex(x => x && x.variable === "DESEMPLEO");
+          if (idxD >= 0) datosGlobales.macro_y_fiscal[idxD] = resp.desempleo;
+          else datosGlobales.macro_y_fiscal.push(resp.desempleo);
+        }
         if (categoriaActiva === "aceptacion_gobierno") renderizar(true);
       }
     };
 
     window.renderizarSeccionAceptacionGobierno = function() {
       const fuenteIndices = (datosGlobales.indices && datosGlobales.indices.length > 0) ? datosGlobales.indices : window.INDICES_ESTATICOS_BASE;
-      const rpItem = fuenteIndices.find(x => x && x.variable === "RIESGO_PAIS") || {
-        variable: "RIESGO_PAIS",
-        descripcion: "Riesgo País EMBI+",
-        valor_formateado: "1.038 pb",
-        variacion: "+11,5%",
-        var_mes: "+31,9%",
-        var_anio: "+81,8%",
-        valor: 1038
-      };
+      const rpItem = fuenteIndices.find(x => x && x.variable === "RIESGO_PAIS") || { variable: "RIESGO_PAIS", descripcion: "Riesgo País EMBI+", valor_formateado: "1.038 pb", variacion: "+11,5%", var_mes: "+31,9%", var_anio: "+81,8%", valor: 1038 };
+      const emaeItem = (datosGlobales.macro_y_fiscal || []).find(x => x && x.variable === "EMAE_ACTIVIDAD") || { variable: "EMAE_ACTIVIDAD", descripcion: "EMAE Actividad Económica", valor_formateado: "+4,2% i.a.", variacion: "+0,4% m/m", valor: 4.2, fecha: "INDEC" };
+      const infIaItem = (datosGlobales.inflacion_y_ajuste || []).find(x => x && x.variable === "INFLACION_INTERANUAL") || { variable: "INFLACION_INTERANUAL", descripcion: "Inflación Interanual (Oct 2026)", valor_formateado: "29,4%", variacion: "29,4%", valor: 29.4, fecha: "Corte: Oct 2026" };
+      const desempleoItem = (datosGlobales.macro_y_fiscal || []).find(x => x && x.variable === "DESEMPLEO") || { variable: "DESEMPLEO", descripcion: "Tasa de Desempleo (EPH)", valor_formateado: "6,6%", variacion: "-0,3 pp", valor: 6.6, fecha: "INDEC EPH" };
 
       const icg = window.DATOS_ACEPTACION_GOBIERNO.icg;
       const icc = window.DATOS_ACEPTACION_GOBIERNO.icc;
-      const animRp = FLASH_REGISTRO["RIESGO_PAIS"] || "";
+      const hist3 = icg.historico_3_gobiernos || { icg_promedio: 1.57, icc_promedio: 40.68, riesgo_pais_promedio: 1298.0, emae_ia_promedio: -0.9, inflacion_ia_promedio: 59.2, desempleo_promedio: 8.1 };
 
+      const rpVal = Number(rpItem.valor) || 1038;
+      const icgVal = Number(icg.valor) || 2.04;
+      const iccVal = Number(icc.valor) || 40.99;
+      const emaeVal = !isNaN(Number(emaeItem.valor)) ? Number(emaeItem.valor) : 4.2;
+      const infIaVal = !isNaN(Number(infIaItem.valor)) ? Number(infIaItem.valor) : 29.4;
+      const desempleoVal = !isNaN(Number(desempleoItem.valor)) ? Number(desempleoItem.valor) : 6.6;
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const diffRpPct = ((rpVal - hist3.riesgo_pais_promedio) / hist3.riesgo_pais_promedio) * 100;
+      const tempRp = clamp(50 + diffRpPct * 0.65, 5, 98);
+
+      const diffIcgPct = ((icgVal - hist3.icg_promedio) / hist3.icg_promedio) * 100;
+      const tempIcg = clamp(50 - diffIcgPct * 0.85, 5, 98);
+
+      const diffIccPct = ((iccVal - hist3.icc_promedio) / hist3.icc_promedio) * 100;
+      const tempIcc = clamp(50 - diffIccPct * 0.90, 5, 98);
+
+      const promEmae = Number(hist3.emae_ia_promedio ?? -0.9);
+      const diffEmaePp = emaeVal - promEmae;
+      const tempEmae = clamp(50 - diffEmaePp * 5.2, 5, 98);
+
+      const promInfIa = Number(hist3.inflacion_ia_promedio || 59.2);
+      const diffInfIaPct = ((infIaVal - promInfIa) / promInfIa) * 100;
+      const tempInfIa = clamp(50 + diffInfIaPct * 0.65, 5, 98);
+
+      const promDesempleo = Number(hist3.desempleo_promedio ?? 8.1);
+      const diffDesempleoPp = desempleoVal - promDesempleo;
+      const tempDesempleo = clamp(50 + diffDesempleoPp * 9.5, 5, 98);
+
+      const tempGlobal = Math.round(tempRp * 0.22 + tempIcg * 0.23 + tempIcc * 0.13 + tempEmae * 0.15 + tempInfIa * 0.15 + tempDesempleo * 0.12);
+
+      let estadoTermo = {
+        etiqueta: "CLIMA TRANQUILO / ESTABLE",
+        desc: "Las 6 variables muestran menor tensión que el promedio de las últimas 3 gestiones a la misma altura del mandato.",
+        colorTexto: "text-sky-300",
+        badgeCls: "bg-sky-500/15 text-sky-300 border-sky-500/35",
+        bulboColor: "#0ea5e9",
+        glowColor: "rgba(14, 165, 233, 0.45)"
+      };
+      if (tempGlobal >= 70) {
+        estadoTermo = { etiqueta: "ALTA TEMPERATURA / TENSIÓN ELEVADA", desc: "Deterioro simultáneo frente al promedio histórico de las últimas 3 gestiones.", colorTexto: "text-rose-400", badgeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40", bulboColor: "#ef4444", glowColor: "rgba(239, 68, 68, 0.55)" };
+      } else if (tempGlobal >= 52) {
+        estadoTermo = { etiqueta: "TEMPERATURA MODERADA / ALERTA", desc: "Nivel de tensión cercano o levemente superior al promedio de las últimas 3 presidencias.", colorTexto: "text-amber-300", badgeCls: "bg-amber-500/15 text-amber-300 border-amber-500/35", bulboColor: "#f59e0b", glowColor: "rgba(245, 158, 11, 0.45)" };
+      } else if (tempGlobal >= 35) {
+        estadoTermo = { etiqueta: "TEMPLADO / FAVORABLE VS. HISTÓRICO", desc: "Mejor desempeño neto que el promedio de los 3 gobiernos anteriores a igual mes.", colorTexto: "text-cyan-300", badgeCls: "bg-cyan-500/15 text-cyan-300 border-cyan-500/35", bulboColor: "#06b6d4", glowColor: "rgba(6, 182, 212, 0.45)" };
+      }
+
+      const fmtDiffHist = (d) => `${d >= 0 ? "+" : ""}${d.toFixed(1).replace(".", ",")}%`;
       const renderBadgeVar = (vStr, invertir = false) => {
         const s = String(vStr || "0,0%").trim();
         const esPos = s.includes("+");
         const esNeg = s.includes("-") || s.includes("−");
-        if (!esPos && !esNeg) {
-          return `<span class="text-slate-400 num-editorial text-xs font-semibold flex items-center gap-1"><span class="text-[8px]">▪</span><span>${s}</span></span>`;
-        }
+        if (!esPos && !esNeg) return `<span class="text-slate-400 num-editorial text-xs font-semibold flex items-center gap-1"><span class="text-[8px]">▪</span><span>${s}</span></span>`;
         const bueno = invertir ? esNeg : esPos;
-        const cls = bueno ? "text-emerald-400" : "text-rose-400";
-        const flecha = esPos ? "▲" : "▼";
-        return `<span class="${cls} num-editorial text-xs font-bold flex items-center gap-1"><span class="text-[9px]">${flecha}</span><span>${s}</span></span>`;
+        return `<span class="${bueno ? "text-emerald-400" : "text-rose-400"} num-editorial text-xs font-bold flex items-center gap-1"><span class="text-[9px]">${esPos ? "▲" : "▼"}</span><span>${s}</span></span>`;
       };
 
       const comparativasHtml = (icg.comparativa_anteriores || []).map(comp => {
         const esMasAlto = Number(comp.diferencia_pct) >= 0;
-        const badgeColor = esMasAlto
-          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/35"
-          : "bg-rose-500/15 text-rose-300 border-rose-500/35";
+        const badgeColor = esMasAlto ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/35" : "bg-rose-500/15 text-rose-300 border-rose-500/35";
         const barraActualPct = Math.min(100, Math.round((icg.valor / 5.0) * 100));
         const barraPrevPct = Math.min(100, Math.round((comp.valor / 5.0) * 100));
-
         return `
           <div class="rounded-xl border border-slate-800/55 bg-slate-950/60 p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2712,7 +2742,6 @@
                 <span class="uppercase text-[10px] tracking-wider">(${comp.estado})</span>
               </div>
             </div>
-
             <div class="space-y-2 pt-1">
               <div class="space-y-1">
                 <div class="flex justify-between text-[11px] font-mono">
@@ -2723,7 +2752,6 @@
                   <div class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full" style="width: ${barraActualPct}%;"></div>
                 </div>
               </div>
-
               <div class="space-y-1">
                 <div class="flex justify-between text-[11px] font-mono">
                   <span class="text-slate-400">${comp.presidente} (${comp.periodo})</span>
@@ -2751,81 +2779,10 @@
           </div>`;
       }).join("");
 
-      // Cálculo del Termómetro de Tensión (0° Frío/Tranquilo Azul -> 100° Alta Temperatura Rojo)
-      // Comparando las 3 variables actuales vs el promedio de los 3 últimos gobiernos a la misma altura del mandato (Mes 35)
-      const hist3 = icg.historico_3_gobiernos || {
-        icg_promedio: 1.57,
-        icc_promedio: 40.68,
-        riesgo_pais_promedio: 1298.0,
-        detalle: [
-          { presidente: "Alberto Fernández", periodo: "Nov 2022 (Mes 35)", icg: 1.19, icc: 37.51, riesgo_pais: 2415 },
-          { presidente: "Mauricio Macri", periodo: "Nov 2018 (Mes 35)", icg: 1.77, icc: 37.43, riesgo_pais: 695 },
-          { presidente: "Cristina Fernández (II)", periodo: "Nov 2014 (Mes 35)", icg: 1.76, icc: 47.10, riesgo_pais: 785 }
-        ]
-      };
-
-      const rpVal = Number(rpItem.valor) || 1038;
-      const icgVal = Number(icg.valor) || 2.04;
-      const iccVal = Number(icc.valor) || 40.99;
-
-      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-      // 50° = paridad exacta con el promedio de los 3 últimos gobiernos; <50° = más tranquilo (azul); >50° = más tensión (rojo)
-      const diffRpPct = ((rpVal - hist3.riesgo_pais_promedio) / hist3.riesgo_pais_promedio) * 100;
-      const tempRp = clamp(50 + diffRpPct * 0.65, 5, 98);
-
-      const diffIcgPct = ((icgVal - hist3.icg_promedio) / hist3.icg_promedio) * 100;
-      const tempIcg = clamp(50 - diffIcgPct * 0.85, 5, 98);
-
-      const diffIccPct = ((iccVal - hist3.icc_promedio) / hist3.icc_promedio) * 100;
-      const tempIcc = clamp(50 - diffIccPct * 0.90, 5, 98);
-
-      const tempGlobal = Math.round(tempRp * 0.40 + tempIcg * 0.35 + tempIcc * 0.25);
-
-      let estadoTermo = {
-        etiqueta: "CLIMA TRANQUILO / ESTABLE",
-        desc: "Las 3 variables muestran menor tensión que el promedio de las últimas 3 gestiones a la misma altura del mandato.",
-        colorTexto: "text-sky-300",
-        badgeCls: "bg-sky-500/15 text-sky-300 border-sky-500/35",
-        bulboColor: "#0ea5e9",
-        glowColor: "rgba(14, 165, 233, 0.45)"
-      };
-      if (tempGlobal >= 70) {
-        estadoTermo = {
-          etiqueta: "ALTA TEMPERATURA / TENSIÓN ELEVADA",
-          desc: "Deterioro simultáneo frente al promedio histórico de las últimas 3 gestiones al mismo mes de gobierno.",
-          colorTexto: "text-rose-400",
-          badgeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40",
-          bulboColor: "#ef4444",
-          glowColor: "rgba(239, 68, 68, 0.55)"
-        };
-      } else if (tempGlobal >= 52) {
-        estadoTermo = {
-          etiqueta: "TEMPERATURA MODERADA / ALERTA",
-          desc: "Nivel de tensión cercano o levemente superior al promedio de las últimas 3 presidencias a igual mes.",
-          colorTexto: "text-amber-300",
-          badgeCls: "bg-amber-500/15 text-amber-300 border-amber-500/35",
-          bulboColor: "#f59e0b",
-          glowColor: "rgba(245, 158, 11, 0.45)"
-        };
-      } else if (tempGlobal >= 35) {
-        estadoTermo = {
-          etiqueta: "TEMPLADO / FAVORABLE VS. HISTÓRICO",
-          desc: "Mejor desempeño neto que el promedio de los 3 gobiernos anteriores a la misma altura del período.",
-          colorTexto: "text-cyan-300",
-          badgeCls: "bg-cyan-500/15 text-cyan-300 border-cyan-500/35",
-          bulboColor: "#06b6d4",
-          glowColor: "rgba(6, 182, 212, 0.45)"
-        };
-      }
-
-      const fmtDiffHist = (d) => `${d >= 0 ? "+" : ""}${d.toFixed(1).replace(".", ",")}%`;
-
       return `
         <div class="space-y-5">
           ${renderizarBarraSeccion(window.CONFIG_SECCIONES.aceptacion_gobierno)}
 
-          <!-- Termómetro de Temperatura Política y Financiera (0° Azul Tranquilo -> 100° Rojo Alta Temperatura) -->
           <div class="rounded-2xl border border-slate-800/55 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl">
             <div class="border-b border-slate-800/50 pb-3 mb-4 flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2.5">
@@ -2834,7 +2791,7 @@
                 </div>
                 <div>
                   <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">Termómetro de Aceptación y Tensión — Mes ${icg.mes_mandato} vs. Últimos 3 Gobiernos</h3>
-                  <p class="text-[11px] text-slate-400 font-mono">Pondera Riesgo País (40%), ICG Di Tella (35%) e ICC Di Tella (25%) contra el promedio histórico a igual mes</p>
+                  <p class="text-[11px] text-slate-400 font-mono">Pondera ICG (23%), Riesgo País (22%), EMAE i.a. (15%), Inflación i.a. (15%), ICC (13%) y Desempleo (12%)</p>
                 </div>
               </div>
               <span class="px-3 py-1 rounded-full border font-mono text-[11px] font-extrabold ${estadoTermo.badgeCls}">
@@ -2843,7 +2800,6 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-              <!-- Ilustración SVG del Termómetro Vertical -->
               <div class="lg:col-span-4 flex items-center justify-center gap-5 p-4 rounded-2xl bg-slate-950/65 border border-slate-800/50">
                 <div class="relative w-24 h-56 flex items-center justify-center shrink-0">
                   <svg viewBox="0 0 110 250" class="w-full h-full overflow-visible">
@@ -2859,46 +2815,26 @@
                         <rect x="44" y="22" width="22" height="168" rx="11" />
                       </clipPath>
                     </defs>
-
-                    <!-- Marcas de escala -->
                     <line x1="72" y1="30" x2="82" y2="30" stroke="#ef4444" stroke-width="2" />
                     <text x="86" y="33" fill="#fca5a5" font-size="9" font-family="monospace" font-weight="bold">100°</text>
-
-                    <line x1="72" y1="68" x2="79" y2="68" stroke="#f97316" stroke-width="1.5" />
-                    <text x="86" y="71" fill="#94a3b8" font-size="8" font-family="monospace">75°</text>
-
                     <line x1="72" y1="106" x2="82" y2="106" stroke="#eab308" stroke-width="2" />
                     <text x="86" y="109" fill="#fde047" font-size="9" font-family="monospace" font-weight="bold">50°</text>
-
-                    <line x1="72" y1="144" x2="79" y2="144" stroke="#06b6d4" stroke-width="1.5" />
-                    <text x="86" y="147" fill="#94a3b8" font-size="8" font-family="monospace">25°</text>
-
                     <line x1="72" y1="182" x2="82" y2="182" stroke="#3b82f6" stroke-width="2" />
                     <text x="86" y="185" fill="#93c5fd" font-size="9" font-family="monospace" font-weight="bold">0°</text>
-
-                    <!-- Etiquetas Frío / Caliente izquierda -->
                     <text x="36" y="34" text-anchor="end" fill="#f87171" font-size="8.5" font-family="sans-serif" font-weight="bold">ALTA</text>
                     <text x="36" y="44" text-anchor="end" fill="#f87171" font-size="7.5" font-family="sans-serif">TENSIÓN</text>
-
                     <text x="36" y="176" text-anchor="end" fill="#60a5fa" font-size="8.5" font-family="sans-serif" font-weight="bold">BAJA</text>
                     <text x="36" y="186" text-anchor="end" fill="#60a5fa" font-size="7.5" font-family="sans-serif">TRANQUILO</text>
-
-                    <!-- Carcasa exterior de vidrio -->
                     <rect x="40" y="18" width="30" height="176" rx="15" fill="#091122" stroke="#334155" stroke-width="2.5" />
                     <circle cx="55" cy="212" r="24" fill="#091122" stroke="#334155" stroke-width="2.5" />
-
-                    <!-- Columna interior graduada según temperatura -->
                     <g clip-path="url(#clipTuboTermo)">
                       <rect x="44" y="22" width="22" height="168" fill="#0f172a" />
                       <rect x="44" y="${190 - (tempGlobal / 100) * 168}" width="22" height="${(tempGlobal / 100) * 168 + 10}" fill="url(#gradTermometro)" />
                     </g>
-
-                    <!-- Bulbo inferior -->
                     <circle cx="55" cy="212" r="18" fill="${estadoTermo.bulboColor}" style="filter: drop-shadow(0 0 10px ${estadoTermo.glowColor});" />
                     <circle cx="49" cy="206" r="4.5" fill="rgba(255,255,255,0.45)" />
                   </svg>
                 </div>
-
                 <div class="space-y-2">
                   <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Índice Térmico</div>
                   <div class="text-4xl sm:text-5xl font-black text-white num-editorial leading-none">${tempGlobal}°</div>
@@ -2907,9 +2843,7 @@
                 </div>
               </div>
 
-              <!-- Desglose de las 3 variables vs promedio de los últimos 3 gobiernos -->
               <div class="lg:col-span-8 space-y-3">
-                <!-- Barra horizontal continua Azul -> Rojo -->
                 <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/50 space-y-2">
                   <div class="flex justify-between text-[10px] font-mono font-bold">
                     <span class="text-blue-400">0° TRANQUILO (FRÍO)</span>
@@ -2921,133 +2855,125 @@
                   </div>
                 </div>
 
-                <!-- 3 Sub-indicadores comparados contra las últimas 3 gestiones -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[11px] font-bold text-slate-200">Riesgo País</span>
-                      <span class="text-xs font-mono font-extrabold ${diffRpPct <= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempRp)}°</span>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">Riesgo País</span><span class="text-xs font-mono font-extrabold ${diffRpPct <= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempRp)}°</span></div>
                     <div class="text-sm font-extrabold text-white num-editorial">${rpItem.valor_formateado}</div>
-                    <div class="text-[10px] font-mono text-slate-400">
-                      Prom. 3 gob: <strong class="text-slate-200">${Math.round(hist3.riesgo_pais_promedio).toLocaleString("es-AR")} pb</strong>
-                    </div>
-                    <div class="text-[10px] font-mono font-bold ${diffRpPct <= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                      ${fmtDiffHist(diffRpPct)} vs. prom. histórico
-                    </div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${Math.round(hist3.riesgo_pais_promedio).toLocaleString("es-AR")} pb</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffRpPct <= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtDiffHist(diffRpPct)} vs. prom.</div>
                   </div>
 
-                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[11px] font-bold text-slate-200">ICG Di Tella</span>
-                      <span class="text-xs font-mono font-extrabold ${diffIcgPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcg)}°</span>
-                    </div>
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">ICG Di Tella</span><span class="text-xs font-mono font-extrabold ${diffIcgPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcg)}°</span></div>
                     <div class="text-sm font-extrabold text-white num-editorial">${icg.valor_formateado}</div>
-                    <div class="text-[10px] font-mono text-slate-400">
-                      Prom. 3 gob: <strong class="text-slate-200">${hist3.icg_promedio.toFixed(2).replace(".", ",")} pts</strong>
-                    </div>
-                    <div class="text-[10px] font-mono font-bold ${diffIcgPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                      ${fmtDiffHist(diffIcgPct)} vs. prom. histórico
-                    </div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${hist3.icg_promedio.toFixed(2).replace(".", ",")} pts</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffIcgPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtDiffHist(diffIcgPct)} vs. prom.</div>
                   </div>
 
-                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[11px] font-bold text-slate-200">ICC Di Tella</span>
-                      <span class="text-xs font-mono font-extrabold ${diffIccPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcc)}°</span>
-                    </div>
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">ICC Di Tella</span><span class="text-xs font-mono font-extrabold ${diffIccPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcc)}°</span></div>
                     <div class="text-sm font-extrabold text-white num-editorial">${icc.valor_formateado}</div>
-                    <div class="text-[10px] font-mono text-slate-400">
-                      Prom. 3 gob: <strong class="text-slate-200">${hist3.icc_promedio.toFixed(2).replace(".", ",")} pts</strong>
-                    </div>
-                    <div class="text-[10px] font-mono font-bold ${diffIccPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                      ${fmtDiffHist(diffIccPct)} vs. prom. histórico
-                    </div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${hist3.icc_promedio.toFixed(2).replace(".", ",")} pts</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffIccPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtDiffHist(diffIccPct)} vs. prom.</div>
                   </div>
-                </div>
 
-                <div class="text-[10px] font-mono text-slate-400 flex flex-wrap items-center justify-between gap-2 px-1">
-                  <span>Referencia Mes ${icg.mes_mandato}: Alberto Fernández (2022) • Mauricio Macri (2018) • Cristina Fernández II (2014)</span>
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">EMAE (i.a.)</span><span class="text-xs font-mono font-extrabold ${diffEmaePp >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempEmae)}°</span></div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${emaeItem.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promEmae >= 0 ? "+" : ""}${promEmae.toFixed(1).replace(".", ",")}% i.a.</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffEmaePp >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${diffEmaePp >= 0 ? "+" : ""}${diffEmaePp.toFixed(1).replace(".", ",")} pp vs. prom.</div>
+                  </div>
+
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">Inflación (i.a.)</span><span class="text-xs font-mono font-extrabold ${diffInfIaPct <= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempInfIa)}°</span></div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${infIaItem.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promInfIa.toFixed(1).replace(".", ",")}% i.a.</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffInfIaPct <= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtDiffHist(diffInfIaPct)} vs. prom.</div>
+                  </div>
+
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1">
+                    <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">Desempleo (EPH)</span><span class="text-xs font-mono font-extrabold ${diffDesempleoPp <= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempDesempleo)}°</span></div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${desempleoItem.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promDesempleo.toFixed(1).replace(".", ",")}%</strong></div>
+                    <div class="text-[10px] font-mono font-bold ${diffDesempleoPp <= 0 ? 'text-emerald-400' : 'text-rose-400'}">${diffDesempleoPp >= 0 ? "+" : ""}${diffDesempleoPp.toFixed(1).replace(".", ",")} pp vs. prom.</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Fila Superior: 3 Tarjetas Principales -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Tarjeta 1: Riesgo País -->
-            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between ${animRp ? "card-" + animRp : ""}">
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Riesgo País EMBI+</span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">JP Morgan • En vivo</span>
-                </div>
-                <div class="mt-3">
-                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial ${animRp}">${rpItem.valor_formateado}</span>
-                </div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Riesgo País EMBI+</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">JP Morgan • En vivo</span></div>
+                <div class="mt-3"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${rpItem.valor_formateado}</span></div>
               </div>
               <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
                 ${renderBadgeVar(rpItem.variacion, true)}
-                <div class="flex items-center gap-2.5 num-editorial text-[11px] text-slate-400">
-                  <span>Mes <strong class="${String(rpItem.var_mes || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_mes || "-"}</strong></span>
-                  <span>Año <strong class="${String(rpItem.var_anio || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_anio || "-"}</strong></span>
-                </div>
+                <div class="flex items-center gap-2.5 num-editorial text-[11px] text-slate-400"><span>Mes <strong class="${String(rpItem.var_mes || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_mes || "-"}</strong></span><span>Año <strong class="${String(rpItem.var_anio || "").includes("-") ? "text-emerald-400" : "text-rose-400"}">${rpItem.var_anio || "-"}</strong></span></div>
               </div>
             </div>
 
-            <!-- Tarjeta 2: Índice de Confianza del Consumidor (ICC) -->
             <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza del Consumidor (ICC)</span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">CIF • UTDT</span>
-                </div>
-                <div class="mt-3">
-                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icc.valor_formateado}</span>
-                </div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza del Consumidor (ICC)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">CIF • UTDT</span></div>
+                <div class="mt-3"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icc.valor_formateado}</span></div>
               </div>
               <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5">
-                  ${renderBadgeVar(icc.variacion_mensual, false)}
-                  <span class="text-[10px] font-mono text-slate-400">m/m</span>
-                </div>
-                <div class="text-[11px] font-mono text-slate-400">
-                  i.a.: <strong class="${String(icc.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icc.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icc.mes_label}</span>
-                </div>
+                <div class="flex items-center gap-1.5">${renderBadgeVar(icc.variacion_mensual, false)}<span class="text-[10px] font-mono text-slate-400">m/m</span></div>
+                <div class="text-[11px] font-mono text-slate-400">i.a.: <strong class="${String(icc.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icc.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icc.mes_label}</span></div>
               </div>
             </div>
 
-            <!-- Tarjeta 3: Índice de Confianza en el Gobierno (ICG Di Tella) -->
             <div class="neon-card rounded-2xl p-5 flex flex-col justify-between border-emerald-500/30">
               <div>
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza en el Gobierno (ICG)</span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">UTDT • Escala 0–5</span>
-                </div>
-                <div class="mt-3 flex items-baseline gap-2.5">
-                  <span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icg.valor_formateado}</span>
-                  <span class="text-xs font-mono text-cyan-300">Mes ${icg.mes_mandato} de gestión</span>
-                </div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Confianza en el Gobierno (ICG)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">UTDT • Escala 0–5</span></div>
+                <div class="mt-3 flex items-baseline gap-2.5"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${icg.valor_formateado}</span><span class="text-xs font-mono text-cyan-300">Mes ${icg.mes_mandato} de gestión</span></div>
               </div>
               <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5">
-                  ${renderBadgeVar(icg.variacion_mensual, false)}
-                  <span class="text-[10px] font-mono text-slate-400">m/m</span>
-                </div>
-                <div class="text-[11px] font-mono text-slate-400">
-                  i.a.: <strong class="${String(icg.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icg.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icg.mes_label}</span>
-                </div>
+                <div class="flex items-center gap-1.5">${renderBadgeVar(icg.variacion_mensual, false)}<span class="text-[10px] font-mono text-slate-400">m/m</span></div>
+                <div class="text-[11px] font-mono text-slate-400">i.a.: <strong class="${String(icg.variacion_interanual || "").includes("-") ? "text-rose-400" : "text-emerald-400"}">${icg.variacion_interanual || "-"}</strong> • <span class="text-slate-300">${icg.mes_label}</span></div>
+              </div>
+            </div>
+
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Actividad Económica (EMAE)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">INDEC • Interanual</span></div>
+                <div class="mt-3"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${emaeItem.valor_formateado}</span></div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                ${renderBadgeVar(emaeItem.variacion, false)}
+                <div class="text-[11px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promEmae >= 0 ? "+" : ""}${promEmae.toFixed(1).replace(".", ",")}%</strong> • <span class="text-slate-300">${emaeItem.fecha || "INDEC"}</span></div>
+              </div>
+            </div>
+
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">${infIaItem.descripcion || "Inflación Interanual (IPC)"}</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30">INDEC • Interanual</span></div>
+                <div class="mt-3"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${infIaItem.valor_formateado}</span></div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                <span class="text-xs font-mono font-bold ${diffInfIaPct <= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtDiffHist(diffInfIaPct)} vs. prom. 3 gob</span>
+                <div class="text-[11px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promInfIa.toFixed(1).replace(".", ",")}%</strong> • <span class="text-slate-300">${infIaItem.fecha || "INDEC"}</span></div>
+              </div>
+            </div>
+
+            <div class="neon-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2"><span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Tasa de Desempleo (EPH)</span><span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">INDEC • EPH</span></div>
+                <div class="mt-3"><span class="text-3xl sm:text-4xl font-extrabold text-white num-editorial">${desempleoItem.valor_formateado}</span></div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between gap-2">
+                <span class="text-xs font-mono font-bold ${diffDesempleoPp <= 0 ? 'text-emerald-400' : 'text-rose-400'}">${diffDesempleoPp >= 0 ? "+" : ""}${diffDesempleoPp.toFixed(1).replace(".", ",")} pp vs. prom. 3 gob</span>
+                <div class="text-[11px] font-mono text-slate-400">Prom. 3 gob: <strong class="text-slate-200">${promDesempleo.toFixed(1).replace(".", ",")}%</strong> • <span class="text-slate-300">${desempleoItem.fecha || "INDEC EPH"}</span></div>
               </div>
             </div>
           </div>
 
-          <!-- Bloque Central: Contraste Histórico ICG Di Tella vs 2 Gobiernos Anteriores -->
           <div class="rounded-2xl border border-slate-800/50 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl space-y-4">
             <div class="border-b border-slate-800/50 pb-3 flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-xs">
-                  <i class="fa-solid fa-scale-balanced"></i>
-                </div>
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-xs"><i class="fa-solid fa-scale-balanced"></i></div>
                 <div>
                   <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">Contraste Histórico ICG Di Tella — Misma Altura del Mandato (Mes ${icg.mes_mandato})</h3>
                   <p class="text-[11px] text-slate-400 font-mono">Diferencia porcentual del nivel actual (${icg.valor_formateado}) frente a las tres presidencias anteriores</p>
@@ -3055,31 +2981,19 @@
               </div>
               <span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800/60 text-slate-300">Escuela de Gobierno • UTDT</span>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              ${comparativasHtml}
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">${comparativasHtml}</div>
           </div>
 
-          <!-- Desglose de los 5 Subíndices del ICG Di Tella -->
           <div class="rounded-2xl border border-slate-800/50 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl space-y-3">
             <div class="border-b border-slate-800/50 pb-2.5 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-list-check text-cyan-400 text-xs"></i>
-                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Desglose por Subíndices del ICG (${icg.mes_label})</h3>
-              </div>
+              <div class="flex items-center gap-2"><i class="fa-solid fa-list-check text-cyan-400 text-xs"></i><h3 class="text-xs font-bold text-white uppercase tracking-wider">Desglose por Subíndices del ICG (${icg.mes_label})</h3></div>
               <span class="text-[10px] font-mono text-slate-400">Puntaje (0 a 5) y variación mensual</span>
             </div>
-            <div class="space-y-1">
-              ${componentesHtml}
-            </div>
+            <div class="space-y-1">${componentesHtml}</div>
           </div>
         </div>`;
     };
 
-    // ============================================================================
-    // 6. MOTOR DE RENDERIZADO PRINCIPAL (CON PROTECCIÓN ANTI-PARPADEO DE WIDGETS)
-    // ============================================================================
     function renderizar(forzarReconstruccion = false) {
       const contenedor = document.getElementById("dashboard-content");
       if (!contenedor) return;
