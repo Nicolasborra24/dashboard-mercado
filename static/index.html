@@ -808,25 +808,46 @@
     function obtenerSerieInflacionImplicita() {
       const d = datosInflacionImplicitaSJB;
       if (d) {
-        const arr = Array.isArray(d) ? d : (d.series || d.chart || d.data || d.tabla || d.filas);
+        // Soporte para formato Chart.js directo de SJB ({ labels: [...], datasets: [...] })
+        if (Array.isArray(d.labels) && Array.isArray(d.datasets) && d.labels.length >= 6) {
+          const dsReal = d.datasets.find(ds => /real|ipc/i.test(ds.label || "")) || {};
+          const dsImp = d.datasets.find(ds => /impl|break/i.test(ds.label || "")) || {};
+          const dsNom = d.datasets.find(ds => /nominal|lecap|fija/i.test(ds.label || "")) || {};
+          const dsCer = d.datasets.find(ds => /cer/i.test(ds.label || "")) || {};
+          return d.labels.map((lbl, idx) => {
+            const vR = parseNumSeguro((dsReal.data || [])[idx]);
+            const vI = parseNumSeguro((dsImp.data || [])[idx]);
+            const vN = parseNumSeguro((dsNom.data || [])[idx]);
+            const vC = parseNumSeguro((dsCer.data || [])[idx]);
+            return {
+              mes: String(lbl),
+              ipc_real: !isNaN(vR) ? +vR.toFixed(2) : null,
+              inf_implicita: !isNaN(vI) ? +vI.toFixed(2) : null,
+              tem_nominal: !isNaN(vN) ? +vN.toFixed(2) : null,
+              tem_cer: !isNaN(vC) ? +vC.toFixed(2) : null
+            };
+          });
+        }
+
+        const arr = Array.isArray(d) ? d : (d.series || d.chart || d.data || d.tabla || d.filas || d.puntos);
         if (Array.isArray(arr) && arr.length >= 6) {
           return arr.map((r, i) => {
             const keys = Object.keys(r);
-            const kMes = keys.find(k => /mes|periodo|fecha|label/i.test(k)) || keys[0];
-            const kReal = keys.find(k => /ipc_real|indec|real_ipc|hist/i.test(k));
-            const kImp = keys.find(k => /implicita|breakeven|break_even|mercado/i.test(k));
+            const kMes = keys.find(k => /mes|periodo|fecha|label|x/i.test(k)) || keys[0];
+            const kReal = keys.find(k => /ipc_real|indec|real_ipc|hist|ipc/i.test(k));
+            const kImp = keys.find(k => /implicita|breakeven|break_even|mercado|inf_imp/i.test(k));
             const kNom = keys.find(k => /tem_nominal|tem_fija|lecap|nominal/i.test(k));
-            const kCer = keys.find(k => /tem_real|tem_cer|cer_tem|tir_cer/i.test(k));
+            const kCer = keys.find(k => /tem_real|tem_cer|cer_tem|tir_cer|cer/i.test(k));
             const vReal = kReal ? parseNumSeguro(r[kReal]) : NaN;
             const vImp = kImp ? parseNumSeguro(r[kImp]) : NaN;
             const vNom = kNom ? parseNumSeguro(r[kNom]) : NaN;
             const vCer = kCer ? parseNumSeguro(r[kCer]) : NaN;
             return {
               mes: String(r[kMes] || `M${i + 1}`),
-              ipc_real: !isNaN(vReal) ? vReal : null,
-              inf_implicita: !isNaN(vImp) ? vImp : null,
-              tem_nominal: !isNaN(vNom) ? vNom : null,
-              tem_cer: !isNaN(vCer) ? vCer : null
+              ipc_real: !isNaN(vReal) ? +vReal.toFixed(2) : null,
+              inf_implicita: !isNaN(vImp) ? +vImp.toFixed(2) : null,
+              tem_nominal: !isNaN(vNom) ? +vNom.toFixed(2) : null,
+              tem_cer: !isNaN(vCer) ? +vCer.toFixed(2) : null
             };
           });
         }
@@ -1016,7 +1037,7 @@
       if (!canvas) return;
 
       const serie = obtenerSerieInflacionImplicita();
-      const hashActual = JSON.stringify(serie);
+      const hashActual = serie.map(s => `${s.mes}:${s.ipc_real ?? ""}:${s.inf_implicita ?? ""}:${s.tem_nominal ?? ""}:${s.tem_cer ?? ""}`).join("|");
       const canvasSigueVivo = chartInflacionInstance && chartInflacionInstance.canvas === canvas && document.body.contains(canvas);
 
       if (canvasSigueVivo) {
@@ -1047,7 +1068,7 @@
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          animation: { duration: 250 },
+          animation: false,
           layout: { padding: { top: 20, right: 16, left: 8, bottom: 6 } },
           plugins: {
             legend: { display: true, position: "top", align: "start", labels: { color: "#cbd5e1", boxWidth: 14, padding: 18, font: { family: "'Inter', sans-serif", size: 11 } } },
@@ -1161,22 +1182,23 @@
     }
 
     async function sincronizarEndpointsSecundarios() {
-      const [curvas, infImp, bandas, finviz, cerDir1, cerDir2, infDir] = await Promise.all([
+      const [curvas, infImp, bandas, finviz, cerDir1, cerDir2, infDir, infDir2] = await Promise.all([
         fetchJsonSeguro("/api/bonos/curvas-sjb?t=" + Date.now()),
         fetchJsonSeguro("/api/bonos/inflacion-implicita?t=" + Date.now()),
         fetchJsonSeguro("/api/dolar/bandas?t=" + Date.now()),
         fetchJsonSeguro("/api/sectores/finviz?t=" + Date.now()),
         fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=BONOS%20CER&moneda=ARS&_t=" + Date.now()),
         fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/tabla?categoria=CER&moneda=ARS&_t=" + Date.now()),
-        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita?_t=" + Date.now())
+        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita?_t=" + Date.now()),
+        fetchJsonSeguro("https://sjbdashboards.up.railway.app/api/intradiario/inflacion-implicita?_t=" + Date.now())
       ]);
       if (curvas && Object.keys(curvas).length > 0) datosCurvasSJB = curvas;
       const cerVivo = cerDir1 || cerDir2;
       if (cerVivo && ((Array.isArray(cerVivo) && cerVivo.length > 0) || (cerVivo.tabla && cerVivo.tabla.length > 0) || (cerVivo.data && cerVivo.data.length > 0))) {
         datosCurvasSJB.cer = cerVivo;
       }
-      if (infDir && Object.keys(infDir).length > 0) datosInflacionImplicitaSJB = infDir;
-      else if (infImp && Object.keys(infImp).length > 0) datosInflacionImplicitaSJB = infImp;
+      const infSjbOk = [infDir, infDir2, infImp].find(x => x && (Array.isArray(x) ? x.length >= 6 : Object.keys(x).length > 0));
+      if (infSjbOk) datosInflacionImplicitaSJB = infSjbOk;
       if (bandas && bandas.banda_inferior) datosBandasCambiarias = bandas;
       if (finviz && (finviz["1D"] || finviz["1W"])) datosFinvizSectores = finviz;
       if (["cotizacion_bonos", "inflacion_y_ajuste"].includes(categoriaActiva)) renderizar(false);

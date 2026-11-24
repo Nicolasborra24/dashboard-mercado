@@ -2229,40 +2229,82 @@ def fetch_una_curva_sjb(clave: str, url: str) -> tuple:
     return clave, None
 
 def fetch_inflacion_implicita_sjb():
+    ts_ms = int(time.time() * 1000)
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://sjbdashboards.up.railway.app/"
+    }
     for u in [
-        "https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita",
-        "https://sjbdashboards.up.railway.app/api/inflacion-implicita",
-        "https://sjbdashboards.up.railway.app/api/intradiario/inflacion-implicita"
+        f"https://sjbdashboards.up.railway.app/api/bonos/inflacion-implicita?_t={ts_ms}",
+        f"https://sjbdashboards.up.railway.app/api/inflacion-implicita?_t={ts_ms}",
+        f"https://sjbdashboards.up.railway.app/api/intradiario/inflacion-implicita?_t={ts_ms}",
+        f"https://sjbdashboards.up.railway.app/api/intradiario/breakeven?_t={ts_ms}",
+        f"https://sjbdashboards.up.railway.app/api/bonos/breakeven?_t={ts_ms}"
     ]:
         try:
-            r = GLOBAL_HTTP_SESSION.get(u, headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
-            if r.status_code == 200 and r.json():
-                return r.json()
+            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=4.5)
+            if r.status_code == 200 and r.text.strip():
+                data_j = r.json()
+                if isinstance(data_j, list) and len(data_j) >= 5:
+                    return {"series": data_j, "fuente": "SJB_LIVE"}
+                if isinstance(data_j, dict) and any(
+                    isinstance(data_j.get(k), list) and len(data_j.get(k)) >= 5
+                    for k in ("series", "chart", "data", "tabla", "filas", "puntos", "meses", "labels")
+                ):
+                    data_j["fuente"] = "SJB_LIVE"
+                    return data_j
         except Exception:
             pass
-    # Cálculo dinámico de break-even en vivo desde curvas Lecaps y CER cacheadas
+
+    # Respaldo dinámico sincronizado con las curvas vivas LECAP/BONCAP y CER de SJB
     lecaps = (CACHE_CURVAS_SJB.get("lecaps") or {}).get("tabla") or []
     cer = (CACHE_CURVAS_SJB.get("cer") or {}).get("tabla") or []
     if lecaps and cer:
-        meses_proy = [
-            ("Nov 2026", 15), ("Dec 2026", 45), ("Jan 2027", 75), ("Feb 2027", 105),
-            ("Mar 2027", 135), ("Apr 2027", 165), ("May 2027", 195), ("Jun 2027", 225), ("Jul 2027", 255)
-        ]
-        def _interp_tem(tabla, dias_obj):
+        from datetime import timezone, timedelta
+        hoy_ar = datetime.now(timezone(timedelta(hours=-3))).date()
+        meses_en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        def _extraer_pts_tem(tabla):
             pts = []
             for row in tabla:
-                d = normalizar_valor(row.get("Dias") or row.get("dias"))
+                d = normalizar_valor(row.get("Dias") or row.get("dias") or row.get("plazo"))
+                if d is None:
+                    vto_s = str(row.get("Vencimiento") or row.get("vencimiento") or "").strip()
+                    if len(vto_s) >= 10:
+                        try:
+                            d = (datetime.strptime(vto_s[:10], "%Y-%m-%d").date() - hoy_ar).days
+                        except Exception:
+                            pass
                 tem = normalizar_valor(row.get("TEM") or row.get("tem"))
                 if tem is None:
-                    tir = normalizar_valor(row.get("TIR") or row.get("tir"))
+                    tir = normalizar_valor(row.get("TIR") or row.get("tir") or row.get("TEA") or row.get("tea"))
                     if tir is not None:
-                        tem = ((1 + tir / 100.0) ** (1 / 12.0) - 1) * 100.0
-                if d is not None and tem is not None:
-                    pts.append((d, tem))
+                        tem = ((1.0 + tir / 100.0) ** (1.0 / 12.0) - 1.0) * 100.0
+                if d is not None and d > 0 and tem is not None and -15.0 <= tem <= 25.0:
+                    pts.append((float(d), float(tem)))
+            pts.sort(key=lambda x: x[0])
+            return pts
+
+        def _interpolar_lineal(pts, dias_obj):
             if not pts:
                 return None
-            pts.sort(key=lambda x: abs(x[0] - dias_obj))
-            return round(pts[0][1], 2)
+            if dias_obj <= pts[0][0]:
+                return round(pts[0][1], 2)
+            if dias_obj >= pts[-1][0]:
+                return round(pts[-1][1], 2)
+            for i in range(len(pts) - 1):
+                d0, t0 = pts[i]
+                d1, t1 = pts[i + 1]
+                if d0 <= dias_obj <= d1:
+                    if d1 == d0:
+                        return round(t0, 2)
+                    w = (dias_obj - d0) / (d1 - d0)
+                    return round(t0 + w * (t1 - t0), 2)
+            return round(pts[-1][1], 2)
+
+        pts_nom = _extraer_pts_tem(lecaps)
+        pts_cer = _extraer_pts_tem(cer)
 
         serie = [
             {"mes": "Jun 2026", "tipo": "real", "ipc_real": 1.89, "inf_implicita": None, "tem_nominal": None, "tem_cer": None},
@@ -2271,17 +2313,26 @@ def fetch_inflacion_implicita_sjb():
             {"mes": "Sep 2026", "tipo": "real", "ipc_real": 1.93, "inf_implicita": None, "tem_nominal": None, "tem_cer": None},
             {"mes": "Oct 2026", "tipo": "real", "ipc_real": 2.10, "inf_implicita": None, "tem_nominal": None, "tem_cer": None}
         ]
-        for m_lbl, d_obj in meses_proy:
-            t_nom = _interp_tem(lecaps, d_obj)
-            t_cer = _interp_tem(cer, d_obj)
+
+        for offset_m in range(0, 9):
+            yr = hoy_ar.year + ((hoy_ar.month - 1 + offset_m) // 12)
+            mo = ((hoy_ar.month - 1 + offset_m) % 12) + 1
+            if mo == 12:
+                fin_mes = datetime(yr, 12, 31).date()
+            else:
+                fin_mes = (datetime(yr, mo + 1, 1) - timedelta(days=1)).date()
+            dias_m = max(5, (fin_mes - hoy_ar).days)
+            lbl_m = f"{meses_en[mo - 1]} {yr}"
+            t_nom = _interpolar_lineal(pts_nom, dias_m)
+            t_cer = _interpolar_lineal(pts_cer, dias_m)
             if t_nom is not None and t_cer is not None:
-                be = round((((1 + t_nom / 100.0) / (1 + t_cer / 100.0)) - 1) * 100.0, 2)
+                be = round((((1.0 + t_nom / 100.0) / (1.0 + t_cer / 100.0)) - 1.0) * 100.0, 2)
                 serie.append({
-                    "mes": m_lbl, "tipo": "implicita", "ipc_real": None,
+                    "mes": lbl_m, "tipo": "implicita", "ipc_real": None,
                     "inf_implicita": be, "tem_nominal": t_nom, "tem_cer": t_cer
                 })
         if len(serie) >= 8:
-            return {"series": serie}
+            return {"series": serie, "fuente": "CURVAS_SJB_CALC"}
     return None
 
 BANDAS_BCRA_TABLA_BASE = {
@@ -2949,6 +3000,9 @@ def worker_refresco_continuo():
                     par = _safe_res(fut, (None, None))
                     if par and par[0] and par[1]:
                         CACHE_CURVAS_SJB[par[0]] = par[1]
+                res_inf_fresca = fetch_inflacion_implicita_sjb()
+                if res_inf_fresca:
+                    res_inf_imp = res_inf_fresca
 
             res_finviz = fetch_finviz_sectores(res_usa) if (es_ciclo_lento or not CACHE_FINVIZ_SECTORES.get("1D")) else None
             ciclo_n += 1
