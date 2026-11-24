@@ -4011,8 +4011,8 @@
       // 2. Contraste directo desde el navegador con Rava (Home + Índices) y BondTerminal
       const fuentesWeb = [
         "https://www.rava.com/?_t=" + ts,
-        "https://www.rava.com/cotizaciones/indices?_t=" + ts,
-        "https://bondterminal.com/?_t=" + ts
+        "https://www.rava.com/perfil/RIESGO%20PAIS?_t=" + ts,
+        "https://bondterminal.com/riesgo-pais?_t=" + ts
       ];
       for (const targetUrl of fuentesWeb) {
         if (!isNaN(rpUlt) && !isNaN(mArsUlt) && !isNaN(mUsdUlt)) break;
@@ -4063,6 +4063,17 @@
             }
 
             const plano = htmlU.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+            if (isNaN(rpUlt)) {
+              const mRavaTit = plano.match(/RIESGO\s+PA[IÍ]S\s+Argentina\s+\$?\s*([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)\s*\(([+\-−]?\d{1,2}[,\.]\d{1,2})%\)/i);
+              if (mRavaTit) {
+                const u = parseNumSeguro(mRavaTit[1]);
+                const d = parseNumSeguro(mRavaTit[2]);
+                if (!isNaN(u) && u >= 100 && u <= 5000) {
+                  rpUlt = u;
+                  if (!isNaN(d)) rpDia = d;
+                }
+              }
+            }
             if (isNaN(rpUlt)) {
               const mTxt = plano.match(/(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)/i);
               if (mTxt) {
