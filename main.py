@@ -718,7 +718,7 @@ def obtener_acciones_rava_en_vivo() -> Dict[str, Any]:
     return CACHE_ACCIONES_ARGENTINA
 
 def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
-    """Consulta https://bondterminal.com/ (HTML + endpoints internos) para obtener Riesgo País en vivo."""
+    """Consulta https://bondterminal.com/ (directo y via puentes) para obtener Riesgo Pais en vivo."""
     ts_ms = int(time.time() * 1000)
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -731,7 +731,9 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
         f"https://bondterminal.com/?_t={ts_ms}",
         f"https://bondterminal.com/api/riesgo-pais?_t={ts_ms}",
         f"https://bondterminal.com/api/market?_t={ts_ms}",
-        f"https://bondterminal.com/api/data?_t={ts_ms}"
+        f"https://bondterminal.com/api/data?_t={ts_ms}",
+        f"https://api.allorigins.win/raw?url={quote(f'https://bondterminal.com/?_t={ts_ms}', safe='')}",
+        f"https://corsproxy.io/?{quote(f'https://bondterminal.com/?_t={ts_ms}', safe='')}"
     ]
     for u in candidatos:
         try:
@@ -739,7 +741,6 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
             if r.status_code != 200 or not r.text.strip():
                 continue
             txt = r.text
-            # 1) Si es JSON o contiene JSON embebido con riesgoPais / embi / country_risk
             for pat_json in [
                 r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*\{[^{}]*?"(?:valor|value|last|ultimo|price|puntos)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?',
                 r'"(?:riesgo[_\s]?pais|embi|country[_\s]?risk|rp)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?'
@@ -756,10 +757,9 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
                                 res_bt["dia"] = vd
                         return res_bt
 
-            # 2) Texto renderizado de BondTerminal (ej: "Riesgo País 1.071" o "EMBI+ 1071 pb")
             plano = BeautifulSoup(txt, "html.parser").get_text(" ", strip=True)
             m_txt = re.search(
-                r'(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}?([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)(?:\s*(?:pb|bps|pts))?(?:\s*\(?([+\-−]?\d{1,2}[,\.]\d{1,2})\s*%?\)?)?',
+                r'(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)(?:\s*(?:pb|bps|pts))?(?:\s*\(?([+\-−]?\d{1,2}[,\.]\d{1,2})\s*%?\)?)?',
                 plano,
                 re.IGNORECASE
             )
@@ -784,10 +784,9 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
         raw_html.replace("&quot;", '"')
         .replace("&#34;", '"')
         .replace("&apos;", "'")
-        .replace("\/", "/")
+        .replace("\\/", "/")
     )
 
-    # 1) Buscar en objetos/props JSON embebidos en Rava
     patrones_busqueda = [
         ("RIESGO_PAIS", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"RIESGO\s*PA[IÍ]S"', 100, 5000),
         ("MERVAL_USD", r'"(?:simbolo|especie|nombre|titulo)"\s*:\s*"MERVAL\s*(?:USD|CCL)"', 10, 5000),
@@ -795,8 +794,8 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
     ]
     for clave, pat_sim, min_v, max_v in patrones_busqueda:
         for m in re.finditer(pat_sim, html_u, re.IGNORECASE):
-            ini = max(0, m.start() - 250)
-            fin = min(len(html_u), m.end() + 550)
+            ini = max(0, m.start() - 350)
+            fin = min(len(html_u), m.end() + 650)
             ventana = html_u[ini:fin]
             m_u = re.search(r'"(?:ultimo|px_last|close|valor|cierre)"\s*:\s*"?([+\-]?[\d\.,]+)"?', ventana, re.IGNORECASE)
             if not m_u:
@@ -811,16 +810,12 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
             vd = _parse_float_limpio(m_d.group(1)) if m_d else None
             vm = _parse_float_limpio(m_m.group(1)) if m_m else None
             va = _parse_float_limpio(m_a.group(1)) if m_a else None
-            if vd is not None and -45.0 <= vd <= 45.0:
-                res_k["dia"] = vd
-            if vm is not None and -85.0 <= vm <= 250.0:
-                res_k["mes"] = vm
-            if va is not None and -95.0 <= va <= 500.0:
-                res_k["anio"] = va
+            if vd is not None and -45.0 <= vd <= 45.0: res_k["dia"] = vd
+            if vm is not None and -85.0 <= vm <= 250.0: res_k["mes"] = vm
+            if va is not None and -95.0 <= va <= 500.0: res_k["anio"] = va
             encontrados[clave] = res_k
             break
 
-    # 2) Buscar en filas <tr> de las tablas de Rava (Índices / Home)
     soup = BeautifulSoup(raw_html, "html.parser")
     for tr in soup.find_all("tr"):
         celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
@@ -829,11 +824,11 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
         esp = celdas[0].upper().strip()
         clave_tr = None
         min_v, max_v = 0.0, 0.0
-        if re.fullmatch(r'RIESGO\s+PA[IÍ]S', esp):
+        if "RIESGO PAIS" in esp or "RIESGO PAÍS" in esp:
             clave_tr, min_v, max_v = "RIESGO_PAIS", 100, 5000
-        elif re.fullmatch(r'MERVAL\s*(?:USD|CCL)', esp):
+        elif "MERVAL" in esp and ("USD" in esp or "CCL" in esp):
             clave_tr, min_v, max_v = "MERVAL_USD", 10, 5000
-        elif re.fullmatch(r'(?:S&P\s*)?MERVAL|IMV', esp):
+        elif esp in ("MERVAL", "S&P MERVAL", "IMV"):
             clave_tr, min_v, max_v = "MERVAL_ARS", 20000, 10000000
 
         if clave_tr and clave_tr not in encontrados:
@@ -848,12 +843,11 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
                     r_tab["anio"] = float(_parse_float_limpio(celdas[4]))
                 encontrados[clave_tr] = r_tab
 
-    # 3) Texto plano de respaldo
     plano = soup.get_text(" ", strip=True)
     patrones_tabla = [
-        ("MERVAL_ARS", r'(?:S&P\s+)?MERVAL(?!\s*(?:USD|CCL))\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 100000, 20000000),
-        ("MERVAL_USD", r'MERVAL\s+(?:USD|CCL)\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 100, 10000),
-        ("RIESGO_PAIS", r'RIESGO\s+PA[IÍ]S\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 100, 5000)
+        ("MERVAL_ARS", r'(?:S&P\s+)?MERVAL(?!\s*(?:USD|CCL))\s+([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 20000, 20000000),
+        ("MERVAL_USD", r'MERVAL\s+(?:USD|CCL)\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{2,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 10, 10000),
+        ("RIESGO_PAIS", r'RIESGO\s+PA[IÍ]S\s+([\d]{1,2}\.[\d]{3}(?:,[\d]+)?|[\d]{3,4}(?:,[\d]+)?)\s+([+\-−]?[\d]+,[\d]+)(?:\s+([+\-−]?[\d]+,[\d]+))?(?:\s+([+\-−]?[\d]+,[\d]+))?', 100, 5000)
     ]
     for k_t, pat, min_v, max_v in patrones_tabla:
         if k_t in encontrados:
@@ -878,33 +872,21 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
     prev_m_ars = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "MERVAL_ARS"), {})
     prev_m_usd = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "MERVAL_USD"), {})
 
-    prev_rp_val = float(prev_rp.get("valor") or 1071.0)
-    if prev_rp_val in (852.0, 1038.0):
-        prev_rp_val = 1071.0
-
-    prev_mars_val = float(prev_m_ars.get("valor") or 81255.0)
-    if prev_mars_val > 500000:
-        prev_mars_val = 81255.0
-
-    prev_musd_val = float(prev_m_usd.get("valor") or 46.0)
-    if prev_musd_val > 500:
-        prev_musd_val = 46.0
-
     datos = {
         "MERVAL_ARS": {
-            "ult": prev_mars_val,
+            "ult": float(prev_m_ars.get("valor") or 81255.0),
             "dia": _parse_float_limpio(prev_m_ars.get("variacion")) or 0.0,
             "mes": _parse_float_limpio(prev_m_ars.get("var_mes")) or 0.0,
             "anio": _parse_float_limpio(prev_m_ars.get("var_anio")) or 0.0
         },
         "MERVAL_USD": {
-            "ult": prev_musd_val,
+            "ult": float(prev_m_usd.get("valor") or 46.0),
             "dia": _parse_float_limpio(prev_m_usd.get("variacion")) or 0.0,
             "mes": _parse_float_limpio(prev_m_usd.get("var_mes")) or 0.0,
             "anio": _parse_float_limpio(prev_m_usd.get("var_anio")) or 0.0
         },
         "RIESGO_PAIS": {
-            "ult": prev_rp_val,
+            "ult": float(prev_rp.get("valor") or 1038.0),
             "dia": _parse_float_limpio(prev_rp.get("variacion")) or 0.0,
             "mes": _parse_float_limpio(prev_rp.get("var_mes")) or 0.0,
             "anio": _parse_float_limpio(prev_rp.get("var_anio")) or 0.0
@@ -918,39 +900,40 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
         "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
         "Referer": "https://www.rava.com/"
     }
 
-    # 1. Consultar Rava (Home + Índices + Perfiles MERVAL / MERVAL USD / RIESGO PAIS)
+    html_comp = obtener_html_rava_compartido(ttl=4.0)
+    if html_comp:
+        ext_c = _extraer_rp_y_merval_de_html_rava(html_comp)
+        for k_e, v_e in ext_c.items():
+            datos[k_e].update(v_e)
+            if k_e == "RIESGO_PAIS": rp_vivo_ok = True
+            elif k_e == "MERVAL_ARS": merval_ars_ok = True
+            elif k_e == "MERVAL_USD": merval_usd_ok = True
+
     urls_rava = [
-        f"https://www.rava.com/?_t={ts_ms}",
         f"https://www.rava.com/cotizaciones/indices?_t={ts_ms}",
+        f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}",
         f"https://www.rava.com/perfil/MERVAL?_t={ts_ms}",
-        f"https://www.rava.com/perfil/MERVAL%20USD?_t={ts_ms}",
-        f"https://www.rava.com/perfil/RIESGO%20PAIS?_t={ts_ms}"
+        f"https://api.allorigins.win/raw?url={quote(f'https://www.rava.com/cotizaciones/indices?_t={ts_ms}', safe='')}"
     ]
     for u_rp in urls_rava:
         if rp_vivo_ok and merval_ars_ok and merval_usd_ok:
             break
         try:
-            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.5)
-            if rr.status_code != 200 or len(rr.text) < 400:
-                continue
-            ext = _extraer_rp_y_merval_de_html_rava(rr.text)
-            for k_e, v_e in ext.items():
-                datos[k_e].update(v_e)
-                if k_e == "RIESGO_PAIS":
-                    rp_vivo_ok = True
-                elif k_e == "MERVAL_ARS":
-                    merval_ars_ok = True
-                elif k_e == "MERVAL_USD":
-                    merval_usd_ok = True
+            rr = GLOBAL_HTTP_SESSION.get(u_rp, headers=hdrs_rava, timeout=3.5, verify=False)
+            if rr.status_code == 200 and len(rr.text) > 400:
+                ext = _extraer_rp_y_merval_de_html_rava(rr.text)
+                for k_e, v_e in ext.items():
+                    datos[k_e].update(v_e)
+                    if k_e == "RIESGO_PAIS": rp_vivo_ok = True
+                    elif k_e == "MERVAL_ARS": merval_ars_ok = True
+                    elif k_e == "MERVAL_USD": merval_usd_ok = True
         except Exception:
             pass
 
-    # Si Rava trajo MERVAL en pesos pero no MERVAL USD explícito, calcularlo con el CCL en vivo de Rava
     if merval_ars_ok and not merval_usd_ok:
         ccl_rava = (_DOLARITO_CICLO_CACHE.get("data") or {}).get("DOLAR_CCL") or BASE_DOLARITO_EXACTA.get("DOLAR_CCL") or {}
         ccl_px = float(ccl_rava.get("venta") or ccl_ref or 1749.47)
@@ -959,11 +942,11 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             ccl_dia = _parse_float_limpio(ccl_rava.get("variacion")) or 0.0
             datos["MERVAL_USD"]["dia"] = round(((1 + datos["MERVAL_ARS"]["dia"] / 100.0) / (1 + ccl_dia / 100.0) - 1) * 100.0, 2)
 
-    # 2. Consultar BondTerminal (https://bondterminal.com/) para Riesgo País
-    bt_rp = _extraer_rp_de_bondterminal()
-    if bt_rp and bt_rp.get("ult"):
-        datos["RIESGO_PAIS"].update(bt_rp)
-        rp_vivo_ok = True
+    if not rp_vivo_ok:
+        bt_rp = _extraer_rp_de_bondterminal()
+        if bt_rp and bt_rp.get("ult"):
+            datos["RIESGO_PAIS"].update(bt_rp)
+            rp_vivo_ok = True
 
     res_out = {}
     config_items = [

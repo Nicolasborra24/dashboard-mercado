@@ -4162,7 +4162,6 @@
       ejecutarSinSolapar("core", cargarDatos);
       ejecutarSinSolapar("cripto", actualizarCriptosEnVivo);
       ejecutarSinSolapar("dolar", actualizarPuntasDolarEnVivo);
-    ejecutarSinSolapar("rp_rava", window.sincronizarRiesgoPaisRava);
       ejecutarSinSolapar("rp_rava", window.sincronizarRiesgoPaisRava);
       if (["cotizacion_bonos", "inflacion_y_ajuste", "dolar_y_cambiario", "indices"].includes(categoriaActiva)) {
         ejecutarSinSolapar("sec", sincronizarEndpointsSecundarios);
