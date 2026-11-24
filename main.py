@@ -3361,6 +3361,301 @@ def ver_aceptacion_gobierno():
             "updated": ULTIMA_ACTUALIZACION
         }
 
+
+CACHE_NOTICIAS_DRIVERS: Dict[str, Any] = {
+    "bloomberg": [
+        {
+            "titulo": "Riesgo país de Argentina podría oscilar entre 700 y 900 hasta las elecciones, dice Adcap",
+            "url": "https://www.bloomberglinea.com/tags/economia-argentina/",
+            "seccion": "Mercados & Deuda",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Bausili ve señales de que Argentina empieza a pasar de la estabilidad al crecimiento",
+            "url": "https://www.bloomberglinea.com/latinoamerica/argentina/",
+            "seccion": "BCRA & Macro",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Morgan Stanley: bonos argentinos ya descuentan escenarios de volatilidad electoral",
+            "url": "https://www.bloomberglinea.com/tags/economia-argentina/",
+            "seccion": "Renta Fija",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Vaca Muerta: YPF consigue aprobación del RIGI para la inversión Argentina LNG",
+            "url": "https://www.bloomberglinea.com/latinoamerica/argentina/",
+            "seccion": "Acciones & Energía",
+            "fecha": "Reciente"
+        }
+    ],
+    "ambito": [
+        {
+            "titulo": "Bonos en dólares y acciones líderes operan con foco en reservas del BCRA y tasas",
+            "url": "https://www.ambito.com/contenidos/finanzas.html",
+            "seccion": "Finanzas",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Dólar financiero (MEP y CCL): cómo evolucionan las brechas frente al mayorista",
+            "url": "https://www.ambito.com/contenidos/economia.html",
+            "seccion": "Cambiario",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Licitaciones del Tesoro y curva en pesos: qué tasas convalida el mercado en LECAP y CER",
+            "url": "https://www.ambito.com/contenidos/finanzas.html",
+            "seccion": "Renta Fija ARS",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Wall Street y ADRs argentinos siguen de cerca los datos de actividad e inflación de EE.UU.",
+            "url": "https://www.ambito.com/contenidos/finanzas.html",
+            "seccion": "Mercados Globales",
+            "fecha": "Reciente"
+        }
+    ],
+    "finanzas_argy": [
+        {
+            "titulo": "Resumen de mercado: dinámica de reservas del BCRA, tasas en pesos y flujo hacia activos locales",
+            "url": "https://finanzasargy.com/",
+            "seccion": "Mercado Local",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Dólar MEP, CCL y Blue: análisis de cotizaciones en tiempo real y cobertura cambiaria",
+            "url": "https://finanzasargy.com/",
+            "seccion": "Divisas",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Superávit fiscal, desaceleración inflacionaria y el impacto en la curva soberana",
+            "url": "https://substack.com/@finanzasargy",
+            "seccion": "Macro & Deuda",
+            "fecha": "Reciente"
+        },
+        {
+            "titulo": "Principales índices globales, tasas de la Fed y drivers para el S&P Merval",
+            "url": "https://finanzasargy.com/",
+            "seccion": "Mercados",
+            "fecha": "Reciente"
+        }
+    ],
+    "updated": ""
+}
+
+_NOTICIAS_CACHE_TS = 0.0
+_NOTICIAS_LOCK = threading.Lock()
+
+KW_MERCADO_CAPITALES = (
+    "dolar", "dólar", "bcra", "bono", "bonos", "accion", "acciones", "merval", "riesgo pais",
+    "riesgo país", "tasa", "tasas", "inflacion", "inflación", "reserva", "reservas", "wall street",
+    "fed", "tesoro", "lecap", "cer", "mep", "ccl", "licitacion", "licitación", "deuda", "mercado",
+    "mercados", "inversion", "inversión", "inversores", "ypf", "rigi", "superavit", "superávit",
+    "pbi", "pib", "emae", "fmi", "caputo", "bausili", "adr", "adrs", "byma", "cedear", "cripto",
+    "bitcoin", "nasdaq", "s&p", "soja", "petroleo", "petróleo", "banco", "bancos", "credito", "crédito"
+)
+
+def _es_relevante_mercado(titulo: str) -> bool:
+    t = titulo.lower()
+    return any(k in t for k in KW_MERCADO_CAPITALES)
+
+def _limpiar_fecha_rss(raw_f: str) -> str:
+    if not raw_f:
+        return "Hoy"
+    s = raw_f.strip()
+    m_rfc = re.search(r"(\d{1,2})\s+([A-Za-z]{3})\s+20\d{2}\s+(\d{2}:\d{2})", s)
+    if m_rfc:
+        return f"{m_rfc.group(1)} {m_rfc.group(2)} • {m_rfc.group(3)}"
+    m_iso = re.search(r"20\d{2}-(\d{2})-(\d{2})(?:T(\d{2}:\d{2}))?", s)
+    if m_iso:
+        mes_n = MESES_CORTOS_ES.get(int(m_iso.group(1)), m_iso.group(1))
+        h_s = f" • {m_iso.group(3)}" if m_iso.group(3) else ""
+        return f"{int(m_iso.group(2))} {mes_n}{h_s}"
+    return s[:22]
+
+def _parsear_rss_xml(xml_txt: str, sec_default: str, solo_mercado: bool = True) -> List[Dict[str, str]]:
+    items_out: List[Dict[str, str]] = []
+    if not xml_txt or "<item" not in xml_txt.lower():
+        return items_out
+    soup = BeautifulSoup(xml_txt, "xml")
+    if not soup.find("item"):
+        soup = BeautifulSoup(xml_txt, "html.parser")
+    vistos = set()
+    for it in soup.find_all("item"):
+        t_el = it.find("title")
+        l_el = it.find("link")
+        p_el = it.find("pubDate") or it.find("pubdate") or it.find("dc:date")
+        c_el = it.find("category")
+        tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
+        tit = re.sub(r"\s+", " ", tit).strip()
+        link = l_el.get_text(strip=True) if l_el else ""
+        if not link and l_el and l_el.next_sibling:
+            link = str(l_el.next_sibling).strip()
+        if not tit or len(tit) < 18 or not link.startswith("http"):
+            continue
+        if solo_mercado and not _es_relevante_mercado(tit):
+            continue
+        k_norm = tit.lower()[:65]
+        if k_norm in vistos:
+            continue
+        vistos.add(k_norm)
+        sec = c_el.get_text(strip=True) if c_el else sec_default
+        fec = _limpiar_fecha_rss(p_el.get_text(strip=True) if p_el else "")
+        items_out.append({
+            "titulo": tit,
+            "url": link,
+            "seccion": sec[:26] if sec else sec_default,
+            "fecha": fec
+        })
+        if len(items_out) >= 4:
+            break
+    return items_out
+
+def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
+    global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
+    now = time.time()
+    if not forzar and (now - _NOTICIAS_CACHE_TS < 600.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
+        return CACHE_NOTICIAS_DRIVERS
+    if not _NOTICIAS_LOCK.acquire(blocking=False):
+        return CACHE_NOTICIAS_DRIVERS
+    try:
+        hdrs = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8"
+        }
+
+        # 1. Bloomberg Línea Argentina
+        bl_items: List[Dict[str, str]] = []
+        for u_bl in [
+            "https://www.bloomberglinea.com/arc/outboundfeeds/rss/category/latinoamerica/argentina/?outputType=xml",
+            "https://www.bloomberglinea.com/arc/outboundfeeds/rss/?outputType=xml"
+        ]:
+            try:
+                r = GLOBAL_HTTP_SESSION.get(u_bl, headers=hdrs, timeout=4.5, verify=False)
+                if r.status_code == 200 and r.text:
+                    bl_items = _parsear_rss_xml(r.text, "Bloomberg AR", solo_mercado=True)
+                    if len(bl_items) < 4:
+                        extra = _parsear_rss_xml(r.text, "Bloomberg AR", solo_mercado=False)
+                        for e in extra:
+                            if all(e["titulo"] != x["titulo"] for x in bl_items):
+                                bl_items.append(e)
+                            if len(bl_items) >= 4:
+                                break
+                    if len(bl_items) >= 4:
+                        break
+            except Exception:
+                pass
+
+        if len(bl_items) < 4:
+            try:
+                r_html = GLOBAL_HTTP_SESSION.get("https://www.bloomberglinea.com/latinoamerica/argentina/", headers=hdrs, timeout=4.5, verify=False)
+                if r_html.status_code == 200 and r_html.text:
+                    soup_b = BeautifulSoup(r_html.text, "html.parser")
+                    vistos_b = {x["titulo"].lower()[:60] for x in bl_items}
+                    for a in soup_b.find_all("a", href=True):
+                        href = a["href"]
+                        if "/latinoamerica/argentina/" not in href and "/mercados/" not in href and "/economia/" not in href:
+                            continue
+                        if href.rstrip("/") in ("https://www.bloomberglinea.com/latinoamerica/argentina", "/latinoamerica/argentina"):
+                            continue
+                        tit = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
+                        if len(tit) < 24 or len(tit) > 165:
+                            continue
+                        full_u = href if href.startswith("http") else ("https://www.bloomberglinea.com" + href)
+                        if tit.lower()[:60] in vistos_b:
+                            continue
+                        vistos_b.add(tit.lower()[:60])
+                        bl_items.append({"titulo": tit, "url": full_u, "seccion": "Argentina", "fecha": "En vivo"})
+                        if len(bl_items) >= 4:
+                            break
+            except Exception:
+                pass
+
+        if len(bl_items) >= 2:
+            CACHE_NOTICIAS_DRIVERS["bloomberg"] = bl_items[:4]
+
+        # 2. Ámbito Económico y Finanzas
+        amb_items: List[Dict[str, str]] = []
+        for u_amb, sec_amb in [
+            ("https://www.ambito.com/rss/pages/finanzas.xml", "Finanzas"),
+            ("https://www.ambito.com/rss/economia.xml", "Economía"),
+            ("https://www.ambito.com/rss/ultimas-noticias.xml", "Mercados")
+        ]:
+            if len(amb_items) >= 4:
+                break
+            try:
+                r = GLOBAL_HTTP_SESSION.get(u_amb, headers=hdrs, timeout=4.5, verify=False)
+                if r.status_code == 200 and r.text:
+                    parsed_a = _parsear_rss_xml(r.text, sec_amb, solo_mercado=True)
+                    for it_a in parsed_a:
+                        if all(it_a["titulo"].lower()[:60] != x["titulo"].lower()[:60] for x in amb_items):
+                            amb_items.append(it_a)
+                        if len(amb_items) >= 4:
+                            break
+            except Exception:
+                pass
+
+        if len(amb_items) >= 2:
+            CACHE_NOTICIAS_DRIVERS["ambito"] = amb_items[:4]
+
+        # 3. Finanzas Argy
+        fa_items: List[Dict[str, str]] = []
+        try:
+            r_fa = GLOBAL_HTTP_SESSION.get("https://finanzasargy.com/", headers=hdrs, timeout=4.5, verify=False)
+            if r_fa.status_code == 200 and r_fa.text:
+                soup_fa = BeautifulSoup(r_fa.text, "html.parser")
+                vistos_fa = set()
+                for a in soup_fa.find_all("a", href=True):
+                    href = a["href"].strip()
+                    if any(x in href for x in ("/cotizaciones", "twitter.com", "x.com", "t.me", "whatsapp", "instagram", "#")):
+                        continue
+                    tit = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
+                    tit = re.sub(r"(Econom[ií]a|Finanzas|Criptomonedas|Mercados)\s+\d{1,2}\s+de\s+[a-z]+\s+de\s+20\d{2}.*$", "", tit, flags=re.IGNORECASE).strip()
+                    if len(tit) < 26 or len(tit) > 165:
+                        continue
+                    if tit.lower().startswith(("dólar ", "dolar ", "panel ", "cotización")):
+                        continue
+                    full_u = href if href.startswith("http") else ("https://finanzasargy.com" + ("" if href.startswith("/") else "/") + href)
+                    if full_u.rstrip("/") == "https://finanzasargy.com":
+                        continue
+                    if tit.lower()[:55] in vistos_fa:
+                        continue
+                    vistos_fa.add(tit.lower()[:55])
+                    fa_items.append({"titulo": tit, "url": full_u, "seccion": "Finanzas Argy", "fecha": "Reciente"})
+                    if len(fa_items) >= 4:
+                        break
+        except Exception:
+            pass
+
+        if len(fa_items) < 4:
+            try:
+                r_sub = GLOBAL_HTTP_SESSION.get("https://finanzasargy.substack.com/feed", headers=hdrs, timeout=4.0, verify=False)
+                if r_sub.status_code == 200 and r_sub.text:
+                    sub_parsed = _parsear_rss_xml(r_sub.text, "Newsletter", solo_mercado=False)
+                    for sp in sub_parsed:
+                        if all(sp["titulo"].lower()[:55] != x["titulo"].lower()[:55] for x in fa_items):
+                            fa_items.append(sp)
+                        if len(fa_items) >= 4:
+                            break
+            except Exception:
+                pass
+
+        if len(fa_items) >= 2:
+            CACHE_NOTICIAS_DRIVERS["finanzas_argy"] = fa_items[:4]
+
+        CACHE_NOTICIAS_DRIVERS["updated"] = datetime.utcnow().strftime("%H:%M:%S UTC")
+        _NOTICIAS_CACHE_TS = time.time()
+    except Exception:
+        _NOTICIAS_CACHE_TS = time.time() - 480.0
+    finally:
+        _NOTICIAS_LOCK.release()
+    return CACHE_NOTICIAS_DRIVERS
+
+@app.get("/api/noticias-drivers")
+def ver_noticias_drivers(forzar: bool = Query(False)):
+    return actualizar_noticias_drivers(forzar=forzar)
+
 @app.get("/api/calendario/economico")
 def ver_calendario_economico(desde: Optional[str] = Query(None), hasta: Optional[str] = Query(None)):
     indec = extraer_calendario_indec()
