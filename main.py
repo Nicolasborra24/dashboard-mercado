@@ -3516,82 +3516,6 @@ KW_DRIVERS_USA = (
     "semiconductores", "chips", "tecnolog", "apple", "microsoft", "tesla", "fomc"
 )
 
-def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuente_default: str = "") -> List[Dict[str, Any]]:
-    salida: List[Dict[str, Any]] = []
-    hdrs = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*"
-    }
-    try:
-        r = GLOBAL_HTTP_SESSION.get(url_rss, headers=hdrs, timeout=2.8, verify=False)
-        if r.status_code != 200 or "<item" not in r.text.lower():
-            return salida
-        soup = BeautifulSoup(r.text, "html.parser")
-        from email.utils import parsedate_to_datetime
-        for it in soup.find_all("item"):
-            t_el = it.find("title")
-            l_el = it.find("link")
-            p_el = it.find("pubdate")
-            s_el = it.find("source")
-            raw_tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
-            raw_tit = re.sub(r"\s+", " ", raw_tit).strip()
-            fuente_nom = s_el.get_text(strip=True) if s_el else (fuente_default or mercado_lbl)
-            if " - " in raw_tit:
-                partes = raw_tit.rsplit(" - ", 1)
-                raw_tit = partes[0].strip()
-                if not s_el and not fuente_default:
-                    fuente_nom = partes[1].strip()
-
-            link = l_el.get_text(strip=True) if l_el else (str(l_el.next_sibling).strip() if (l_el and l_el.next_sibling) else "")
-            if not link.startswith("http") and it.find("guid"):
-                g_txt = it.find("guid").get_text(strip=True)
-                if g_txt.startswith("http"):
-                    link = g_txt
-            if len(raw_tit) < 22 or not link.startswith("http"):
-                continue
-
-            ts_val = 0.0
-            fec_lbl = "Hoy • En vivo"
-            if p_el:
-                try:
-                    dt_p = parsedate_to_datetime(p_el.get_text(strip=True)).astimezone(tz_ar)
-                    ts_val = dt_p.timestamp()
-                    if dt_p.strftime("%Y-%m-%d") == hoy_iso:
-                        fec_lbl = f"Hoy • {dt_p.strftime('%H:%M')} hs"
-                    else:
-                        mes_n = MESES_CORTOS_ES.get(dt_p.month, str(dt_p.month))
-                        fec_lbl = f"{dt_p.day} {mes_n} • {dt_p.strftime('%H:%M')} hs"
-                except Exception:
-                    pass
-
-            t_low = raw_tit.lower()
-            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi", "blue")):
-                imp_tag = "Dólar & Divisas"
-            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap", "powell", "rates")):
-                imp_tag = "Tasas & Bancos Centrales"
-            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer", "bond", "yield")):
-                imp_tag = "Renta Fija & Deuda"
-            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia", "stocks", "dow")):
-                imp_tag = "Renta Variable"
-            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo", "cpi", "gdp", "jobs")):
-                imp_tag = "Macroeconomía"
-            else:
-                imp_tag = "Driver de Mercado"
-
-            salida.append({
-                "ts": ts_val,
-                "titulo": raw_tit,
-                "url": link,
-                "fuente": fuente_nom[:28],
-                "mercado": mercado_lbl,
-                "impacto": imp_tag,
-                "fecha": fec_lbl
-            })
-    except Exception:
-        pass
-    salida.sort(key=lambda x: x["ts"], reverse=True)
-    return salida
-
 def _traducir_titular_es(texto: str) -> str:
     """Traduce titulares financieros de ingles a espanol con fallback doble."""
     if not texto or len(texto.strip()) < 5:
@@ -3599,7 +3523,6 @@ def _traducir_titular_es(texto: str) -> str:
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
-    # 1. Google Translate clients5 / gtx
     for u in (
         f"https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=es&q={quote(texto)}",
         f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q={quote(texto)}"
@@ -3618,7 +3541,6 @@ def _traducir_titular_es(texto: str) -> str:
                             return trad
         except Exception:
             pass
-    # 2. Respaldo gratuito MyMemory
     try:
         u_mm = f"https://api.mymemory.translated.net/get?q={quote(texto[:450])}&langpair=en|es"
         r2 = requests.get(u_mm, headers=hdrs, timeout=3.0)
@@ -3630,6 +3552,98 @@ def _traducir_titular_es(texto: str) -> str:
         pass
     return texto
 
+def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuente_default: str = "") -> List[Dict[str, Any]]:
+    salida: List[Dict[str, Any]] = []
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+    }
+    try:
+        r = GLOBAL_HTTP_SESSION.get(url_rss, headers=hdrs, timeout=3.0, verify=False)
+        xml_txt = r.content.decode("utf-8", errors="replace")
+        if r.status_code != 200 or "<item" not in xml_txt.lower():
+            return salida
+        soup = BeautifulSoup(xml_txt, "html.parser")
+        from email.utils import parsedate_to_datetime
+        ruido_editorial = (
+            "401(k)", "retirement", "personal finance", "how to ", "why ", "opinion:",
+            "review:", "best credit cards", "mortgage rates today", "lottery", "powerball"
+        )
+        for it in soup.find_all("item"):
+            t_el = it.find("title")
+            l_el = it.find("link")
+            p_el = it.find("pubdate")
+            s_el = it.find("source")
+            d_el = it.find("description")
+            raw_tit = BeautifulSoup(t_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True) if t_el else ""
+            raw_tit = re.sub(r"\s+", " ", raw_tit).strip()
+            fuente_nom = s_el.get_text(strip=True) if s_el else (fuente_default or mercado_lbl)
+            if " - " in raw_tit:
+                partes = raw_tit.rsplit(" - ", 1)
+                raw_tit = partes[0].strip()
+                if not s_el and not fuente_default:
+                    fuente_nom = partes[1].strip()
+
+            link = l_el.get_text(strip=True) if l_el else (str(l_el.next_sibling).strip() if (l_el and l_el.next_sibling) else "")
+            if not link.startswith("http") and it.find("guid"):
+                g_txt = it.find("guid").get_text(strip=True)
+                if g_txt.startswith("http"):
+                    link = g_txt
+            if len(raw_tit) < 22 or not link.startswith("http"):
+                continue
+
+            t_low = raw_tit.lower()
+            if any(bad in t_low for bad in ruido_editorial):
+                continue
+
+            # Si el titulo de EE.UU. no trae cifras/datos duros, enriquecer con la 1ra oracion de la bajada
+            if mercado_lbl == "EE.UU." and d_el and not re.search(r"\d+[%\.]|\$\d+|fed|fomc|cpi|pce|gdp|yield|s&p|nasdaq|dow", t_low):
+                desc_txt = BeautifulSoup(d_el.get_text(" ", strip=True), "html.parser").get_text(" ", strip=True)
+                desc_txt = re.sub(r"\s+", " ", desc_txt).strip()
+                primera_oracion = desc_txt.split(". ")[0].strip()
+                if 25 <= len(primera_oracion) <= 130 and primera_oracion.lower() not in t_low:
+                    raw_tit = f"{raw_tit}: {primera_oracion}"
+
+            ts_val = 0.0
+            fec_lbl = "Hoy • En vivo"
+            if p_el:
+                try:
+                    dt_p = parsedate_to_datetime(p_el.get_text(strip=True)).astimezone(tz_ar)
+                    ts_val = dt_p.timestamp()
+                    if dt_p.strftime("%Y-%m-%d") == hoy_iso:
+                        fec_lbl = f"Hoy • {dt_p.strftime('%H:%M')} hs"
+                    else:
+                        mes_n = MESES_CORTOS_ES.get(dt_p.month, str(dt_p.month))
+                        fec_lbl = f"{dt_p.day} {mes_n} • {dt_p.strftime('%H:%M')} hs"
+                except Exception:
+                    pass
+
+            if any(k in t_low for k in ("dolar", "dólar", "mep", "ccl", "divisa", "cambi", "blue", "dollar", "fx")):
+                imp_tag = "Dólar & Divisas"
+            elif any(k in t_low for k in ("fed", "tasa", "treasury", "fomc", "bcra", "tamar", "lecap", "powell", "rates", "yield")):
+                imp_tag = "Tasas & Bancos Centrales"
+            elif any(k in t_low for k in ("bono", "deuda", "riesgo pais", "riesgo país", "cer", "bond", "credit")):
+                imp_tag = "Renta Fija & Deuda"
+            elif any(k in t_low for k in ("nvidia", "nasdaq", "s&p", "merval", "accion", "wall street", "ia", "stocks", "dow", "chips", "tech")):
+                imp_tag = "Renta Variable"
+            elif any(k in t_low for k in ("inflacion", "inflación", "pce", "pib", "emae", "empleo", "cpi", "gdp", "jobs", "oil", "gold")):
+                imp_tag = "Macroeconomía"
+            else:
+                imp_tag = "Driver de Mercado"
+
+            salida.append({
+                "ts": ts_val,
+                "titulo": raw_tit,
+                "url": link,
+                "fuente": fuente_nom[:28],
+                "mercado": mercado_lbl,
+                "impacto": imp_tag,
+                "fecha": fec_lbl
+            })
+    except Exception:
+        pass
+    salida.sort(key=lambda x: x["ts"], reverse=True)
+    return salida
 
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
@@ -3645,7 +3659,6 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
         return CACHE_NOTICIAS_DRIVERS
     try:
         q_ar = quote("dolar bonos merval bcra economia argentina")
-        q_us = quote("wall street fed s&p 500 nasdaq treasury yields")
         feeds_ar = [
             ("https://www.ambito.com/rss/pages/finanzas.xml", "Ámbito Finanzas"),
             ("https://www.cronista.com/files/rss/finanzas-mercados.xml", "El Cronista"),
@@ -3653,24 +3666,23 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
         feeds_us = [
-            ("https://www.investing.com/rss/news_25.rss", "Investing.com"),
+            ("https://www.investing.com/rss/news_25.rss", "Investing Markets"),
             ("https://www.investing.com/rss/news_95.rss", "Investing Macro"),
-            ("https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", "NYTimes Business"),
-            ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "WSJ Markets"),
-            ("https://finance.yahoo.com/news/rssindex", "Yahoo Finance"),
-            ("https://www.cnbc.com/id/100003114/device/rss/rss.html", "CNBC")
+            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI,NVDA,TLT,GC=F&region=US&lang=en-US", "Yahoo Finance"),
+            ("https://www.cnbc.com/id/15839069/device/rss/rss.html", "CNBC Investing"),
+            ("https://www.cnbc.com/id/20910258/device/rss/rss.html", "CNBC Economy")
         ]
 
         res_ar: List[Dict[str, Any]] = []
         res_us: List[Dict[str, Any]] = []
-        with ThreadPoolExecutor(max_workers=8) as ex_n:
+        with ThreadPoolExecutor(max_workers=9) as ex_n:
             futs_ar = [ex_n.submit(_parsear_feed_rss, u, "Argentina", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_ar]
             futs_us = [ex_n.submit(_parsear_feed_rss, u, "EE.UU.", tz_ar, hoy_iso, f_nom) for u, f_nom in feeds_us]
             for f in futs_ar:
-                try: res_ar.extend(f.result(timeout=3.0))
+                try: res_ar.extend(f.result(timeout=3.2))
                 except Exception: pass
             for f in futs_us:
-                try: res_us.extend(f.result(timeout=3.0))
+                try: res_us.extend(f.result(timeout=3.2))
                 except Exception: pass
 
         res_ar.sort(key=lambda x: x["ts"], reverse=True)
@@ -3695,7 +3707,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             if len(lista_us_limpia) >= 6:
                 break
 
-        if len(lista_ar_limpia) >= 2:
+        if len(lista_ar_limpia) >= 1:
             CACHE_NOTICIAS_DRIVERS["argentina"] = [
                 {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
             ]
@@ -3728,13 +3740,6 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
         _NOTICIAS_CACHE_TS = time.time() - 240.0
     finally:
         _NOTICIAS_LOCK.release()
-    return CACHE_NOTICIAS_DRIVERS
-
-@app.get("/api/noticias-drivers")
-def ver_noticias_drivers(forzar: bool = Query(False)):
-    now = time.time()
-    if forzar or (now - _NOTICIAS_CACHE_TS > 300.0) or not CACHE_NOTICIAS_DRIVERS.get("updated"):
-        threading.Thread(target=actualizar_noticias_drivers, kwargs={"forzar": True}, daemon=True).start()
     return CACHE_NOTICIAS_DRIVERS
 
 @app.get("/api/calendario/economico")
