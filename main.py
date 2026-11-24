@@ -2956,6 +2956,7 @@ def worker_refresco_continuo():
 
     ciclo_n = 0
     while True:
+        threading.Thread(target=actualizar_noticias_drivers, daemon=True).start()
         try:
             es_ciclo_lento = (ciclo_n % 15 == 0)
             with ThreadPoolExecutor(max_workers=16) as executor:
@@ -3592,44 +3593,54 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
     salida.sort(key=lambda x: x["ts"], reverse=True)
     return salida
 
-def _consultar_gemini_drivers_en_vivo(ahora_ar: datetime) -> Optional[Dict[str, Any]]:
-    api_key = (os.getenv("dashboardgeminikey") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+def _consultar_gemini_drivers_en_vivo(ahora_ar: datetime) -> Tuple[Optional[Dict[str, Any]], str]:
+    api_key = ""
+    for k_env in ("dashboardgeminikey", "DASHBOARDGEMINIKEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"):
+        val = os.getenv(k_env)
+        if val and val.strip():
+            api_key = val.strip()
+            break
     if not api_key:
-        return None
+        return None, "FALTA_API_KEY_EN_RAILWAY"
+
     fecha_str = ahora_ar.strftime("%Y-%m-%d %H:%M")
     prompt = (
-        f"Sos un analista senior de mesa de dinero. Fecha y hora actual en Argentina: {fecha_str} ART. "
-        "Buscá en Google las noticias y drivers financieros MÁS IMPORTANTES Y ACTUALES DE HOY en los mercados de Argentina y Estados Unidos (Wall Street). "
-        "Devolvé ÚNICAMENTE un JSON válido (sin markdown, sin ```json) con esta estructura exacta: "
+        f"Sos un analista senior de mesa de dinero. Hoy es {fecha_str} (hora Argentina). "
+        "Buscá en Google las noticias y drivers financieros MÁS RECIENTES DE HOY en Argentina (dólar, bonos, Merval, BCRA, economía) y Estados Unidos (Wall Street, Fed, S&P 500, Nasdaq, tasas). "
+        "Respondé ÚNICAMENTE con un JSON válido (sin texto extra, sin bloques markdown) con esta estructura exacta: "
         '{"top5": [{"titulo": "...", "url": "https://...", "fuente": "...", "mercado": "Argentina o EE.UU.", "impacto": "...", "fecha": "Hoy • HH:MM hs"}], '
-        '"argentina": [6 items con titulo, url, fuente, impacto, fecha], '
-        '"estados_unidos": [6 items con titulo, url, fuente, impacto, fecha]}. '
-        "Reglas: titulares concretos en español con precios/porcentajes reales de hoy, URLs reales de las notas encontradas, "
-        "6 drivers en argentina, 6 drivers en estados_unidos y los 5 de mayor impacto en top5."
+        '"argentina": [{"titulo": "...", "url": "https://...", "fuente": "...", "impacto": "...", "fecha": "Hoy • HH:MM hs"}], '
+        '"estados_unidos": [{"titulo": "...", "url": "https://...", "fuente": "...", "impacto": "...", "fecha": "Hoy • HH:MM hs"}]}. '
+        "Incluí exactamente 6 noticias en argentina, 6 noticias en estados_unidos y las 5 más importantes en top5."
     )
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=){api_key}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "tools": [{"google_search": {}}],
         "generationConfig": {"temperature": 0.2}
     }
-    try:
-        r = GLOBAL_HTTP_SESSION.post(url, json=payload, timeout=18.0)
-        if r.status_code != 200:
-            return None
-        data = r.json()
-        partes = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        texto = "".join(p.get("text", "") for p in partes).strip()
-        texto = re.sub(r"^```(?:json)?\s*|\s*```$", "", texto, flags=re.IGNORECASE).strip()
-        m_obj = re.search(r"\{[\s\S]*\}", texto)
-        if not m_obj:
-            return None
-        parsed = json.loads(m_obj.group(0))
-        if isinstance(parsed.get("top5"), list) and len(parsed["top5"]) >= 3:
-            return parsed
-    except Exception:
-        pass
-    return None
+    ultimo_err = "SIN_RESPUESTA"
+    for modelo in ("gemini-4-hydrogen", "gemini-4.0-hydrogen", "gemini-3-flash-preview"):
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={api_key}"
+        try:
+            r = requests.post(url, json=payload, timeout=25.0)
+            if r.status_code != 200:
+                ultimo_err = f"HTTP_{r.status_code}_{modelo}: {r.text[:180]}"
+                continue
+            data = r.json()
+            partes = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            texto = "".join(p.get("text", "") for p in partes).strip()
+            texto = re.sub(r"^```(?:json)?\s*|\s*```$", "", texto, flags=re.IGNORECASE).strip()
+            m_obj = re.search(r"\{[\s\S]*\}", texto)
+            if not m_obj:
+                ultimo_err = f"JSON_NO_ENCONTRADO_{modelo}: {texto[:150]}"
+                continue
+            parsed = json.loads(m_obj.group(0))
+            if isinstance(parsed.get("top5"), list) and len(parsed["top5"]) >= 3:
+                return parsed, f"OK_{modelo}"
+            ultimo_err = f"POCOS_ITEMS_{modelo}"
+        except Exception as e:
+            ultimo_err = f"EXC_{modelo}: {str(e)[:150]}"
+    return None, ultimo_err
 
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
@@ -3638,12 +3649,13 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     ahora_ar = datetime.now(tz_ar)
 
     now = time.time()
-    if not forzar and (now - _NOTICIAS_CACHE_TS < 300.0) and CACHE_NOTICIAS_DRIVERS.get("updated"):
+    if not forzar and (now - _NOTICIAS_CACHE_TS < 300.0) and CACHE_NOTICIAS_DRIVERS.get("status", "").startswith("OK_"):
         return CACHE_NOTICIAS_DRIVERS
     if not _NOTICIAS_LOCK.acquire(blocking=False):
         return CACHE_NOTICIAS_DRIVERS
     try:
-        res_gemini = _consultar_gemini_drivers_en_vivo(ahora_ar)
+        res_gemini, estado = _consultar_gemini_drivers_en_vivo(ahora_ar)
+        CACHE_NOTICIAS_DRIVERS["status"] = estado
         if res_gemini:
             if len(res_gemini.get("argentina", [])) >= 3:
                 CACHE_NOTICIAS_DRIVERS["argentina"] = res_gemini["argentina"][:6]
@@ -3653,8 +3665,11 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                 CACHE_NOTICIAS_DRIVERS["top5"] = res_gemini["top5"][:5]
             CACHE_NOTICIAS_DRIVERS["updated"] = ahora_ar.strftime("%H:%M:%S")
             _NOTICIAS_CACHE_TS = time.time()
-    except Exception:
-        _NOTICIAS_CACHE_TS = time.time() - 240.0
+        else:
+            _NOTICIAS_CACHE_TS = time.time() - 250.0
+    except Exception as e:
+        CACHE_NOTICIAS_DRIVERS["status"] = f"ERROR: {str(e)[:120]}"
+        _NOTICIAS_CACHE_TS = time.time() - 250.0
     finally:
         _NOTICIAS_LOCK.release()
     return CACHE_NOTICIAS_DRIVERS
@@ -3662,7 +3677,9 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
 @app.get("/api/noticias-drivers")
 def ver_noticias_drivers(forzar: bool = Query(False)):
     now = time.time()
-    if forzar or (now - _NOTICIAS_CACHE_TS > 300.0) or not CACHE_NOTICIAS_DRIVERS.get("updated"):
+    if forzar:
+        return actualizar_noticias_drivers(forzar=True)
+    if (now - _NOTICIAS_CACHE_TS > 300.0) or not CACHE_NOTICIAS_DRIVERS.get("status", "").startswith("OK_"):
         threading.Thread(target=actualizar_noticias_drivers, kwargs={"forzar": True}, daemon=True).start()
     return CACHE_NOTICIAS_DRIVERS
 
