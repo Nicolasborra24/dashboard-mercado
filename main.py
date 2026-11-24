@@ -3592,6 +3592,23 @@ def _parsear_feed_rss(url_rss: str, mercado_lbl: str, tz_ar, hoy_iso: str, fuent
     salida.sort(key=lambda x: x["ts"], reverse=True)
     return salida
 
+def _traducir_titular_es(texto: str) -> str:
+    """Traduce titulares financieros de ingles a espanol usando Google Translate GTX."""
+    if not texto or len(texto.strip()) < 5:
+        return texto
+    try:
+        u = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q={quote(texto)}"
+        r = GLOBAL_HTTP_SESSION.get(u, timeout=2.5, verify=False)
+        if r.status_code == 200:
+            data = r.json()
+            partes = [seg[0] for seg in (data[0] or []) if seg and seg[0]]
+            trad = "".join(partes).strip()
+            if trad:
+                return trad
+    except Exception:
+        pass
+    return texto
+
 def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
     global _NOTICIAS_CACHE_TS, CACHE_NOTICIAS_DRIVERS
     from datetime import timezone, timedelta
@@ -3658,10 +3675,13 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             CACHE_NOTICIAS_DRIVERS["argentina"] = [
                 {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
             ]
-        if len(lista_us_limpia) >= 2:
-            CACHE_NOTICIAS_DRIVERS["estados_unidos"] = [
-                {k: v for k, v in x.items() if k != "ts"} for x in lista_us_limpia[:6]
-            ]
+        if len(lista_us_limpia) >= 1:
+            us_traducidos = []
+            for x in lista_us_limpia[:6]:
+                item_clean = {k: v for k, v in x.items() if k != "ts"}
+                item_clean["titulo"] = _traducir_titular_es(item_clean["titulo"])
+                us_traducidos.append(item_clean)
+            CACHE_NOTICIAS_DRIVERS["estados_unidos"] = us_traducidos
 
         combinados = []
         ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
