@@ -3263,8 +3263,27 @@ CACHE_ACEPTACION_GOBIERNO: Dict[str, Any] = {
                 "diferencia_pct": 71.1,
                 "diferencia_formateada": "+71,1%",
                 "estado": "Más alto"
+            },
+            {
+                "presidente": "Cristina Fernández (II)",
+                "periodo": "Nov 2014 (Mes 35)",
+                "valor": 1.76,
+                "valor_formateado": "1,76 pts",
+                "diferencia_pct": 15.9,
+                "diferencia_formateada": "+15,9%",
+                "estado": "Más alto"
             }
         ],
+        "historico_3_gobiernos": {
+            "icg_promedio": 1.57,
+            "icc_promedio": 40.68,
+            "riesgo_pais_promedio": 1298.0,
+            "detalle": [
+                {"presidente": "Alberto Fernández", "periodo": "Nov 2022 (Mes 35)", "icg": 1.19, "icc": 37.51, "riesgo_pais": 2415},
+                {"presidente": "Mauricio Macri", "periodo": "Nov 2018 (Mes 35)", "icg": 1.77, "icc": 37.43, "riesgo_pais": 695},
+                {"presidente": "Cristina Fernández (II)", "periodo": "Nov 2014 (Mes 35)", "icg": 1.76, "icc": 47.10, "riesgo_pais": 785}
+            ]
+        },
         "componentes": [
             {"nombre": "Honestidad de los funcionarios", "valor": 2.41, "variacion": "+1,4%"},
             {"nombre": "Capacidad para resolver problemas", "valor": 2.40, "variacion": "+5,6%"},
@@ -3320,6 +3339,8 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
                     signed_alberto = pct_alberto if dir_alberto == "mayor" else -pct_alberto
                     val_macri = round(val_icg / (1.0 + signed_macri / 100.0), 2)
                     val_alberto = round(val_icg / (1.0 + signed_alberto / 100.0), 2)
+                    val_cfk = 1.76
+                    signed_cfk = round(((val_icg / val_cfk) - 1.0) * 100.0, 1)
                     CACHE_ACEPTACION_GOBIERNO["icg"].update({
                         "mes_label": f"{mes_nom[:3]} 2026",
                         "mes_mandato": mes_mandato,
@@ -3344,6 +3365,15 @@ def actualizar_aceptacion_utdt() -> Dict[str, Any]:
                                 "diferencia_pct": signed_alberto,
                                 "diferencia_formateada": f"{'+' if signed_alberto >= 0 else ''}{signed_alberto:.1f}%".replace(".", ","),
                                 "estado": "Más alto" if signed_alberto >= 0 else "Más bajo"
+                            },
+                            {
+                                "presidente": "Cristina Fernández (II)",
+                                "periodo": f"Mes {mes_mandato} de mandato",
+                                "valor": val_cfk,
+                                "valor_formateado": f"{val_cfk:.2f} pts".replace(".", ","),
+                                "diferencia_pct": signed_cfk,
+                                "diferencia_formateada": f"{'+' if signed_cfk >= 0 else ''}{signed_cfk:.1f}%".replace(".", ","),
+                                "estado": "Más alto" if signed_cfk >= 0 else "Más bajo"
                             }
                         ]
                     })

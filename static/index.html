@@ -2611,8 +2611,27 @@
             diferencia_pct: 71.1,
             diferencia_formateada: "+71,1%",
             estado: "Más alto"
+          },
+          {
+            presidente: "Cristina Fernández (II)",
+            periodo: "Nov 2014 (Mes 35)",
+            valor: 1.76,
+            valor_formateado: "1,76 pts",
+            diferencia_pct: 15.9,
+            diferencia_formateada: "+15,9%",
+            estado: "Más alto"
           }
         ],
+        historico_3_gobiernos: {
+          icg_promedio: 1.57,
+          icc_promedio: 40.68,
+          riesgo_pais_promedio: 1298.0,
+          detalle: [
+            { presidente: "Alberto Fernández", periodo: "Nov 2022 (Mes 35)", icg: 1.19, icc: 37.51, riesgo_pais: 2415 },
+            { presidente: "Mauricio Macri", periodo: "Nov 2018 (Mes 35)", icg: 1.77, icc: 37.43, riesgo_pais: 695 },
+            { presidente: "Cristina Fernández (II)", periodo: "Nov 2014 (Mes 35)", icg: 1.76, icc: 47.10, riesgo_pais: 785 }
+          ]
+        },
         componentes: [
           { nombre: "Honestidad de los funcionarios", valor: 2.41, variacion: "+1,4%" },
           { nombre: "Capacidad para resolver problemas", valor: 2.40, variacion: "+5,6%" },
@@ -2732,9 +2751,227 @@
           </div>`;
       }).join("");
 
+      // Cálculo del Termómetro de Tensión (0° Frío/Tranquilo Azul -> 100° Alta Temperatura Rojo)
+      // Comparando las 3 variables actuales vs el promedio de los 3 últimos gobiernos a la misma altura del mandato (Mes 35)
+      const hist3 = icg.historico_3_gobiernos || {
+        icg_promedio: 1.57,
+        icc_promedio: 40.68,
+        riesgo_pais_promedio: 1298.0,
+        detalle: [
+          { presidente: "Alberto Fernández", periodo: "Nov 2022 (Mes 35)", icg: 1.19, icc: 37.51, riesgo_pais: 2415 },
+          { presidente: "Mauricio Macri", periodo: "Nov 2018 (Mes 35)", icg: 1.77, icc: 37.43, riesgo_pais: 695 },
+          { presidente: "Cristina Fernández (II)", periodo: "Nov 2014 (Mes 35)", icg: 1.76, icc: 47.10, riesgo_pais: 785 }
+        ]
+      };
+
+      const rpVal = Number(rpItem.valor) || 1038;
+      const icgVal = Number(icg.valor) || 2.04;
+      const iccVal = Number(icc.valor) || 40.99;
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+      // 50° = paridad exacta con el promedio de los 3 últimos gobiernos; <50° = más tranquilo (azul); >50° = más tensión (rojo)
+      const diffRpPct = ((rpVal - hist3.riesgo_pais_promedio) / hist3.riesgo_pais_promedio) * 100;
+      const tempRp = clamp(50 + diffRpPct * 0.65, 5, 98);
+
+      const diffIcgPct = ((icgVal - hist3.icg_promedio) / hist3.icg_promedio) * 100;
+      const tempIcg = clamp(50 - diffIcgPct * 0.85, 5, 98);
+
+      const diffIccPct = ((iccVal - hist3.icc_promedio) / hist3.icc_promedio) * 100;
+      const tempIcc = clamp(50 - diffIccPct * 0.90, 5, 98);
+
+      const tempGlobal = Math.round(tempRp * 0.40 + tempIcg * 0.35 + tempIcc * 0.25);
+
+      let estadoTermo = {
+        etiqueta: "CLIMA TRANQUILO / ESTABLE",
+        desc: "Las 3 variables muestran menor tensión que el promedio de las últimas 3 gestiones a la misma altura del mandato.",
+        colorTexto: "text-sky-300",
+        badgeCls: "bg-sky-500/15 text-sky-300 border-sky-500/35",
+        bulboColor: "#0ea5e9",
+        glowColor: "rgba(14, 165, 233, 0.45)"
+      };
+      if (tempGlobal >= 70) {
+        estadoTermo = {
+          etiqueta: "ALTA TEMPERATURA / TENSIÓN ELEVADA",
+          desc: "Deterioro simultáneo frente al promedio histórico de las últimas 3 gestiones al mismo mes de gobierno.",
+          colorTexto: "text-rose-400",
+          badgeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40",
+          bulboColor: "#ef4444",
+          glowColor: "rgba(239, 68, 68, 0.55)"
+        };
+      } else if (tempGlobal >= 52) {
+        estadoTermo = {
+          etiqueta: "TEMPERATURA MODERADA / ALERTA",
+          desc: "Nivel de tensión cercano o levemente superior al promedio de las últimas 3 presidencias a igual mes.",
+          colorTexto: "text-amber-300",
+          badgeCls: "bg-amber-500/15 text-amber-300 border-amber-500/35",
+          bulboColor: "#f59e0b",
+          glowColor: "rgba(245, 158, 11, 0.45)"
+        };
+      } else if (tempGlobal >= 35) {
+        estadoTermo = {
+          etiqueta: "TEMPLADO / FAVORABLE VS. HISTÓRICO",
+          desc: "Mejor desempeño neto que el promedio de los 3 gobiernos anteriores a la misma altura del período.",
+          colorTexto: "text-cyan-300",
+          badgeCls: "bg-cyan-500/15 text-cyan-300 border-cyan-500/35",
+          bulboColor: "#06b6d4",
+          glowColor: "rgba(6, 182, 212, 0.45)"
+        };
+      }
+
+      const fmtDiffHist = (d) => `${d >= 0 ? "+" : ""}${d.toFixed(1).replace(".", ",")}%`;
+
       return `
         <div class="space-y-5">
           ${renderizarBarraSeccion(window.CONFIG_SECCIONES.aceptacion_gobierno)}
+
+          <!-- Termómetro de Temperatura Política y Financiera (0° Azul Tranquilo -> 100° Rojo Alta Temperatura) -->
+          <div class="rounded-2xl border border-slate-800/55 bg-white/[0.025] backdrop-blur-md p-5 shadow-2xl">
+            <div class="border-b border-slate-800/50 pb-3 mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-300 text-xs">
+                  <i class="fa-solid fa-temperature-half"></i>
+                </div>
+                <div>
+                  <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">Termómetro de Aceptación y Tensión — Mes ${icg.mes_mandato} vs. Últimos 3 Gobiernos</h3>
+                  <p class="text-[11px] text-slate-400 font-mono">Pondera Riesgo País (40%), ICG Di Tella (35%) e ICC Di Tella (25%) contra el promedio histórico a igual mes</p>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-full border font-mono text-[11px] font-extrabold ${estadoTermo.badgeCls}">
+                ${tempGlobal}° • ${estadoTermo.etiqueta}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+              <!-- Ilustración SVG del Termómetro Vertical -->
+              <div class="lg:col-span-4 flex items-center justify-center gap-5 p-4 rounded-2xl bg-slate-950/65 border border-slate-800/50">
+                <div class="relative w-24 h-56 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 110 250" class="w-full h-full overflow-visible">
+                    <defs>
+                      <linearGradient id="gradTermometro" x1="0%" y1="100%" x2="0%" y2="0%">
+                        <stop offset="0%" stop-color="#2563eb" />
+                        <stop offset="30%" stop-color="#06b6d4" />
+                        <stop offset="55%" stop-color="#eab308" />
+                        <stop offset="80%" stop-color="#f97316" />
+                        <stop offset="100%" stop-color="#ef4444" />
+                      </linearGradient>
+                      <clipPath id="clipTuboTermo">
+                        <rect x="44" y="22" width="22" height="168" rx="11" />
+                      </clipPath>
+                    </defs>
+
+                    <!-- Marcas de escala -->
+                    <line x1="72" y1="30" x2="82" y2="30" stroke="#ef4444" stroke-width="2" />
+                    <text x="86" y="33" fill="#fca5a5" font-size="9" font-family="monospace" font-weight="bold">100°</text>
+
+                    <line x1="72" y1="68" x2="79" y2="68" stroke="#f97316" stroke-width="1.5" />
+                    <text x="86" y="71" fill="#94a3b8" font-size="8" font-family="monospace">75°</text>
+
+                    <line x1="72" y1="106" x2="82" y2="106" stroke="#eab308" stroke-width="2" />
+                    <text x="86" y="109" fill="#fde047" font-size="9" font-family="monospace" font-weight="bold">50°</text>
+
+                    <line x1="72" y1="144" x2="79" y2="144" stroke="#06b6d4" stroke-width="1.5" />
+                    <text x="86" y="147" fill="#94a3b8" font-size="8" font-family="monospace">25°</text>
+
+                    <line x1="72" y1="182" x2="82" y2="182" stroke="#3b82f6" stroke-width="2" />
+                    <text x="86" y="185" fill="#93c5fd" font-size="9" font-family="monospace" font-weight="bold">0°</text>
+
+                    <!-- Etiquetas Frío / Caliente izquierda -->
+                    <text x="36" y="34" text-anchor="end" fill="#f87171" font-size="8.5" font-family="sans-serif" font-weight="bold">ALTA</text>
+                    <text x="36" y="44" text-anchor="end" fill="#f87171" font-size="7.5" font-family="sans-serif">TENSIÓN</text>
+
+                    <text x="36" y="176" text-anchor="end" fill="#60a5fa" font-size="8.5" font-family="sans-serif" font-weight="bold">BAJA</text>
+                    <text x="36" y="186" text-anchor="end" fill="#60a5fa" font-size="7.5" font-family="sans-serif">TRANQUILO</text>
+
+                    <!-- Carcasa exterior de vidrio -->
+                    <rect x="40" y="18" width="30" height="176" rx="15" fill="#091122" stroke="#334155" stroke-width="2.5" />
+                    <circle cx="55" cy="212" r="24" fill="#091122" stroke="#334155" stroke-width="2.5" />
+
+                    <!-- Columna interior graduada según temperatura -->
+                    <g clip-path="url(#clipTuboTermo)">
+                      <rect x="44" y="22" width="22" height="168" fill="#0f172a" />
+                      <rect x="44" y="${190 - (tempGlobal / 100) * 168}" width="22" height="${(tempGlobal / 100) * 168 + 10}" fill="url(#gradTermometro)" />
+                    </g>
+
+                    <!-- Bulbo inferior -->
+                    <circle cx="55" cy="212" r="18" fill="${estadoTermo.bulboColor}" style="filter: drop-shadow(0 0 10px ${estadoTermo.glowColor});" />
+                    <circle cx="49" cy="206" r="4.5" fill="rgba(255,255,255,0.45)" />
+                  </svg>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Índice Térmico</div>
+                  <div class="text-4xl sm:text-5xl font-black text-white num-editorial leading-none">${tempGlobal}°</div>
+                  <div class="text-xs font-bold ${estadoTermo.colorTexto} leading-snug">${estadoTermo.etiqueta}</div>
+                  <p class="text-[11px] text-slate-400 leading-relaxed">${estadoTermo.desc}</p>
+                </div>
+              </div>
+
+              <!-- Desglose de las 3 variables vs promedio de los últimos 3 gobiernos -->
+              <div class="lg:col-span-8 space-y-3">
+                <!-- Barra horizontal continua Azul -> Rojo -->
+                <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/50 space-y-2">
+                  <div class="flex justify-between text-[10px] font-mono font-bold">
+                    <span class="text-blue-400">0° TRANQUILO (FRÍO)</span>
+                    <span class="text-amber-300">50° PROMEDIO 3 GESTIONES</span>
+                    <span class="text-rose-400">100° ALTA TEMPERATURA</span>
+                  </div>
+                  <div class="relative w-full h-3.5 rounded-full overflow-hidden border border-slate-700/60" style="background: linear-gradient(90deg, #2563eb 0%, #06b6d4 28%, #eab308 52%, #f97316 76%, #ef4444 100%);">
+                    <div class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_#ffffff]" style="left: calc(${tempGlobal}% - 2px);"></div>
+                  </div>
+                </div>
+
+                <!-- 3 Sub-indicadores comparados contra las últimas 3 gestiones -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">Riesgo País</span>
+                      <span class="text-xs font-mono font-extrabold ${diffRpPct <= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempRp)}°</span>
+                    </div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${rpItem.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">
+                      Prom. 3 gob: <strong class="text-slate-200">${Math.round(hist3.riesgo_pais_promedio).toLocaleString("es-AR")} pb</strong>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold ${diffRpPct <= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                      ${fmtDiffHist(diffRpPct)} vs. prom. histórico
+                    </div>
+                  </div>
+
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">ICG Di Tella</span>
+                      <span class="text-xs font-mono font-extrabold ${diffIcgPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcg)}°</span>
+                    </div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${icg.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">
+                      Prom. 3 gob: <strong class="text-slate-200">${hist3.icg_promedio.toFixed(2).replace(".", ",")} pts</strong>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold ${diffIcgPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                      ${fmtDiffHist(diffIcgPct)} vs. prom. histórico
+                    </div>
+                  </div>
+
+                  <div class="rounded-xl bg-slate-950/60 border border-slate-800/50 p-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold text-slate-200">ICC Di Tella</span>
+                      <span class="text-xs font-mono font-extrabold ${diffIccPct >= 0 ? 'text-sky-400' : 'text-rose-400'}">${Math.round(tempIcc)}°</span>
+                    </div>
+                    <div class="text-sm font-extrabold text-white num-editorial">${icc.valor_formateado}</div>
+                    <div class="text-[10px] font-mono text-slate-400">
+                      Prom. 3 gob: <strong class="text-slate-200">${hist3.icc_promedio.toFixed(2).replace(".", ",")} pts</strong>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold ${diffIccPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                      ${fmtDiffHist(diffIccPct)} vs. prom. histórico
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-[10px] font-mono text-slate-400 flex flex-wrap items-center justify-between gap-2 px-1">
+                  <span>Referencia Mes ${icg.mes_mandato}: Alberto Fernández (2022) • Mauricio Macri (2018) • Cristina Fernández II (2014)</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Fila Superior: 3 Tarjetas Principales -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2813,13 +3050,13 @@
                 </div>
                 <div>
                   <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">Contraste Histórico ICG Di Tella — Misma Altura del Mandato (Mes ${icg.mes_mandato})</h3>
-                  <p class="text-[11px] text-slate-400 font-mono">Diferencia porcentual del nivel actual (${icg.valor_formateado}) frente a las dos presidencias anteriores</p>
+                  <p class="text-[11px] text-slate-400 font-mono">Diferencia porcentual del nivel actual (${icg.valor_formateado}) frente a las tres presidencias anteriores</p>
                 </div>
               </div>
               <span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800/60 text-slate-300">Escuela de Gobierno • UTDT</span>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               ${comparativasHtml}
             </div>
           </div>
