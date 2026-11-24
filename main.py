@@ -3628,12 +3628,11 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             ("https://www.infobae.com/arc/outboundfeeds/rss/category/economia/", "Infobae Economía"),
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
-        q_us_mkt = quote('(Wall Street OR "S&P 500" OR Nasdaq OR Treasury OR Fed OR inflation) (stocks OR yields OR rates OR rally OR fall) when:1d')
-        q_us_tech = quote('(Nvidia OR semiconductors OR "Federal Reserve" OR "10-year" OR oil OR gold) (market OR trading OR report) when:1d')
         feeds_us = [
-            (f"https://news.google.com/rss/search?q={q_us_mkt}&hl=en-US&gl=US&ceid=US:en", ""),
-            (f"https://news.google.com/rss/search?q={q_us_tech}&hl=en-US&gl=US&ceid=US:en", ""),
-            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI,NVDA,TLT&region=US&lang=en-US", "Yahoo Finance")
+            ("https://www.infobae.com/arc/outboundfeeds/rss/category/america/eeuu/", "Infobae EE.UU."),
+            ("https://www.ambito.com/rss/pages/economia.xml", "Ámbito Global"),
+            ("https://feeds.bbci.co.uk/mundo/topics/c2dwqd1zr92t/rss.xml", "BBC Economía"),
+            ("https://www.eleconomista.es/rss/rss-mercados.php", "El Economista")
         ]
 
         res_ar: List[Dict[str, Any]] = []
