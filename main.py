@@ -122,7 +122,7 @@ def consultar_url_mae_con_puentes(target_url: str) -> Any:
     ]
     for u in candidatos:
         try:
-            r = sess.get(u, headers=hdrs, timeout=4.0, verify=False)
+            r = sess.get(u, headers=hdrs, timeout=2.5, verify=False)
             if r.status_code == 200 and r.text.strip():
                 return r.json()
         except Exception:
@@ -1315,7 +1315,7 @@ def obtener_inflacion_oficial_bcra() -> Dict[str, Dict[str, Any]]:
 
     for url in urls:
         try:
-            r = GLOBAL_HTTP_SESSION.get(url, headers=headers, timeout=4.5, verify=False)
+            r = GLOBAL_HTTP_SESSION.get(url, headers=headers, timeout=2.5, verify=False)
             if r.status_code != 200:
                 continue
             try:
@@ -2571,7 +2571,7 @@ def normalizar_item_licitacion(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def fetch_estado_mae() -> Dict[str, Any]:
     global CACHE_ESTADO_MAE
     try:
-        r = GLOBAL_HTTP_SESSION.get("https://api.marketdata.mae.com.ar/api/mercado/estado", headers=headers_mae_a3(), timeout=4.0, verify=False)
+        r = GLOBAL_HTTP_SESSION.get("https://api.marketdata.mae.com.ar/api/mercado/estado", headers=headers_mae_a3(), timeout=2.5, verify=False)
         if r.status_code == 200 and r.json():
             d = r.json()
             CACHE_ESTADO_MAE = d if isinstance(d, dict) else {"estado": str(d)}
@@ -2787,7 +2787,7 @@ def extraer_calendario_indec() -> List[Dict[str, Any]]:
         f"https://corsproxy.io/?{quote(url_js, safe='')}"
     ]:
         try:
-            r = sess.get(u, headers=hdrs, timeout=4.5, verify=False)
+            r = sess.get(u, headers=hdrs, timeout=2.5, verify=False)
             if r.status_code == 200 and len(r.text) > 100:
                 extraidos = parsear_js_indec_completo(r.text)
                 if len(extraidos) > 5:
@@ -3532,7 +3532,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             "https://www.bloomberglinea.com/arc/outboundfeeds/rss/?outputType=xml"
         ]:
             try:
-                r = GLOBAL_HTTP_SESSION.get(u_bl, headers=hdrs, timeout=4.5, verify=False)
+                r = GLOBAL_HTTP_SESSION.get(u_bl, headers=hdrs, timeout=2.5, verify=False)
                 if r.status_code == 200 and r.text:
                     bl_items = _parsear_rss_xml(r.text, "Bloomberg AR", solo_mercado=True)
                     if len(bl_items) < 4:
@@ -3549,7 +3549,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
 
         if len(bl_items) < 4:
             try:
-                r_html = GLOBAL_HTTP_SESSION.get("https://www.bloomberglinea.com/latinoamerica/argentina/", headers=hdrs, timeout=4.5, verify=False)
+                r_html = GLOBAL_HTTP_SESSION.get("https://www.bloomberglinea.com/latinoamerica/argentina/", headers=hdrs, timeout=2.5, verify=False)
                 if r_html.status_code == 200 and r_html.text:
                     soup_b = BeautifulSoup(r_html.text, "html.parser")
                     vistos_b = {x["titulo"].lower()[:60] for x in bl_items}
@@ -3585,7 +3585,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             if len(amb_items) >= 4:
                 break
             try:
-                r = GLOBAL_HTTP_SESSION.get(u_amb, headers=hdrs, timeout=4.5, verify=False)
+                r = GLOBAL_HTTP_SESSION.get(u_amb, headers=hdrs, timeout=2.5, verify=False)
                 if r.status_code == 200 and r.text:
                     parsed_a = _parsear_rss_xml(r.text, sec_amb, solo_mercado=True)
                     for it_a in parsed_a:
@@ -3602,7 +3602,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
         # 3. Finanzas Argy
         fa_items: List[Dict[str, str]] = []
         try:
-            r_fa = GLOBAL_HTTP_SESSION.get("https://finanzasargy.com/", headers=hdrs, timeout=4.5, verify=False)
+            r_fa = GLOBAL_HTTP_SESSION.get("https://finanzasargy.com/", headers=hdrs, timeout=2.5, verify=False)
             if r_fa.status_code == 200 and r_fa.text:
                 soup_fa = BeautifulSoup(r_fa.text, "html.parser")
                 vistos_fa = set()
@@ -3630,7 +3630,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
 
         if len(fa_items) < 4:
             try:
-                r_sub = GLOBAL_HTTP_SESSION.get("https://finanzasargy.substack.com/feed", headers=hdrs, timeout=4.0, verify=False)
+                r_sub = GLOBAL_HTTP_SESSION.get("https://finanzasargy.substack.com/feed", headers=hdrs, timeout=2.5, verify=False)
                 if r_sub.status_code == 200 and r_sub.text:
                     sub_parsed = _parsear_rss_xml(r_sub.text, "Newsletter", solo_mercado=False)
                     for sp in sub_parsed:
