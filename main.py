@@ -3703,6 +3703,15 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
         _NOTICIAS_LOCK.release()
     return CACHE_NOTICIAS_DRIVERS
 
+@app.get("/api/noticias-drivers")
+def ver_noticias_drivers(forzar: bool = Query(False)):
+    now = time.time()
+    if forzar or not CACHE_NOTICIAS_DRIVERS.get("updated"):
+        return actualizar_noticias_drivers(forzar=True)
+    if now - _NOTICIAS_CACHE_TS > 300.0:
+        threading.Thread(target=actualizar_noticias_drivers, kwargs={"forzar": True}, daemon=True).start()
+    return CACHE_NOTICIAS_DRIVERS
+
 @app.get("/api/calendario/economico")
 def ver_calendario_economico(desde: Optional[str] = Query(None), hasta: Optional[str] = Query(None)):
     indec = extraer_calendario_indec()
