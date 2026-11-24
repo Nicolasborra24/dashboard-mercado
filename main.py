@@ -171,7 +171,7 @@ if DATABASE_URL:
         engine = None
         SessionLocal = None
 
-app = FastAPI(title="API Mercado Argentino")
+app = FastAPI(title="Monitor Maestro De Mercado API v6.0", version="6.0.0")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if os.path.exists("static"):
