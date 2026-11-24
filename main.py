@@ -6,7 +6,7 @@ import urllib3
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, Depends, Query
