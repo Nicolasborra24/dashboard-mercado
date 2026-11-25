@@ -770,48 +770,50 @@ def _extraer_rp_de_rava_perfil() -> Optional[Dict[str, float]]:
     return None
 
 def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
-    """Consulta BondTerminal (https://bondterminal.com/riesgo-pais) como unico respaldo."""
-    ts_ms = int(time.time() * 1000)
+    """Obtiene el Riesgo Pais intradiario directo desde la API de BondTerminal."""
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
-        "Cache-Control": "no-cache",
-        "Referer": "https://bondterminal.com/riesgo-pais"
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://bondterminal.com/"
     }
-    candidatos = [
-        f"https://bondterminal.com/riesgo-pais?_t={ts_ms}",
-        f"https://bondterminal.com/api/riesgo-pais/scenario?_t={ts_ms}",
-        f"https://bondterminal.com/api/riesgo-pais?_t={ts_ms}",
-        f"https://api.allorigins.win/raw?url={quote(f'https://bondterminal.com/riesgo-pais?_t={ts_ms}', safe='')}"
-    ]
-    for u in candidatos:
-        try:
-            r = GLOBAL_HTTP_SESSION.get(u, headers=hdrs, timeout=3.5, verify=False)
-            if r.status_code != 200 or not r.text.strip():
-                continue
-            txt = r.text
-            for pat_json in [
-                r'"(?:officialValue|btLiveValue|weightedSpreadBps|valueBps|riesgo[_\s]?pais|embi)"\s*:\s*"?([1-9]\d{2,3}(?:[\.,]\d+)?)"?'
-            ]:
-                m_j = re.search(pat_json, txt, re.IGNORECASE)
-                if m_j:
-                    v_rp = _parse_float_limpio(m_j.group(1))
-                    if v_rp and 100 <= v_rp <= 5000:
-                        return {"ult": v_rp}
+    try:
+        r = GLOBAL_HTTP_SESSION.get("https://bondterminal.com/api/riesgo-pais", headers=hdrs, timeout=4.0, verify=False)
+        if r.status_code != 200:
+            return None
+        j = r.json()
+        if isinstance(j, list) and j:
+            j = j[-1] if isinstance(j[-1], dict) else j[0]
+        if isinstance(j, dict) and isinstance(j.get("data"), dict):
+            j = j["data"]
+        elif isinstance(j, dict) and isinstance(j.get("data"), list) and j["data"]:
+            j = j["data"][-1]
 
-            plano = BeautifulSoup(txt, "html.parser").get_text(" ", strip=True)
-            m_txt = re.search(
-                r"(?:RIESGO\s+PA[IÍ]S|EMBI\+?)\D{0,35}([1-9](?:\.\d{3}|\d{2,3})(?:,\d{1,2})?)\s*(?:bps|pb|pts)?",
-                plano,
-                re.IGNORECASE
-            )
-            if m_txt:
-                v_rp = _parse_float_limpio(m_txt.group(1))
-                if v_rp and 100 <= v_rp <= 5000:
-                    return {"ult": v_rp}
-        except Exception:
-            pass
+        if isinstance(j, dict):
+            val = None
+            for k in ("riesgo_pais", "valor", "ultimo", "value", "embi", "price", "last", "puntos", "pb"):
+                if j.get(k) is not None:
+                    v = _parse_float_limpio(str(j.get(k)))
+                    if v and 200 <= v <= 5000:
+                        val = v
+                        break
+            if val is None:
+                for v_raw in j.values():
+                    if isinstance(v_raw, (int, float)) and 200 <= float(v_raw) <= 5000:
+                        val = float(v_raw)
+                        break
+            if val:
+                res: Dict[str, float] = {"ult": val}
+                for kv in ("variacion", "var_dia", "change_pct", "variation", "pct", "delta_pct", "diff_pct"):
+                    if j.get(kv) is not None:
+                        vd = _parse_float_limpio(str(j.get(kv)).replace("%", ""))
+                        if vd is not None and -40 <= vd <= 40:
+                            res["dia"] = vd
+                            break
+                return res
+    except Exception:
+        pass
     return None
+
 
 def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, float]]:
     encontrados: Dict[str, Dict[str, float]] = {}
@@ -898,7 +900,7 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
 
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str, Any]]:
     prev_rp = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), {})
-    if not prev_rp or float(prev_rp.get("valor") or 0) in (0.0, 1071.0, 1106.0):
+    if not prev_rp or float(prev_rp.get("valor") or 0) in (0.0, 1064.0, 1071.0, 1106.0):
         try:
             if os.path.exists("/tmp/rp_ultimo_vivo.json"):
                 with open("/tmp/rp_ultimo_vivo.json", "r") as f_rp:
@@ -933,11 +935,17 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
     merval_ars_ok = False
     merval_usd_ok = False
 
-    rava_pf = _extraer_rp_de_rava_perfil()
-    if rava_pf and rava_pf.get("ult"):
-        datos["RIESGO_PAIS"].update(rava_pf)
+    bt_rp = _extraer_rp_de_bondterminal()
+    if bt_rp and bt_rp.get("ult"):
+        datos["RIESGO_PAIS"].update(bt_rp)
         rp_vivo_ok = True
-        rp_fuente = "RAVA_PERFIL"
+        rp_fuente = "BONDTERMINAL_API"
+    else:
+        rava_pf = _extraer_rp_de_rava_perfil()
+        if rava_pf and rava_pf.get("ult"):
+            datos["RIESGO_PAIS"].update(rava_pf)
+            rp_vivo_ok = True
+            rp_fuente = "RAVA_PERFIL"
 
     html_comp = obtener_html_rava_compartido(ttl=4.0)
     if html_comp:
@@ -994,7 +1002,7 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             "_live": rp_vivo_ok if cod == "RIESGO_PAIS" else True,
             "_fuente": rp_fuente if cod == "RIESGO_PAIS" else "RAVA"
         }
-    if rp_vivo_ok and datos["RIESGO_PAIS"]["ult"] not in (1071.0, 1106.0):
+    if rp_vivo_ok and datos["RIESGO_PAIS"]["ult"] not in (1064.0, 1071.0, 1106.0):
         try:
             with open("/tmp/rp_ultimo_vivo.json", "w") as f_rp:
                 json.dump(res_out["RIESGO_PAIS"], f_rp)
