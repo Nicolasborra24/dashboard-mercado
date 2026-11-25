@@ -770,7 +770,7 @@ def _extraer_rp_de_rava_perfil() -> Optional[Dict[str, float]]:
     return None
 
 def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
-    """Obtiene el Riesgo Pais intradiario directo desde la API de BondTerminal."""
+    """Obtiene el Riesgo Pais oficial (ambitoValue) desde la API de BondTerminal."""
     hdrs = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -781,34 +781,22 @@ def _extraer_rp_de_bondterminal() -> Optional[Dict[str, float]]:
         if r.status_code != 200:
             return None
         j = r.json()
-        if isinstance(j, list) and j:
-            j = j[-1] if isinstance(j[-1], dict) else j[0]
-        if isinstance(j, dict) and isinstance(j.get("data"), dict):
-            j = j["data"]
-        elif isinstance(j, dict) and isinstance(j.get("data"), list) and j["data"]:
-            j = j["data"][-1]
-
         if isinstance(j, dict):
-            val = None
-            for k in ("riesgo_pais", "valor", "ultimo", "value", "embi", "price", "last", "puntos", "pb"):
-                if j.get(k) is not None:
-                    v = _parse_float_limpio(str(j.get(k)))
-                    if v and 200 <= v <= 5000:
-                        val = v
-                        break
+            val = j.get("ambitoValue")
+            if val is None and isinstance(j.get("methodologyReplica"), dict):
+                val = j["methodologyReplica"].get("spreadBps")
             if val is None:
-                for v_raw in j.values():
-                    if isinstance(v_raw, (int, float)) and 200 <= float(v_raw) <= 5000:
-                        val = float(v_raw)
-                        break
-            if val:
-                res: Dict[str, float] = {"ult": val}
-                for kv in ("variacion", "var_dia", "change_pct", "variation", "pct", "delta_pct", "diff_pct"):
-                    if j.get(kv) is not None:
-                        vd = _parse_float_limpio(str(j.get(kv)).replace("%", ""))
-                        if vd is not None and -40 <= vd <= 40:
-                            res["dia"] = vd
-                            break
+                val = j.get("weightedSpreadBps")
+            val_f = _parse_float_limpio(str(val)) if val is not None else None
+            if val_f and 200 <= val_f <= 5000:
+                res: Dict[str, float] = {"ult": round(val_f, 2)}
+                deltas = j.get("deltas")
+                if isinstance(deltas, dict) and deltas.get("oneDay") is not None:
+                    d_bps = _parse_float_limpio(str(deltas.get("oneDay")))
+                    if d_bps is not None and (val_f - d_bps) > 0:
+                        pct = round((d_bps / (val_f - d_bps)) * 100.0, 2)
+                        if -40 <= pct <= 40:
+                            res["dia"] = pct
                 return res
     except Exception:
         pass
