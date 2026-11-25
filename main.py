@@ -1709,6 +1709,50 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
         res_rava[k] = dict(v)
     return res_rava
 
+def _obtener_dolar_futuro_rava_mes_actual() -> Optional[Dict[str, Any]]:
+    """Obtiene el Dolar Futuro del mes en curso directo desde Rava (ej: DLR112026)."""
+    from datetime import timezone, timedelta
+    import html as _html
+    ahora = datetime.now(timezone(timedelta(hours=-3)))
+    meses_probar = [(ahora.month, ahora.year)]
+    if ahora.month == 12:
+        meses_probar.append((1, ahora.year + 1))
+    else:
+        meses_probar.append((ahora.month + 1, ahora.year))
+
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Referer": "https://www.rava.com/"
+    }
+    for m, y in meses_probar:
+        ticker = f"DLR{m:02d}{y}"
+        try:
+            r = GLOBAL_HTTP_SESSION.get(f"https://www.rava.com/perfil/{ticker}", headers=hdrs, timeout=3.5, verify=False)
+            if r.status_code != 200:
+                continue
+            txt = _html.unescape(r.text)
+            m_ult = re.search(r'"ultimo"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
+            m_com = re.search(r'"compra"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
+            m_ven = re.search(r'"venta"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
+            m_var = re.search(r'"variacion"\s*:\s*(-?[0-9]+(?:\.[0-9]+)?)', txt)
+            ult = float(m_ult.group(1)) if m_ult else None
+            com = float(m_com.group(1)) if m_com else None
+            ven = float(m_ven.group(1)) if m_ven else None
+            if (ult and ult > 500) or (ven and ven > 500):
+                precio_v = ven if (ven and ven > 500) else ult
+                precio_c = com if (com and com > 500) else precio_v
+                var_str = _fmt_var_dolar(float(m_var.group(1))) if m_var else "0,00%"
+                return {
+                    "compra": round(precio_c, 2),
+                    "venta": round(precio_v, 2),
+                    "variacion": var_str,
+                    "var_anio": BASE_DOLARITO_EXACTA.get("DOLAR_FUTURO", {}).get("var_anio", "+8,2%"),
+                    "fecha": ticker
+                }
+        except Exception:
+            continue
+    return None
+
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 6.0 and _DOLARITO_CICLO_CACHE["data"]:
         return {k: dict(v) for k, v in _DOLARITO_CICLO_CACHE["data"].items()}
@@ -1733,6 +1777,11 @@ def _obtener_puntas_dolarito_interno() -> Dict[str, Dict[str, Any]]:
     for k_r, v_r in datos_rava.items():
         res[k_r] = dict(v_r)
         BASE_DOLARITO_EXACTA[k_r] = dict(v_r)
+
+    fut_rava = _obtener_dolar_futuro_rava_mes_actual()
+    if fut_rava:
+        res["DOLAR_FUTURO"] = dict(fut_rava)
+        BASE_DOLARITO_EXACTA["DOLAR_FUTURO"] = dict(fut_rava)
 
     # 2. Completar Blue y Futuro (y puntas de compra) sin pisar los valores de Rava
     try:
