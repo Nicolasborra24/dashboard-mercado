@@ -898,6 +898,13 @@ def _extraer_rp_y_merval_de_html_rava(raw_html: str) -> Dict[str, Dict[str, floa
 
 def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str, Any]]:
     prev_rp = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "RIESGO_PAIS"), {})
+    if not prev_rp or float(prev_rp.get("valor") or 0) in (0.0, 1071.0, 1106.0):
+        try:
+            if os.path.exists("/tmp/rp_ultimo_vivo.json"):
+                with open("/tmp/rp_ultimo_vivo.json", "r") as f_rp:
+                    prev_rp = json.load(f_rp)
+        except Exception:
+            pass
     prev_m_ars = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "MERVAL_ARS"), {})
     prev_m_usd = next((x for x in CACHE_VARIABLES.get("indices", []) if x.get("variable") == "MERVAL_USD"), {})
 
@@ -962,6 +969,27 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             rp_vivo_ok = True
             rp_fuente = "BONDTERMINAL"
 
+    if not rp_vivo_ok:
+        try:
+            r_amb = GLOBAL_HTTP_SESSION.get(
+                "https://mercados.ambito.com//riesgopais/variacion-ultimo",
+                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.ambito.com/"},
+                timeout=3.5,
+                verify=False
+            )
+            if r_amb.status_code == 200:
+                j_amb = r_amb.json()
+                u_amb = _parse_float_limpio(str(j_amb.get("ultimo", "")))
+                v_amb = _parse_float_limpio(str(j_amb.get("variacion", "")).replace("%", ""))
+                if u_amb and 250 <= u_amb <= 5000:
+                    datos["RIESGO_PAIS"]["ult"] = u_amb
+                    if v_amb is not None and -40 <= v_amb <= 40:
+                        datos["RIESGO_PAIS"]["dia"] = v_amb
+                    rp_vivo_ok = True
+                    rp_fuente = "AMBITO_API"
+        except Exception:
+            pass
+
     res_out = {}
     config_items = [
         ("MERVAL_ARS", "Merval", f"{int(round(datos['MERVAL_ARS']['ult'])):,} pts".replace(",", ".")),
@@ -987,6 +1015,12 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             "_live": rp_vivo_ok if cod == "RIESGO_PAIS" else True,
             "_fuente": rp_fuente if cod == "RIESGO_PAIS" else "RAVA"
         }
+    if rp_vivo_ok and datos["RIESGO_PAIS"]["ult"] not in (1071.0, 1106.0):
+        try:
+            with open("/tmp/rp_ultimo_vivo.json", "w") as f_rp:
+                json.dump(res_out["RIESGO_PAIS"], f_rp)
+        except Exception:
+            pass
     return res_out
 
 def obtener_datos_mercado_usa() -> List[Dict[str, Any]]:
