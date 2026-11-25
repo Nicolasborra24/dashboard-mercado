@@ -969,27 +969,6 @@ def obtener_msci_merval_en_vivo(ccl_ref: float = 1749.47) -> Dict[str, Dict[str,
             rp_vivo_ok = True
             rp_fuente = "BONDTERMINAL"
 
-    if not rp_vivo_ok:
-        try:
-            r_amb = GLOBAL_HTTP_SESSION.get(
-                "https://mercados.ambito.com//riesgopais/variacion-ultimo",
-                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.ambito.com/"},
-                timeout=3.5,
-                verify=False
-            )
-            if r_amb.status_code == 200:
-                j_amb = r_amb.json()
-                u_amb = _parse_float_limpio(str(j_amb.get("ultimo", "")))
-                v_amb = _parse_float_limpio(str(j_amb.get("variacion", "")).replace("%", ""))
-                if u_amb and 250 <= u_amb <= 5000:
-                    datos["RIESGO_PAIS"]["ult"] = u_amb
-                    if v_amb is not None and -40 <= v_amb <= 40:
-                        datos["RIESGO_PAIS"]["dia"] = v_amb
-                    rp_vivo_ok = True
-                    rp_fuente = "AMBITO_API"
-        except Exception:
-            pass
-
     res_out = {}
     config_items = [
         ("MERVAL_ARS", "Merval", f"{int(round(datos['MERVAL_ARS']['ult'])):,} pts".replace(",", ".")),
