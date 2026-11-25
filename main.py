@@ -3783,6 +3783,35 @@ def ver_indec_ipc():
         pass
     return []
 
+
+
+def _loop_sync_riesgo_pais_60s():
+    """Sincroniza el Riesgo Pais cada 55 segundos directo desde BondTerminal."""
+    while True:
+        try:
+            bt = _extraer_rp_de_bondterminal()
+            if bt and bt.get("ult"):
+                for item in CACHE_VARIABLES.get("indices", []):
+                    if item.get("variable") == "RIESGO_PAIS":
+                        item["valor"] = bt["ult"]
+                        if "dia" in bt:
+                            for k_var in ("var_dia", "variacion", "dia"):
+                                if k_var in item:
+                                    item[k_var] = bt["dia"]
+                        try:
+                            with open("/tmp/rp_ultimo_vivo.json", "w") as f_rp:
+                                json.dump(item, f_rp)
+                        except Exception:
+                            pass
+                        break
+        except Exception:
+            pass
+        time.sleep(55)
+
+@app.on_event("startup")
+def _iniciar_sync_riesgo_pais():
+    threading.Thread(target=_loop_sync_riesgo_pais_60s, daemon=True).start()
+
 if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8080))
