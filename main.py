@@ -1710,48 +1710,62 @@ def obtener_dolares_rava_en_vivo() -> Dict[str, Dict[str, Any]]:
     return res_rava
 
 def _obtener_dolar_futuro_rava_mes_actual() -> Optional[Dict[str, Any]]:
-    """Obtiene el Dolar Futuro del mes en curso directo desde Rava (ej: DLR112026)."""
+    """Obtiene el Dolar Futuro del mes en curso directo desde la home de Rava (ej: DLR/NOV26)."""
     from datetime import timezone, timedelta
     import html as _html
-    ahora = datetime.now(timezone(timedelta(hours=-3)))
-    meses_probar = [(ahora.month, ahora.year)]
-    if ahora.month == 12:
-        meses_probar.append((1, ahora.year + 1))
-    else:
-        meses_probar.append((ahora.month + 1, ahora.year))
 
-    hdrs = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Referer": "https://www.rava.com/"
+    meses_es = {
+        1: "ENE", 2: "FEB", 3: "MAR", 4: "ABR", 5: "MAY", 6: "JUN",
+        7: "JUL", 8: "AGO", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DIC"
     }
-    for m, y in meses_probar:
-        ticker = f"DLR{m:02d}{y}"
+    ahora = datetime.now(timezone(timedelta(hours=-3)))
+    m1, y1 = ahora.month, ahora.year % 100
+    m2, y2 = (1, (ahora.year + 1) % 100) if m1 == 12 else (m1 + 1, y1)
+    tickers = [f"DLR/{meses_es[m1]}{y1:02d}", f"DLR/{meses_es[m2]}{y2:02d}"]
+
+    raw_html = ""
+    try:
+        raw_html = obtener_html_rava_compartido(ttl=3.0) or ""
+    except Exception:
+        pass
+    if not raw_html or "DLR/" not in raw_html:
         try:
-            r = GLOBAL_HTTP_SESSION.get(f"https://www.rava.com/perfil/{ticker}", headers=hdrs, timeout=3.5, verify=False)
-            if r.status_code != 200:
-                continue
-            txt = _html.unescape(r.text)
-            m_ult = re.search(r'"ultimo"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
-            m_com = re.search(r'"compra"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
-            m_ven = re.search(r'"venta"\s*:\s*([0-9]+(?:\.[0-9]+)?)', txt)
-            m_var = re.search(r'"variacion"\s*:\s*(-?[0-9]+(?:\.[0-9]+)?)', txt)
-            ult = float(m_ult.group(1)) if m_ult else None
-            com = float(m_com.group(1)) if m_com else None
-            ven = float(m_ven.group(1)) if m_ven else None
-            if (ult and ult > 500) or (ven and ven > 500):
-                precio_v = ven if (ven and ven > 500) else ult
-                precio_c = com if (com and com > 500) else precio_v
-                var_str = _fmt_var_dolar(float(m_var.group(1))) if m_var else "0,00%"
+            r = GLOBAL_HTTP_SESSION.get(
+                "https://www.rava.com/",
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                timeout=4.0,
+                verify=False
+            )
+            if r.status_code == 200:
+                raw_html = r.text
+        except Exception:
+            return None
+
+    txt = _html.unescape(raw_html)
+    for ticker in tickers:
+        esc = re.escape(ticker)
+        m = re.search(
+            rf'{esc}</a></td>\s*<td[^>]*>\s*([0-9]{{1,3}}(?:\.[0-9]{{3}})*,[0-9]{{2}})\s*</td>(?:\s*<td[^>]*>\s*([^<]+?)\s*</td>)?',
+            txt,
+            re.IGNORECASE
+        )
+        if m:
+            ult = _parse_float_limpio(m.group(1))
+            if ult and ult > 500:
+                var_str = "0,00%"
+                if m.group(2):
+                    v_f = _parse_float_limpio(m.group(2).replace("%", "").strip())
+                    if v_f is not None and -40 <= v_f <= 40:
+                        var_str = _fmt_var_dolar(v_f)
                 return {
-                    "compra": round(precio_c, 2),
-                    "venta": round(precio_v, 2),
+                    "compra": None,
+                    "venta": round(ult, 2),
                     "variacion": var_str,
                     "var_anio": BASE_DOLARITO_EXACTA.get("DOLAR_FUTURO", {}).get("var_anio", "+8,2%"),
                     "fecha": ticker
                 }
-        except Exception:
-            continue
     return None
+
 
 def obtener_puntas_dolarito() -> Dict[str, Dict[str, Any]]:
     if time.time() - _DOLARITO_CICLO_CACHE["ts"] < 6.0 and _DOLARITO_CICLO_CACHE["data"]:
@@ -1833,7 +1847,7 @@ def _obtener_puntas_dolarito_interno() -> Dict[str, Dict[str, Any]]:
 def obtener_datos_dolar_futuro() -> Optional[Dict[str, Any]]:
     puntas = obtener_puntas_dolarito()
     info_f = puntas.get("DOLAR_FUTURO") or BASE_DOLARITO_EXACTA["DOLAR_FUTURO"]
-    c_fut = info_f.get("compra") or 1563.00
+    c_fut = info_f.get("compra")
     v_fut = float(info_f.get("venta") or 1563.50)
     var_fut = info_f.get("variacion") or "0,00%"
     return {
