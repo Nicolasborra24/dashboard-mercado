@@ -3071,7 +3071,7 @@
         const resp = await fetchJsonSeguro("/api/noticias-drivers?forzar=" + (forzar ? "true" : "false") + "&t=" + Date.now());
         if (resp && typeof resp === "object") {
           if (Array.isArray(resp.top5) && resp.top5.length > 0) window.DATOS_NOTICIAS_DRIVERS.top5 = resp.top5.slice(0, 5);
-          if (Array.isArray(resp.argentina) && resp.argentina.length > 0) window.DATOS_NOTICIAS_DRIVERS.argentina = resp.argentina.slice(0, 6);
+          if (Array.isArray(resp.argentina) && resp.argentina.length > 0) window.DATOS_NOTICIAS_DRIVERS.argentina = resp.argentina.slice(0, 10);
           if (Array.isArray(resp.estados_unidos) && resp.estados_unidos.length > 0) window.DATOS_NOTICIAS_DRIVERS.estados_unidos = resp.estados_unidos.slice(0, 6);
           if (resp.updated) window.DATOS_NOTICIAS_DRIVERS.updated = resp.updated;
         }
@@ -3084,9 +3084,9 @@
 
     window.renderizarSeccionNoticiasDrivers = function() {
       const top5 = (window.DATOS_NOTICIAS_DRIVERS.top5 || []).slice(0, 5);
-      const listaAr = (window.DATOS_NOTICIAS_DRIVERS.argentina || []).slice(0, 6);
+      const listaAr = (window.DATOS_NOTICIAS_DRIVERS.argentina || []).slice(0, 10);
       const listaUs = (window.DATOS_NOTICIAS_DRIVERS.estados_unidos || []).slice(0, 6);
-      const totalDrivers = listaAr.length + listaUs.length;
+      const totalDrivers = listaAr.length;
 
       const top5Html = top5.map((n, idx) => {
         const esUsa = String(n.mercado || "").includes("EE.UU");
@@ -3095,9 +3095,9 @@
           : "bg-cyan-500/20 text-cyan-300 border-cyan-500/35";
         return `
           <a href="${n.url}" target="_blank" rel="noopener noreferrer" class="group neon-card rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-amber-400/45 transition">
-            <div class="space-y-2.5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
               <div class="flex items-center justify-between gap-2">
-                <span class="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/35">#0${idx + 1}</span>
+                <span class="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/35">#${String(idx + 1).padStart(2, "0")}</span>
                 <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${badgeMerc}">${esUsa ? "🇺🇸 EE.UU." : "🇦🇷 ARGENTINA"}</span>
               </div>
               <p class="text-xs sm:text-[13px] font-bold text-slate-100 group-hover:text-white leading-snug">
@@ -3135,7 +3135,7 @@
               ${lista.map((n, idx) => `
                 <a href="${n.url}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-slate-800/55 bg-slate-950/55 hover:bg-slate-900/80 ${borderHover} p-3.5 transition">
                   <div class="flex items-start gap-3">
-                    <span class="font-mono text-xs font-extrabold ${numCls} pt-0.5 shrink-0">0${idx + 1}</span>
+                    <span class="font-mono text-xs font-extrabold ${numCls} pt-0.5 shrink-0">${String(idx + 1).padStart(2, "0")}</span>
                     <div class="flex-1 min-w-0 space-y-1.5">
                       <p class="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white leading-snug">
                         ${n.titulo}

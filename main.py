@@ -3700,12 +3700,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             ("https://www.infobae.com/arc/outboundfeeds/rss/category/economia/", "Infobae Economía"),
             (f"https://news.google.com/rss/search?q={q_ar}&hl=es-419&gl=AR&ceid=AR:es-419", "")
         ]
-        feeds_us = [
-            ("https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI,NVDA,AAPL,MSFT,TLT,GC=F,CL=F&region=US&lang=en-US", "Yahoo Finance"),
-            ("https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "MarketWatch"),
-            ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069", "CNBC Markets"),
-            ("https://www.eleconomista.es/rss/rss-mercados.php", "El Economista")
-        ]
+        feeds_us = []
 
         res_ar: List[Dict[str, Any]] = []
         res_us: List[Dict[str, Any]] = []
@@ -3729,7 +3724,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             if k not in vistos:
                 vistos.add(k)
                 lista_ar_limpia.append(it)
-            if len(lista_ar_limpia) >= 6:
+            if len(lista_ar_limpia) >= 10:
                 break
 
         kw_wallstreet = (
@@ -3756,7 +3751,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
 
         if len(lista_ar_limpia) >= 1:
             CACHE_NOTICIAS_DRIVERS["argentina"] = [
-                {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:6]
+                {k: v for k, v in x.items() if k != "ts"} for x in lista_ar_limpia[:10]
             ]
         if len(lista_us_limpia) >= 1:
             us_trad = []
@@ -3766,20 +3761,16 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                 us_trad.append(item_clean)
             CACHE_NOTICIAS_DRIVERS["estados_unidos"] = us_trad
 
+        CACHE_NOTICIAS_DRIVERS["estados_unidos"] = []
         combinados = []
         ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
-        us_cur = CACHE_NOTICIAS_DRIVERS.get("estados_unidos", [])
-        for i in range(3):
-            if i < len(us_cur):
-                item_u = dict(us_cur[i])
-                item_u["mercado"] = "EE.UU."
-                combinados.append(item_u)
-            if i < len(ar_cur):
-                item_a = dict(ar_cur[i])
-                item_a["mercado"] = "Argentina"
-                combinados.append(item_a)
-        if combinados:
-            CACHE_NOTICIAS_DRIVERS["top5"] = combinados[:5]
+        kw_ext = ("wall street", "fed", "reserva federal", "s&p", "nasdaq", "eeuu", "ee.uu.", "estados unidos", "powell", "nvidia", "trump", "tesoro")
+        for it in ar_cur[:5]:
+            item_c = dict(it)
+            tl = item_c.get("titulo", "").lower()
+            item_c["mercado"] = "EE.UU." if any(k in tl for k in kw_ext) else "Argentina"
+            combinados.append(item_c)
+        CACHE_NOTICIAS_DRIVERS["top5"] = combinados[:5]
 
         CACHE_NOTICIAS_DRIVERS["updated"] = ahora_ar.strftime("%H:%M:%S")
         _NOTICIAS_CACHE_TS = time.time()
