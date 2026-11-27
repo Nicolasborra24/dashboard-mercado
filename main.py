@@ -3791,7 +3791,7 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             _toks = set(w for w in _tn.split() if len(w) >= 4 and w not in _stop)
             if not _toks:
                 continue
-            if any(len(_toks & _vt) >= 3 or (len(_toks & _vt) / max(min(len(_toks), len(_vt)), 1) >= 0.45) for _vt in _vistos_tokens):
+            if any((len(_toks & _vt) / max(min(len(_toks), len(_vt)), 1) >= 0.70) for _vt in _vistos_tokens):
                 continue
             if _url:
                 _vistos_urls.add(_url)
