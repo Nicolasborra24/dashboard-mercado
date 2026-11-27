@@ -3788,6 +3788,33 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
             _tn = _norm_txt(str(_it.get("titulo", "")).strip())
             if any(k in _tn for k in _spam_kw):
                 continue
+            _relevancia_kw = (
+                # Mercado AR y EE.UU.
+                "merval", "byma", "adr", "wall street", "nasdaq", "s&p", "sp500", "dow jones",
+                "bolsa", "acciones", "cedear", "etf", "rueda", "riesgo pais", "embi", "msci",
+                "inversor", "mercado", "bitcoin", "cripto", "oro", "petroleo", "commodit", "soja",
+                # Dolar, tasas y deuda
+                "dolar", "divisa", "cambiari", "mep", "ccl", "mayorista", "rofex", "brecha",
+                "bcra", "reservas", "cepo", "tasa", "lecap", "boncap", "cer", "bono", "deuda",
+                "licitacion", "tesoro", "caucion", "plazo fijo", "credito", "liquidez",
+                "fed", "reserva federal", "powell", "bce", "fmi",
+                # Empresas cotizantes
+                "ypf", "galicia", "ggal", "banco macro", "bbva", "supervielle", "pampa energia",
+                "edenor", "transener", "aluar", "ternium", "loma negra", "irsa", "cresud", "vista",
+                "mercado libre", "meli", "globant", "telecom", "vaca muerta", "bancos", "energetica",
+                "nvidia", "apple", "microsoft", "google", "amazon", "meta", "tesla", "amd", "intel",
+                "balance", "ganancias", "dividendos", "cotiza", "accionistas", "semiconductores",
+                # Politica con impacto en mercado
+                "milei", "caputo", "bausili", "sturzenegger", "congreso", "senado", "diputados",
+                "presupuesto", "reforma", "dnu", "electoral", "elecciones", "trump", "arancel",
+                "tarifas", "retenciones", "impuesto", "privatizacion", "geopolitic", "acuerdo",
+                # Coyuntura economica
+                "inflacion", "ipc", "indec", "pbi", "pib", "emae", "actividad", "recesion",
+                "superavit", "deficit", "fiscal", "empleo", "desempleo", "industria",
+                "exportacion", "importacion", "balanza", "economi", "macro", "rem"
+            )
+            if not any(k in _tn for k in _relevancia_kw):
+                continue
             _toks = set(w for w in _tn.split() if len(w) >= 4 and w not in _stop)
             if not _toks:
                 continue
