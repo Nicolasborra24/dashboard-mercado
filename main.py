@@ -3761,16 +3761,56 @@ def actualizar_noticias_drivers(forzar: bool = False) -> Dict[str, Any]:
                 us_trad.append(item_clean)
             CACHE_NOTICIAS_DRIVERS["estados_unidos"] = us_trad
 
-        CACHE_NOTICIAS_DRIVERS["estados_unidos"] = []
+        import unicodedata as _ud
+        def _norm_txt(s: str) -> str:
+            s = _ud.normalize("NFKD", s.lower()).encode("ascii", "ignore").decode("ascii")
+            return re.sub(r"[^a-z0-9\s]", " ", s)
+
+        _spam_kw = (
+            "minuto a minuto", "a cuanto cotiza", "a cuanto opera",
+            "dolar hoy", "dolar blue hoy", "dolar oficial hoy",
+            "cotizacion del dolar", "precio del dolar"
+        )
+        _stop = {
+            "para", "este", "esta", "como", "sobre", "desde", "hasta", "tras",
+            "jueves", "viernes", "lunes", "martes", "miercoles", "sabado", "domingo",
+            "noviembre", "diciembre", "enero", "argentina", "mercado", "mercados",
+            "hoy", "peso", "pesos", "gobierno", "pais", "anos", "millones", "nuevo", "nueva"
+        }
+        _fuente_raw = lista_ar_limpia if "lista_ar_limpia" in locals() and lista_ar_limpia else CACHE_NOTICIAS_DRIVERS.get("argentina", [])
+        _ar_filtrada = []
+        _vistos_tokens = []
+        _vistos_urls = set()
+        for _it in _fuente_raw:
+            _url = str(_it.get("url", "")).strip().split("?")[0].rstrip("/")
+            if _url and _url in _vistos_urls:
+                continue
+            _tn = _norm_txt(str(_it.get("titulo", "")).strip())
+            if any(k in _tn for k in _spam_kw):
+                continue
+            _toks = set(w for w in _tn.split() if len(w) >= 4 and w not in _stop)
+            if not _toks:
+                continue
+            if any(len(_toks & _vt) >= 3 or (len(_toks & _vt) / max(min(len(_toks), len(_vt)), 1) >= 0.45) for _vt in _vistos_tokens):
+                continue
+            if _url:
+                _vistos_urls.add(_url)
+            _vistos_tokens.append(_toks)
+            _ar_filtrada.append({k: v for k, v in _it.items() if k != "ts"})
+            if len(_ar_filtrada) >= 25:
+                break
+
+        kw_ext = ("wall street", "fed", "reserva federal", "s&p", "nasdaq", "eeuu", "ee.uu.", "estados unidos", "powell", "nvidia", "trump", "tesoro", "bce", "europa")
         combinados = []
-        ar_cur = CACHE_NOTICIAS_DRIVERS.get("argentina", [])
-        kw_ext = ("wall street", "fed", "reserva federal", "s&p", "nasdaq", "eeuu", "ee.uu.", "estados unidos", "powell", "nvidia", "trump", "tesoro")
-        for it in ar_cur[:5]:
+        for it in _ar_filtrada[:5]:
             item_c = dict(it)
             tl = item_c.get("titulo", "").lower()
             item_c["mercado"] = "EE.UU." if any(k in tl for k in kw_ext) else "Argentina"
             combinados.append(item_c)
+
+        CACHE_NOTICIAS_DRIVERS["estados_unidos"] = []
         CACHE_NOTICIAS_DRIVERS["top5"] = combinados[:5]
+        CACHE_NOTICIAS_DRIVERS["argentina"] = _ar_filtrada[5:25] if len(_ar_filtrada) > 5 else _ar_filtrada
 
         CACHE_NOTICIAS_DRIVERS["updated"] = ahora_ar.strftime("%H:%M:%S")
         _NOTICIAS_CACHE_TS = time.time()
